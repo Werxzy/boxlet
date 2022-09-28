@@ -128,11 +128,5 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Obsidian stuff
-.obsidian/
-
 # VS code
 .vscode/
-
-# hack information
-*/Hacks/
