@@ -1,19 +1,19 @@
 import pygame
 import numpy as np
 
-from boxlet.math_extra import *
-import boxlet.opengl.transform_math as Tmath 
-
-from boxlet.opengl.shader import Shader, VertFragShader, ComputeShader
-from boxlet.opengl.texture import Texture
-from boxlet.opengl.model import Model
-
-from boxlet.opengl.renderer import Renderer
-from boxlet.opengl.render_instance_metaclass import RenderInstance
-
 from boxlet.entity import Entity
 from boxlet.manager import instance as manager
 from boxlet.vary_floats import VaryFloats
+
+from boxlet.math_extra import *
+import boxlet.opengl.transform_math as Tmath 
+
+from boxlet.opengl.model import Model
+from boxlet.opengl.shader import Shader, VertFragShader, ComputeShader
+from boxlet.opengl.texture import Texture
+
+from boxlet.opengl.renderer import Renderer
+from boxlet.opengl.render_instance_metaclass import RenderInstance
 
 # anything using opengl when imported needs to be imported AFTER pygame is initialized
 # from core.opengl.sprite_renderer import SpriteRenderer

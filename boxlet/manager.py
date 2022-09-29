@@ -7,35 +7,33 @@ class Manager:
 	def __init__(self) -> None:
 		pygame.init()
 
-		import os
-
-		def get_else(name:str, default:str):
-			return os.environ[name] if name in os.environ else default
+		from os import environ
 
 		# settings TODO : windowed vs fullscreen
 
-		self.screen_pos = np.zeros(2)
-		self.screen_size = np.array([int(i) for i in get_else('BOXLET_RESOLUTION', '960,540').split(',')])
+		self.screen_size = np.array([int(i) for i in environ.get('BOXLET_RESOLUTION', '960,540').split(',')])
 		
-		self.render_mode = get_else('BOXLET_RENDER_MODE', 'sdl2')
-		match(self.render_mode):
-			case 'sdl2': 
-				self.display = pygame.display.set_mode(self.screen_size, flags = pygame.DOUBLEBUF)
+		self.render_mode = environ.get('BOXLET_RENDER_MODE', 'sdl2')
+		if self.render_mode == 'sdl2':
+			self.screen_pos = np.zeros(2)
+			self.display = pygame.display.set_mode(self.screen_size, flags = pygame.DOUBLEBUF)
 
-				self.fill_color = get_else('BOXLET_FILL_COLOR', 'black')
-				if self.fill_color.count(',') > 0: # instead create a list
-					self.fill_color = [int(c) for c in self.fill_color.split(',')]
+			self.fill_color = environ.get('BOXLET_FILL_COLOR', 'black')
+			if self.fill_color.count(',') > 0: # instead create a list
+				self.fill_color = [int(c) for c in self.fill_color.split(',')]
 
-				self.pixel_scale = int(get_else('BOXLET_PIXEL_SCALE', '4'))
-				if self.pixel_scale > 1:
-					self.pixel_display = pygame.surface.Surface(round(self.screen_size / self.pixel_scale))
+			self.pixel_scale = int(environ.get('BOXLET_PIXEL_SCALE', '1'))
+			if self.pixel_scale > 1:
+				self.pixel_display = pygame.surface.Surface(round(self.screen_size / self.pixel_scale))
+		
+		elif self.render_mode == 'opengl':
+			pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MAJOR_VERSION, int(environ.get('BOXLET_GL_CONTEXT_MAJOR_VERSION', '3')))
+			pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MINOR_VERSION, int(environ.get('BOXLET_GL_CONTEXT_MINOR_VERSION', '3')))
+			pygame.display.gl_set_attribute(pygame.GL_CONTEXT_PROFILE_MASK, pygame.GL_CONTEXT_PROFILE_CORE)
+			self.display = pygame.display.set_mode(self.screen_size, flags = pygame.OPENGL | pygame.DOUBLEBUF)
 
-			case 'opengl': 
-				self.display = pygame.display.set_mode(self.screen_size, flags = pygame.OPENGL | pygame.DOUBLEBUF)
-			
-			case _:
-				raise Exception('Unrecognized render mode.')
-				
+		else:
+			raise Exception('Unrecognized render mode.')
 		
 		# self.display = pygame.display.set_mode(flags = pygame.OPENGL | pygame.DOUBLEBUF | pygame.FULLSCREEN, vsync = 1)
 		# self.screen_size[:] = self.display.get_size()
@@ -43,7 +41,7 @@ class Manager:
 		self.clock = pygame.time.Clock()
 
 		self.fps = 100 # frames per second, may get replaced by turning on vsync
-		self.ups = int(get_else('BOXLET_UPDATE_RATE', '60')) # fixed updates per second
+		self.ups = int(environ.get('BOXLET_UPDATE_RATE', '60')) # fixed updates per second
 		self.fixed_delta_time = 1 / self.ups # time passed for fixed update
 		self.delta_time = 0.0 # time passed for vary update
 		self.max_delta_time = self.fixed_delta_time * 3 # prevents large jumps in time, either from lag or changing the clock

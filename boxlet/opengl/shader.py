@@ -1,11 +1,20 @@
 from OpenGL.GL import *
 from OpenGL.GL import shaders
-
+from boxlet import Model
 
 class Shader:
 
 	# TODO? have a dictionary (or hashset?) of already created shaders to save on duplicate vertex/fragment shaders
 	# (not sure how useful that would be though.
+
+	test_vao = glGenVertexArrays(1)
+	glBindVertexArray(test_vao)
+
+	test_model = Model()
+	test_model.bind()
+
+	glBindVertexArray(0)
+
 
 	global_uniforms = {
 		'cameraSize': [glUniform2fv, [0,0]],
@@ -46,10 +55,12 @@ class Shader:
 
 class VertFragShader(Shader):
 	def __init__(self, vertex, frag, uniforms = []):
+		glBindVertexArray(Shader.test_vao)
 		self.vertex = shaders.compileShader(vertex, GL_VERTEX_SHADER)
 		self.fragment = shaders.compileShader(frag, GL_FRAGMENT_SHADER)
 		
 		super().__init__(shaders.compileProgram(self.vertex, self.fragment), uniforms)
+		glBindVertexArray(0)
 
 class ComputeShader(Shader):
 	def __init__(self, compute, uniforms = []):
