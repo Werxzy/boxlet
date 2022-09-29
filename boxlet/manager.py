@@ -6,12 +6,36 @@ class Manager:
 
 	def __init__(self) -> None:
 		pygame.init()
-		
-		self.screen_pos = np.zeros(2)
-		self.screen_size = np.array((384, 216)) * 3
 
-		# self.display = pygame.display.set_mode(self.display_resolution * 3, vsync=1) # flags = pygame.RESIZABLE (would like pygame.SCALED, but I can't set the window size)
-		self.display = pygame.display.set_mode(self.screen_size, flags = pygame.OPENGL | pygame.DOUBLEBUF) # flags = pygame.RESIZABLE (would like pygame.SCALED, but I can't set the window size)
+		import os
+
+		def get_else(name:str, default:str):
+			return os.environ[name] if name in os.environ else default
+
+		# settings TODO : windowed vs fullscreen
+
+		self.screen_pos = np.zeros(2)
+		self.screen_size = np.array([int(i) for i in get_else('BOXLET_RESOLUTION', '960,540').split(',')])
+		
+		self.render_mode = get_else('BOXLET_RENDER_MODE', 'sdl2')
+		match(self.render_mode):
+			case 'sdl2': 
+				self.display = pygame.display.set_mode(self.screen_size, flags = pygame.DOUBLEBUF)
+
+				self.fill_color = get_else('BOXLET_FILL_COLOR', 'black')
+				if self.fill_color.count(',') > 0: # instead create a list
+					self.fill_color = [int(c) for c in self.fill_color.split(',')]
+
+				self.pixel_scale = int(get_else('BOXLET_PIXEL_SCALE', '4'))
+				if self.pixel_scale > 1:
+					self.pixel_display = pygame.surface.Surface(round(self.screen_size / self.pixel_scale))
+
+			case 'opengl': 
+				self.display = pygame.display.set_mode(self.screen_size, flags = pygame.OPENGL | pygame.DOUBLEBUF)
+			
+			case _:
+				raise Exception('Unrecognized render mode.')
+				
 		
 		# self.display = pygame.display.set_mode(flags = pygame.OPENGL | pygame.DOUBLEBUF | pygame.FULLSCREEN, vsync = 1)
 		# self.screen_size[:] = self.display.get_size()
@@ -19,7 +43,7 @@ class Manager:
 		self.clock = pygame.time.Clock()
 
 		self.fps = 100 # frames per second, may get replaced by turning on vsync
-		self.ups = 60 # fixed updates per second
+		self.ups = int(get_else('BOXLET_UPDATE_RATE', '60')) # fixed updates per second
 		self.fixed_delta_time = 1 / self.ups # time passed for fixed update
 		self.delta_time = 0.0 # time passed for vary update
 		self.max_delta_time = self.fixed_delta_time * 3 # prevents large jumps in time, either from lag or changing the clock
@@ -90,10 +114,21 @@ class Manager:
 			self.clock.tick_busy_loop(self.fps)
 
 	def render(self):
+		if self.render_mode == 'sdl2':
+			if self.pixel_scale != 1:
+				self.screen.fill(self.fill_color)
+				Entity.__call_function__('render')
+				pygame.transform.scale(self.screen, self.display.get_size(), self.display)
 
-		Renderer.render_all()
+			else:
+				self.display.fill(self.fill_color)
+				Entity.__call_function__('render')
 
-		pygame.display.flip()
+			pygame.display.update()
+		
+		else:
+			Renderer.render_all()
+			pygame.display.flip()
 
 	def quit(self):
 		self.exit_program = True
