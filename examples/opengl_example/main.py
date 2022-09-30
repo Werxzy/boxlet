@@ -20,14 +20,15 @@ cc.pos[:] = (0,0,-15)
 class ModelSpawner(Entity):
 	def __init__(self):
 		self.timer = 0
+		self.rate = 1
 
 	# def fixed_update(self):
 	# 	...
 	
 	def vary_update(self):
 		self.timer += manager.delta_time
-		if self.timer > 1:
-			self.timer = 0
+		while self.timer > self.rate:
+			self.timer -= self.rate
 			self.spawn_cube()
 			
 	@Entity.watch_event(pygame.KEYDOWN)
