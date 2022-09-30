@@ -1,4 +1,4 @@
-from boxlet import Renderer, Texture, VertFragShader, Model, RenderInstance
+from boxlet import Renderer, Texture, VertFragShader, Model, RenderInstance, np
 from OpenGL.GL import *
 
 
@@ -79,7 +79,7 @@ class ModelInstancedRenderer(Renderer):
 		dim = 3)
 
 	class ModelInstance(RenderInstance):
-		model_matrix = 'mat4', 2
+		model_matrix:np.ndarray = 'mat4', 2
 
 	def __init__(self, model:Model, image:Texture, queue = 0):	
 		super().__init__(queue)
