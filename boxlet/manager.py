@@ -27,9 +27,10 @@ class Manager:
 				self.pixel_display = pygame.surface.Surface(round(self.screen_size / self.pixel_scale))
 		
 		elif self.render_mode == 'opengl':
-			pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MAJOR_VERSION, int(environ.get('BOXLET_GL_CONTEXT_MAJOR_VERSION', '3')))
-			pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MINOR_VERSION, int(environ.get('BOXLET_GL_CONTEXT_MINOR_VERSION', '3')))
-			pygame.display.gl_set_attribute(pygame.GL_CONTEXT_PROFILE_MASK, pygame.GL_CONTEXT_PROFILE_CORE)
+			if environ.get('BOXLET_SKIP_GL_CONTEXT_SETUP', '0') == '0':
+				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MAJOR_VERSION, int(environ.get('BOXLET_GL_CONTEXT_MAJOR_VERSION', '3')))
+				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MINOR_VERSION, int(environ.get('BOXLET_GL_CONTEXT_MINOR_VERSION', '3')))
+				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_PROFILE_MASK, pygame.GL_CONTEXT_PROFILE_CORE)
 			self.display = pygame.display.set_mode(self.screen_size, flags = pygame.OPENGL | pygame.DOUBLEBUF)
 
 		else:

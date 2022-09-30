@@ -109,9 +109,6 @@ class ModelInstancedRenderer(Renderer):
 
 		glEnable(GL_CULL_FACE)
 		glCullFace(GL_FRONT)
-
-		glEnable(GL_ALPHA_TEST)
-		glAlphaFunc(GL_GREATER, 0.1)
 		
 		glBindVertexArray(self.vao)
 		
