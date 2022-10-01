@@ -6,6 +6,7 @@ os.environ['BOXLET_FRAME_RATE'] = '120'
 
 from boxlet import *
 from math import floor
+import random
 
 
 # Sprite assets
@@ -70,6 +71,7 @@ class Player(Entity):
 		if event.key == pygame.K_ESCAPE:
 			manager.quit()
 
+	@Entity.priority(10)
 	def render(self):
 		frame = 1 if self.animation_time == 0 else floor(self.animation_time) % 4
 		bump = [0, (frame+1) % 2]
@@ -77,7 +79,33 @@ class Player(Entity):
 		manager.screen.blit(sub_sprites[sprite_id], self.pos - bump)
 
 
+class Item(Entity):
+	def __init__(self, sprite_id = None, pos = [0,0]):
+		self.sprite_id = sprite_id
+		self.pos = np.array(pos)
+
+	@Entity.priority(0)
+	def render(self):
+		manager.screen.blit(sub_sprites[self.sprite_id], self.pos)
+
+
+class Apple(Item):
+	def __init__(self, pos = [0,0]):
+		super().__init__(18, pos)
+
+
+class Fish(Item):
+	def __init__(self, pos = [0,0]):
+		super().__init__(19, pos)
+
+
 Player()
+
+for _ in range(10):
+	Apple([random.randint(0, manager.screen_size[i] - 14) for i in range(2)])
+
+for _ in range(5):
+	Fish([random.randint(0, manager.screen_size[i] - 14) for i in range(2)])
 
 manager.run()
 
