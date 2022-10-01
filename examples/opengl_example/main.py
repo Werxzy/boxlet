@@ -1,5 +1,6 @@
 import os
 os.environ['BOXLET_RENDER_MODE'] = 'opengl'
+os.environ['BOXLET_OPENGL_VSYNC'] = '1'
 
 from boxlet import *
 import random

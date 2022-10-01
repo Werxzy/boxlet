@@ -75,7 +75,7 @@ class SpriteRenderer(Renderer):
 		cs, cp, ts, tp = (SpriteRenderer.shader.uniforms[u] for u in ['cameraSize', 'cameraPos', 'texSize', 'texPos'])
 
 		# apply camera values
-		glUniform2fv(cs, 1, manager.screen_size * 0.5)
+		glUniform2fv(cs, 1, manager.display_size * 0.5)
 		glUniform2fv(cp, 1, manager.screen_pos)
 		
 		glBindVertexArray(SpriteRenderer.vao)

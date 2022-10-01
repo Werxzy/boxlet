@@ -57,8 +57,8 @@ class FrameBufferStep(Renderer):
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT)
 
 	def get_size(self):
-		return [self.size_settings[0] or round(self.size_settings[2] * manager.screen_size[0]),
-				self.size_settings[1] or round(self.size_settings[3] * manager.screen_size[1])]
+		return [self.size_settings[0] or round(self.size_settings[2] * manager.display_size[0]),
+				self.size_settings[1] or round(self.size_settings[3] * manager.display_size[1])]
 
 
 class ApplyShaderToFrame(Renderer):
@@ -102,7 +102,7 @@ class ApplyShaderToFrame(Renderer):
 		self.shader = shader or self.default_shader
 
 	def render(self):
-		self.viewport(0, 0, *manager.screen_size)
+		self.viewport(0, 0, *manager.display_size)
 
 		glBindFramebuffer(GL_FRAMEBUFFER, self.to_frame)
 		glDisable(GL_DEPTH_TEST)
@@ -148,7 +148,7 @@ class ApplyDitherToFrame(Renderer):
 		self.to_frame = to_frame
 		
 	def render(self):
-		self.viewport(0, 0, *manager.screen_size)
+		self.viewport(0, 0, *manager.display_size)
 
 		glBindFramebuffer(GL_FRAMEBUFFER, self.to_frame)
 		glDisable(GL_DEPTH_TEST)
