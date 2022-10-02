@@ -5,22 +5,6 @@ from OpenGL.GL import *
 class MultiModelRenderer(Renderer):
 	# position and size are in pixel coordinates
 
-	# vertex_shader = """
-	# 	#version 330
-	# 	layout(location = 0) in vec3 pos;
-	# 	layout(location = 1) in vec2 uvIn;
-	# 	layout(location = 2) in mat4 model;
-		
-	# 	uniform mat4 viewProj;
-
-	# 	out vec2 uv;
-
-	# 	void main() {
-	# 		gl_Position = viewProj * model * vec4(pos, 1);
-	# 		uv = uvIn;
-	# 	}
-	# 	"""
-
 	vertex_shader = """
 		#version 330
 		#extension GL_ARB_shader_draw_parameters : enable
