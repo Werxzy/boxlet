@@ -107,27 +107,55 @@ class RenderInstanceList(Generic[T]):
 		self.update_range = [maxsize, -1]
 		self.update_full = False # if set to true, sets the full set of data
 
+		self.free_indices = set()
+		self.to_delete = set()
+		self.instance_count = 0
+		self.instance_total_space = 0
+
+		self._expand_data(16)
+
 	# TODO make a function for creating multiple instances at once, or even one for just making room ahead of time
 	def new_instance(self, **kwargs) -> T:
-		new_inst = self.cls(self, len(self.instances))
+		if not self.free_indices:
+			self._expand_data(self.instance_total_space) # Currently just double the amount every time it needs more space.
+			self.update_full = True
+
+		id = self.free_indices.pop()
+		self.to_delete.difference_update([id])
+		new_inst = self.cls(self, id)
 		self.instances.append(new_inst)
-		self.data = np.append(self.data, self.cls.get_defaults()).astype(np.float32)
-		self.update_full = True
-		# TODO? potentially add more than just one space while using the same count in glDrawElementsInstanced
-		#		This would help a bit with reducing the amount of full updates to the buffer
+		self.instance_count += 1
+
+		r = self.cls.get_stride_range(id)
+		self.data[r] = self.cls.get_defaults()
+		self.update_range = [
+			min(r[0], self.update_range[0]),
+			max(r[-1], self.update_range[1])
+		]
 
 		for k,v in kwargs.items():
 			setattr(new_inst, k, v)
 
 		return new_inst
 
-	def destroy_instance(self, id):
-		self.instances.pop(id)
-		self.data = np.delete(self.data, self.cls.get_stride_range(id))
+	def _expand_data(self, amount):
+		self.free_indices.update(range(self.instance_total_space, self.instance_total_space + amount))
+		self.instance_total_space += amount
+		# self.data = np.append(self.data, np.tile(self.cls.get_defaults(), amount)).astype(np.float32)
+		self.data = np.append(self.data, [0] * (amount*self.cls._bind_stride)).astype(np.float32)
 		self.update_full = True
+
+	def destroy_instance(self, id):
+		self.to_delete.add(id)
+		self.free_indices.add(id)
+		self.instance_count -= 1
+
+		# self.instances.pop(id)
+		# self.data = np.delete(self.data, self.cls.get_stride_range(id))
+		# self.update_full = True
 				
-		for inst in self.instances[id:]:
-			inst.id -= 1
+		# for inst in self.instances[id:]:
+		# 	inst.id -= 1
 
 		# just going through and decrementing ids seems a bit inefficient, 
 		# even if the all the decrementing is done in a single loop (considering multiple destroy calls)
@@ -136,6 +164,29 @@ class RenderInstanceList(Generic[T]):
 		"""
 		Updates the data to the VBO.
 		"""
+
+		if self.to_delete:
+			print('a')
+			for i in list(self.to_delete).sort(reverse=True):
+				self.instances.remove(i)
+			self.to_delete.clear()
+
+			mi = None
+			ma = 0
+
+			for i, inst in enumerate(self.instances): # instances should preserve order
+				if i == inst.id: continue
+
+				r = self.cls.get_stride_range(i)
+				self.data[r] = self.data[self.cls.get_stride_range(inst.id)]
+				inst.id = i
+
+				# must be 'is None'
+				if mi is None: mi = r[0]
+				ma = r
+
+			self.update_range[self.cls.get_stride_range(mi)[0], (ma + 1) * self._bind_stride]
+			self.free_indices = [i for i in range(self.instance_count, self.instance_total_space)]
 
 		if self.update_full: # updates the entire buffer object, needed if the size changes.
 			self.update_full = False
@@ -183,7 +234,6 @@ class RenderInstance(metaclass = RenderInstanceMetaclass):
 	def get_stride_range(cls, id:int):
 		return np.arange(cls._bind_stride) + cls._bind_stride * id
 
-	
 	@classmethod
 	def new_instance_list(cls:type[T]) -> RenderInstanceList[T]:
 		"""

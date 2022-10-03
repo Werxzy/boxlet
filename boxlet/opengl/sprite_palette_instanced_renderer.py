@@ -65,8 +65,7 @@ class SpritePaletteInstancedRenderer(Renderer):
 		return self.instance_list.new_instance(**kwargs)
 
 	def render(self):
-		inst_count = len(self.instance_list.instances)
-		if inst_count == 0:
+		if self.instance_list.instance_count == 0:
 			return
 
 		glUseProgram(self.shader.program)
@@ -85,5 +84,5 @@ class SpritePaletteInstancedRenderer(Renderer):
 
 		self.instance_list.update_data()
 
-		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, None, inst_count)
+		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, None, self.instance_list.instance_count)
 

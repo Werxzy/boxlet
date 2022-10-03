@@ -116,9 +116,8 @@ class MultiModelRenderer(Renderer):
 		return self.instance_list.new_instance(**kwargs)
 
 	def render(self):
-		inst_count = len(self.instance_list.instances)
-		# if inst_count == 0:
-		if inst_count < 4:
+		# if self.instance_list.instance_count == 0:
+		if self.instance_list.instance_count < 4:
 			return
 
 		glUseProgram(self.shader.program)
