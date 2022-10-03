@@ -107,7 +107,7 @@ class RenderInstanceList(Generic[T]):
 		self.update_range = [maxsize, -1]
 		self.update_full = False # if set to true, sets the full set of data
 
-		self.free_indices = set()
+		self.free_indices = list()
 		self.to_delete = set()
 		self.instance_count = 0
 		self.instance_total_space = 0
@@ -139,7 +139,7 @@ class RenderInstanceList(Generic[T]):
 		return new_inst
 
 	def _expand_data(self, amount):
-		self.free_indices.update(range(self.instance_total_space, self.instance_total_space + amount))
+		self.free_indices.append(range(self.instance_total_space, self.instance_total_space + amount))
 		self.instance_total_space += amount
 		# self.data = np.append(self.data, np.tile(self.cls.get_defaults(), amount)).astype(np.float32)
 		self.data = np.append(self.data, [0] * (amount*self.cls._bind_stride)).astype(np.float32)
@@ -147,7 +147,7 @@ class RenderInstanceList(Generic[T]):
 
 	def destroy_instance(self, id):
 		self.to_delete.add(id)
-		self.free_indices.add(id)
+		self.free_indices.append(id)
 		self.instance_count -= 1
 
 		# self.instances.pop(id)
@@ -166,8 +166,7 @@ class RenderInstanceList(Generic[T]):
 		"""
 
 		if self.to_delete:
-			print('a')
-			for i in list(self.to_delete).sort(reverse=True):
+			for i in sorted(self.to_delete, reverse=True):
 				self.instances.remove(i)
 			self.to_delete.clear()
 
