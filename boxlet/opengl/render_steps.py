@@ -5,7 +5,7 @@ from OpenGL.GL import *
 class FrameBufferStep(Renderer):
 	# creates a frame
 
-	def __init__(self, width = 0, height = 0, width_mult = 1, height_mult = 1, depth = True, queue = 0) -> None:
+	def __init__(self, width = 0, height = 0, width_mult = 1, height_mult = 1, depth = True, nearest = False, queue = 0) -> None:
 		'''
 		Setting a dimension size (width or height) will set the size of the frame buffer and it won't change reguardless of window resizing.
 		leaving the non 'mult' dimensions to zero will result in the size of the frame buffer to equal the window size multiplied by the 'mult' parameter.\n
@@ -15,9 +15,10 @@ class FrameBufferStep(Renderer):
 
 		self.size_settings = [width, height, width_mult, height_mult]
 		self.depth = depth
+		self.nearest = nearest
 
-		self.frame_buffer = glGenFramebuffers(1)
-		glBindFramebuffer(GL_FRAMEBUFFER, self.frame_buffer)
+		self._frame_buffer = glGenFramebuffers(1)
+		glBindFramebuffer(GL_FRAMEBUFFER, self._frame_buffer)
 
 		self.texture = glGenTextures(1)
 		glBindTexture(GL_TEXTURE_2D, self.texture)
@@ -31,12 +32,12 @@ class FrameBufferStep(Renderer):
 		width, height = self.get_size()
 
 		if rebind:
-			glBindFramebuffer(GL_FRAMEBUFFER, self.frame_buffer)
+			glBindFramebuffer(GL_FRAMEBUFFER, self._frame_buffer)
 
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, None)
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) # GL_NEAREST)
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) # GL_NEAREST)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST if self.nearest else GL_LINEAR)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST if self.nearest else GL_LINEAR)
 
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.texture, 0)
 
@@ -50,9 +51,10 @@ class FrameBufferStep(Renderer):
 	def render(self):
 		size = self.get_size()
 		self.viewport(0, 0, *size)
+		Shader.set_global_uniform('frameSize', size)
 		Shader.set_global_uniform('cameraSize', size)
 
-		glBindFramebuffer(GL_FRAMEBUFFER, self.frame_buffer)
+		glBindFramebuffer(GL_FRAMEBUFFER, self._frame_buffer)
 		glEnable(GL_DEPTH_TEST)
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT)
 
@@ -90,14 +92,14 @@ class ApplyShaderToFrame(Renderer):
 	rect_model.bind()
 	glBindVertexArray(0)
 
-	def __init__(self, from_frame, to_frame = 0, shader:VertFragShader = None, queue = 1000):
+	def __init__(self, from_texture, to_frame = 0, shader:VertFragShader = None, queue = 1000):
 		"""
 		Renders one frame buffer onto another using a shader, if one is provided.
 		"""
 
 		super().__init__(queue)
 
-		self.from_frame = from_frame
+		self.from_texture = from_texture
 		self.to_frame = to_frame
 		self.shader = shader or self.default_shader
 
@@ -111,7 +113,7 @@ class ApplyShaderToFrame(Renderer):
 		glUseProgram(self.shader.program)
 		glBindVertexArray(ApplyShaderToFrame.rect_vao)
 		glActiveTexture(GL_TEXTURE0)
-		glBindTexture(GL_TEXTURE_2D, self.from_frame)
+		glBindTexture(GL_TEXTURE_2D, self.from_texture)
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, None)
 
 
@@ -135,7 +137,7 @@ class ApplyDitherToFrame(Renderer):
 		"""
 	shader = VertFragShader(ApplyShaderToFrame.vertex_screen_shader, dither_screen_shader, ['random'])
 
-	def __init__(self, from_frame, to_frame = 0, queue = 1000):
+	def __init__(self, from_texture, to_frame = 0, queue = 1000):
 		"""
 		Renders one frame buffer onto another using a shader, if one is provided.
 		
@@ -144,7 +146,7 @@ class ApplyDitherToFrame(Renderer):
 
 		super().__init__(queue)
 
-		self.from_frame = from_frame
+		self.from_texture = from_texture
 		self.to_frame = to_frame
 		
 	def render(self):
@@ -158,10 +160,13 @@ class ApplyDitherToFrame(Renderer):
 		glUniform1f(self.shader.uniforms['random'], manager.time)
 		glBindVertexArray(ApplyShaderToFrame.rect_vao)
 		glActiveTexture(GL_TEXTURE0)
-		glBindTexture(GL_TEXTURE_2D, self.from_frame)
+		glBindTexture(GL_TEXTURE_2D, self.from_texture)
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, None)
+
 
 class SimpleClearStep(Renderer):
 	def render(self):
 		glEnable(GL_DEPTH_TEST)
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT)
+		Shader.set_global_uniform('frameSize', manager.display_size)
+

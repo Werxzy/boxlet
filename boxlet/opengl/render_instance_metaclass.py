@@ -99,13 +99,14 @@ T = TypeVar('T', bound='RenderInstance')
 
 class RenderInstanceList(Generic[T]):
 
-	def __init__(self, cls:T, data_vbo):	
+	def __init__(self, cls:T, data_vbo, renderer = None):	
 		self.cls = cls
 		self.instances:list[T] = []
 		self.data = np.zeros(0, np.float32)
 		self.data_vbo = data_vbo
 		self.update_range = [maxsize, -1]
 		self.update_full = False # if set to true, sets the full set of data
+		self.renderer = renderer
 
 		self.free_indices = list()
 		self.to_delete = set()
@@ -120,7 +121,7 @@ class RenderInstanceList(Generic[T]):
 			self._expand_data(self.instance_total_space) # Currently just double the amount every time it needs more space.
 			self.update_full = True
 
-		id = self.free_indices.pop()
+		id = self.free_indices.pop(0)
 		self.to_delete.difference_update([id])
 		new_inst = self.cls(self, id)
 		self.instances.append(new_inst)
@@ -139,7 +140,7 @@ class RenderInstanceList(Generic[T]):
 		return new_inst
 
 	def _expand_data(self, amount):
-		self.free_indices.append(range(self.instance_total_space, self.instance_total_space + amount))
+		self.free_indices.extend(range(self.instance_total_space, self.instance_total_space + amount))
 		self.instance_total_space += amount
 		# self.data = np.append(self.data, np.tile(self.cls.get_defaults(), amount)).astype(np.float32)
 		self.data = np.append(self.data, [0] * (amount*self.cls._bind_stride)).astype(np.float32)
@@ -234,11 +235,11 @@ class RenderInstance(metaclass = RenderInstanceMetaclass):
 		return np.arange(cls._bind_stride) + cls._bind_stride * id
 
 	@classmethod
-	def new_instance_list(cls:type[T]) -> RenderInstanceList[T]:
+	def new_instance_list(cls:type[T], renderer = None) -> RenderInstanceList[T]:
 		"""
 		Creates a new render instance manager and binds a vbo for the data to the current vao.
 		"""
-		return RenderInstanceList(cls, cls.bind_new_vbo())
+		return RenderInstanceList(cls, cls.bind_new_vbo(), renderer)
 
 
 

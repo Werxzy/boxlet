@@ -1,4 +1,4 @@
-from boxlet import Renderer, Texture, VertFragShader, Model, RenderInstance
+from boxlet import Renderer, MultiTexture, VertFragShader, Model, RenderInstance
 from OpenGL.GL import *
 
 
@@ -10,7 +10,7 @@ class SpritePaletteInstancedRenderer(Renderer):
 		layout(location = 0) in vec2 pos;
 		layout(location = 1) in vec2 uvIn;
 		layout(location = 2) in vec3 texPos;
-		layout(location = 3) in vec4 uvPos; // .xy = scale, .zw = position
+		layout(location = 3) in vec4 uvPos; // .xy = position, .zw = scale
 
 		uniform vec2 cameraSize;
 		uniform vec2 cameraPos;
@@ -20,10 +20,10 @@ class SpritePaletteInstancedRenderer(Renderer):
 		out vec2 uv;
 
 		void main() {
-			vec2 truePos = pos * texSize * uvPos.xy + texPos.xy;
+			vec2 truePos = pos * texSize * uvPos.zw + texPos.xy;
 			vec2 screenPos = (truePos - cameraPos) * 2 / cameraSize;
 			gl_Position = vec4(screenPos, texPos.z, 1);
-			uv = uvIn * uvPos.xy + uvPos.zw;
+			uv = uvIn * uvPos.zw + uvPos.xy;
 		}
 		"""
 	fragment_shader = """
@@ -36,6 +36,7 @@ class SpritePaletteInstancedRenderer(Renderer):
 
 		void main() {
 			vec4 color = texture(tex, uv);
+			if(color.a < 0.5) discard;
 			fragColor = color;
 		}
 		"""
@@ -44,11 +45,17 @@ class SpritePaletteInstancedRenderer(Renderer):
 	model = Model()
 
 	class SpritePaletteInstance(RenderInstance):
-		position = [0,0,0], 2
-		uv_size = [1,1], 3
+		position = [0,0], 2
+		z = [0.5], 2
 		uv_pos = [0,0], 3
+		uv_size = [1,1], 3
 
-	def __init__(self, image:Texture, queue = 0):	
+		def set_sprite(self, id):
+			data = self.owner.renderer.image.sub_image_data[id]
+			self.uv_pos = data[0:2]
+			self.uv_size = data[2:4]
+
+	def __init__(self, image:MultiTexture, queue = 0):	
 		super().__init__(queue)
 		
 		self.image = image
@@ -57,7 +64,7 @@ class SpritePaletteInstancedRenderer(Renderer):
 		glBindVertexArray(self.vao)
 
 		self.model.bind()
-		self.instance_list = self.SpritePaletteInstance.new_instance_list()
+		self.instance_list = self.SpritePaletteInstance.new_instance_list(self)
 
 		glBindVertexArray(0)
 
@@ -73,9 +80,6 @@ class SpritePaletteInstancedRenderer(Renderer):
 		# apply uniform values
 		self.shader.apply_global_uniforms('cameraSize', 'cameraPos')
 		glUniform2fv(self.shader.uniforms['texSize'], 1, self.image.size)
-
-		glEnable(GL_ALPHA_TEST)
-		glAlphaFunc(GL_GREATER, 0.5)
 		
 		glBindVertexArray(self.vao)
 		

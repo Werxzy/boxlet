@@ -17,8 +17,9 @@ class Shader:
 
 
 	global_uniforms = {
-		'cameraSize': [glUniform2fv, [0,0]],
-		'cameraPos': [glUniform2fv, [0,0]],
+		'frameSize': [glUniform2fv, [[0,0]]],
+		'cameraSize': [glUniform2fv, [[0,0]]],
+		'cameraPos': [glUniform2fv, [[0,0]]],
 	}
 	
 	def __init__(self, program, uniforms = []) -> None:
@@ -39,6 +40,10 @@ class Shader:
 	@staticmethod
 	def set_global_uniform(name, value):
 		Shader.global_uniforms[name][1][-1] = value
+
+	@staticmethod
+	def get_global_uniform(name):
+		return Shader.global_uniforms[name][1][-1]
 
 	def apply_global_uniform(self, name):
 		c = Shader.global_uniforms[name]
