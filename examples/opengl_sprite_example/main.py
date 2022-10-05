@@ -13,7 +13,7 @@ w,h = sprite.get_size()
 
 sub_locs = [(i*11, 37, 11, 18) for i in range(8)] # standing sprites
 sub_locs.extend([(i*11, 18, 11, 18) for i in range(8)]) # walking sprites
-sub_locs.extend([(33, 0, 11, 18), (77, 37, 11, 18)]) # alternate walking sprites
+sub_locs.extend([(33, 0, 11, 18), (77, 0, 11, 18)]) # alternate walking sprites
 sub_locs.extend([(89, 41, 14, 14), (89, 26, 14, 14)]) # apple and fish sprites
 sub_locs = [tuple([i[0]/w + 0.0001, i[1]/h + 0.0001, i[2]/w, i[3]/h]) for i in sub_locs] 
 # converting coords, the '+ 0.0001's are probably not needed if the width and height are a power of 2

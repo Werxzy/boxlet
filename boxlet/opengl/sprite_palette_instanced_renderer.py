@@ -46,7 +46,7 @@ class SpritePaletteInstancedRenderer(Renderer):
 
 	class SpritePaletteInstance(RenderInstance):
 		position = [0,0], 2
-		z = [0.5], 2
+		z = [0], 2
 		uv_pos = [0,0], 3
 		uv_size = [1,1], 3
 
