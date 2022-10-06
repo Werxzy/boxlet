@@ -168,7 +168,7 @@ class RenderInstanceList(Generic[T]):
 
 		if self.to_delete:
 			for i in sorted(self.to_delete, reverse=True):
-				self.instances.remove(i)
+				self.instances.pop(i)
 			self.to_delete.clear()
 
 			mi = None
@@ -183,9 +183,11 @@ class RenderInstanceList(Generic[T]):
 
 				# must be 'is None'
 				if mi is None: mi = r[0]
-				ma = r
+				ma = r[-1]
 
-			self.update_range[self.cls.get_stride_range(mi)[0], (ma + 1) * self._bind_stride]
+			if mi is not None:
+				self.update_range = [mi, ma]
+			
 			self.free_indices = [i for i in range(self.instance_count, self.instance_total_space)]
 
 		if self.update_full: # updates the entire buffer object, needed if the size changes.
