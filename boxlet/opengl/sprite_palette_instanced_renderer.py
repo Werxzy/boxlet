@@ -41,7 +41,7 @@ class SpritePaletteInstancedRenderer(Renderer):
 		}
 		"""
 
-	shader = VertFragShader(vertex_shader, fragment_shader, ['cameraSize', 'cameraPos', 'texSize'])
+	shader = VertFragShader(vertex_shader, fragment_shader)
 	model = Model()
 
 	class SpritePaletteInstance(RenderInstance):
@@ -79,7 +79,7 @@ class SpritePaletteInstancedRenderer(Renderer):
 
 		# apply uniform values
 		self.shader.apply_global_uniforms('cameraSize', 'cameraPos')
-		glUniform2fv(self.shader.uniforms['texSize'], 1, self.image.size)
+		self.shader.apply_uniform('texSize', self.image.size)
 		
 		glBindVertexArray(self.vao)
 		

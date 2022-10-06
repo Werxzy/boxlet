@@ -2,7 +2,6 @@ import numpy as np
 import math
 
 from boxlet import Renderer, Shader, Tmath, manager
-from OpenGL.GL import glUniformMatrix4fv
 
 
 class Camera3D(Renderer):
@@ -12,7 +11,7 @@ class Camera3D(Renderer):
 		self.view_matrix = np.identity(4)
 		self.perspective(90, 16.0/9.0, 0.1, 1000)
 		# self.orthographic(-5, 5, -5 * 9 / 16, 5 * 9 / 16, 0.1, 1000)
-		Shader.add_global_matrix_uniform('viewProj', glUniformMatrix4fv, np.identity(4, dtype=np.float32))
+		Shader.add_global_matrix_uniform('viewProj', np.identity(4, dtype=np.float32))
 
 	def render(self):
 		Shader.set_global_uniform('viewProj', np.matmul(np.linalg.inv(self.view_matrix), self.proj_matrix))

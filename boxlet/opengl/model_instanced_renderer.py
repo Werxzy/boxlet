@@ -35,7 +35,7 @@ class ModelInstancedRenderer(Renderer):
 		}
 		"""
 
-	shader = VertFragShader(vertex_shader, fragment_shader, ['viewProj'])
+	shader = VertFragShader(vertex_shader, fragment_shader)
 	cube_model = Model(
 		vertex = [
 			1,-1,-1, 0,0,

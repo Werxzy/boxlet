@@ -135,7 +135,7 @@ class ApplyDitherToFrame(Renderer):
 			FragColor = vec4(col, 1.0);
 		} 
 		"""
-	shader = VertFragShader(ApplyShaderToFrame.vertex_screen_shader, dither_screen_shader, ['random'])
+	shader = VertFragShader(ApplyShaderToFrame.vertex_screen_shader, dither_screen_shader)
 
 	def __init__(self, from_texture, to_frame = 0, queue = 1000):
 		"""
@@ -157,7 +157,7 @@ class ApplyDitherToFrame(Renderer):
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT)
 		
 		glUseProgram(self.shader.program)
-		glUniform1f(self.shader.uniforms['random'], manager.time)
+		self.shader.apply_uniform('random', manager.time)
 		glBindVertexArray(ApplyShaderToFrame.rect_vao)
 		glActiveTexture(GL_TEXTURE0)
 		glBindTexture(GL_TEXTURE_2D, self.from_texture)

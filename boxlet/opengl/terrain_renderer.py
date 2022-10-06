@@ -35,7 +35,7 @@ class TerrainRenderer(Renderer):
 		}
 		"""
 
-	shader = VertFragShader(vertex_shader, fragment_shader, ['viewProj', 'model'])
+	shader = VertFragShader(vertex_shader, fragment_shader)
 
 	def __init__(self, image:Texture, queue = 0):	
 		super().__init__(queue)
@@ -66,7 +66,7 @@ class TerrainRenderer(Renderer):
 	def render(self):
 		glUseProgram(self.shader.program)
 		self.shader.apply_global_uniforms('viewProj')
-		glUniformMatrix4fv(self.shader.uniforms['model'], 1, GL_FALSE, self.model_matrix)
+		self.shader.apply_uniform_matrix('model', self.model_matrix)
 
 		glEnable(GL_CULL_FACE)
 		glCullFace(GL_FRONT)
