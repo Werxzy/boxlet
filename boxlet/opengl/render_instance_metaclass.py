@@ -3,6 +3,7 @@ from OpenGL.GL import *
 from ctypes import c_void_p, c_float
 import numpy as np
 from sys import maxsize
+import bisect
 
 
 class RenderInstancePropertyFloats:
@@ -122,9 +123,12 @@ class RenderInstanceList(Generic[T]):
 			self.update_full = True
 
 		id = self.free_indices.pop(0)
-		self.to_delete.difference_update([id])
 		new_inst = self.cls(self, id)
-		self.instances.append(new_inst)
+		if id in self.to_delete:
+			self.to_delete.remove(id)
+			self.instances[id] = new_inst
+		else:
+			self.instances.append(new_inst)
 		self.instance_count += 1
 
 		r = self.cls.get_stride_range(id)
@@ -148,7 +152,7 @@ class RenderInstanceList(Generic[T]):
 
 	def destroy_instance(self, id):
 		self.to_delete.add(id)
-		self.free_indices.append(id)
+		bisect.insort(self.free_indices, id)
 		self.instance_count -= 1
 
 		# self.instances.pop(id)
@@ -188,7 +192,7 @@ class RenderInstanceList(Generic[T]):
 			if mi is not None:
 				self.update_range = [mi, ma]
 			
-			self.free_indices = [i for i in range(self.instance_count, self.instance_total_space)]
+			self.free_indices = list(range(self.instance_count, self.instance_total_space))
 
 		if self.update_full: # updates the entire buffer object, needed if the size changes.
 			self.update_full = False
