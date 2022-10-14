@@ -22,6 +22,7 @@ class RenderInstancePropertyFloats:
 		]
 		instance.owner.data[r] = value
 
+
 class RenderInstancePropertyMatrix4:
 	def __init__(self, offset, stride) -> None:
 		self._stride = stride
@@ -96,8 +97,8 @@ class RenderInstanceMetaclass(type):
 		
 		return super().__new__(cls, clsname, bases, attrs)
 
-T = TypeVar('T', bound='RenderInstance')
 
+T = TypeVar('T', bound='RenderInstance')
 class RenderInstanceList(Generic[T]):
 
 	def __init__(self, cls:T, data_vbo, renderer = None):	
@@ -207,6 +208,7 @@ class RenderInstanceList(Generic[T]):
 			self.update_range = [maxsize, -1]
 			# this method is a bit weak to updates that include few bytes, but from opposite ends of the data
 
+
 class RenderInstance(metaclass = RenderInstanceMetaclass):
 
 	def __init__(self, owner:RenderInstanceList, id) -> None:
@@ -246,6 +248,4 @@ class RenderInstance(metaclass = RenderInstanceMetaclass):
 		Creates a new render instance manager and binds a vbo for the data to the current vao.
 		"""
 		return RenderInstanceList(cls, cls.bind_new_vbo(), renderer)
-
-
 

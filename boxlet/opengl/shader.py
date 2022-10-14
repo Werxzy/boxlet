@@ -131,7 +131,7 @@ class Shader:
 		int(GL_DOUBLE_MAT3x2) : glUniformMatrix3x2fv, 
 		int(GL_DOUBLE_MAT3x4) : glUniformMatrix3x4fv, 
 		int(GL_DOUBLE_MAT4x2) : glUniformMatrix4x2fv, 
-		int(GL_DOUBLE_MAT4x3): glUniformMatrix4x3fv, 
+		int(GL_DOUBLE_MAT4x3) : glUniformMatrix4x3fv, 
 	}
 	# There are more, but I don't know yet what else is needed
 	# https://registry.khronos.org/OpenGL-Refpages/gl4/html/glGetActiveUniform.xhtml
