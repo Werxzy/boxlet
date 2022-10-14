@@ -100,7 +100,6 @@ class RenderInstanceMetaclass(type):
 
 T = TypeVar('T', bound='RenderInstance')
 class RenderInstanceList(Generic[T]):
-
 	def __init__(self, cls:T, data_vbo, renderer = None):	
 		self.cls = cls
 		self.instances:list[T] = []
@@ -156,16 +155,6 @@ class RenderInstanceList(Generic[T]):
 		bisect.insort(self.free_indices, id)
 		self.instance_count -= 1
 
-		# self.instances.pop(id)
-		# self.data = np.delete(self.data, self.cls.get_stride_range(id))
-		# self.update_full = True
-				
-		# for inst in self.instances[id:]:
-		# 	inst.id -= 1
-
-		# just going through and decrementing ids seems a bit inefficient, 
-		# even if the all the decrementing is done in a single loop (considering multiple destroy calls)
-
 	def update_data(self):
 		"""
 		Updates the data to the VBO.
@@ -210,7 +199,6 @@ class RenderInstanceList(Generic[T]):
 
 
 class RenderInstance(metaclass = RenderInstanceMetaclass):
-
 	def __init__(self, owner:RenderInstanceList, id) -> None:
 		self.owner = owner
 		self.id = id

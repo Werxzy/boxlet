@@ -7,14 +7,11 @@ class Shader:
 	# TODO? have a dictionary (or hashset?) of already created shaders to save on duplicate vertex/fragment shaders
 	# (not sure how useful that would be though.
 
-	test_vao = glGenVertexArrays(1)
-	glBindVertexArray(test_vao)
-
-	test_model = Model()
-	test_model.bind()
-
+	_test_vao = glGenVertexArrays(1)
+	glBindVertexArray(_test_vao)
+	_test_model = Model()
+	_test_model.bind()
 	glBindVertexArray(0)
-
 
 	global_uniforms = {
 		'frameSize': [[0,0]],
@@ -139,7 +136,7 @@ class Shader:
 
 class VertFragShader(Shader):
 	def __init__(self, vertex, frag):
-		glBindVertexArray(Shader.test_vao)
+		glBindVertexArray(Shader._test_vao)
 		self.vertex = shaders.compileShader(vertex, GL_VERTEX_SHADER)
 		self.fragment = shaders.compileShader(frag, GL_FRAGMENT_SHADER)
 		
