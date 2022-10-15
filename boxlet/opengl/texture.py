@@ -16,7 +16,7 @@ class Texture:
 
 		glTexImage2D(GL_TEXTURE_2D, 
 			0, 
-			GL_RGBA, 
+			GL_RGBA32F, 
 			self.size[0], 
 			self.size[1], 
 			0, 
