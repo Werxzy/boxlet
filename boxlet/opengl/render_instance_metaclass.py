@@ -33,7 +33,6 @@ class RenderInstancePropertyMatrix4:
 		
 	def __set__(self, instance:'RenderInstance', value):
 		r = self._offsets + self._stride * instance.id
-		
 		instance.owner.update_range = [
 			min(r[0], instance.owner.update_range[0]),
 			max(r[-1], instance.owner.update_range[1])
@@ -45,10 +44,6 @@ class RenderInstanceMetaclass(type):
 	def __new__(cls, clsname, bases, attrs:dict[str], **kwargs):
 		vars:list[tuple[str, tuple[tuple, int]]] = []
 		total = 0
-		
-		# if 'interweave' in attrs and not attrs['interweave']:
-		#	instead, organize the data as 111222333
-		#	would optimize a little when using glBufferSubData
 
 		# collects all variables
 		for k, v in attrs.items():
