@@ -3,7 +3,7 @@ from OpenGL.GL import *
 import numpy as np
 
 class Texture:
-	def __init__(self, image:pygame.Surface, nearest = True) -> None:
+	def __init__(self, image:pygame.Surface, nearest = True, mipmap = False) -> None:
 		# Generate: request a texture
 		self.image_texture = glGenTextures(1)
 
@@ -25,8 +25,15 @@ class Texture:
 			pygame.image.tostring(image, "RGBA", True))
 
 		# set the filtering mode for the texture
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST if nearest else GL_LINEAR)
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST if nearest else GL_LINEAR)
+		if mipmap:
+			glGenerateMipmap(GL_TEXTURE_2D)
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, -1)
+		else:
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST if nearest else GL_LINEAR)
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST if nearest else GL_LINEAR)
+
 
 		glBindTexture(GL_TEXTURE_2D, 0)
 
