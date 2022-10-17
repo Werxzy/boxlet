@@ -10,9 +10,6 @@ class CameraController(Entity):
 		self.lock_mouse(True)
 
 	def vary_update(self):
-		if self.mouse_is_locked:
-			pygame.mouse.set_pos(manager.display_size * 0.5)
-
 		b = pygame.key.get_pressed()
 		mov = np.zeros(3, float)
 
@@ -45,5 +42,7 @@ class CameraController(Entity):
 		self.mouse_is_locked = on
 		pygame.mouse.set_visible(not on)
 		pygame.event.set_grab(on)
+		if not on:
+			pygame.mouse.set_pos(manager.display_size * 0.5)
 		# set_grab is important to speed up pygame.mouse.set_pos
 			
