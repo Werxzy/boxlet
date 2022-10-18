@@ -1,6 +1,7 @@
 import os
 os.environ['BOXLET_PIXEL_SCALE'] = '3'
 os.environ['BOXLET_FRAME_RATE'] = '120'
+os.environ['BOXLET_CANVAS_SIZE'] = '320,180'
 # Even though Player updates it's sprite on fixed update, 
 # it looks better when the manager's frame rate matches or exceedes the monitor's framerate
 
@@ -10,7 +11,7 @@ import random
 
 
 # Sprite assets
-sprite_sheet = pygame.image.load('examples/sdl2_example/sprites.png')
+sprite_sheet = pygame.image.load('examples/normal_pygame_example/sprites.png')
 sprite_sheet.set_colorkey((0,64,0))
 
 sub_locs = [(i*11, 0, 11, 18) for i in range(8)] # standing sprites
@@ -76,7 +77,7 @@ class Player(Entity):
 		frame = 1 if self.animation_time == 0 else floor(self.animation_time) % 4
 		bump = [0, (frame+1) % 2]
 		sprite_id = self.sprite_animation[self.facing_dir][frame]
-		manager.screen.blit(sub_sprites[sprite_id], self.pos - bump)
+		manager.canvas.blit(sub_sprites[sprite_id], self.pos - bump)
 
 
 class Item(Entity):
@@ -86,7 +87,7 @@ class Item(Entity):
 
 	@Entity.priority(0)
 	def render(self):
-		manager.screen.blit(sub_sprites[self.sprite_id], self.pos)
+		manager.canvas.blit(sub_sprites[self.sprite_id], self.pos)
 
 
 class Apple(Item):
@@ -102,10 +103,10 @@ class Fish(Item):
 Player()
 
 for _ in range(10):
-	Apple([random.randint(0, manager.screen_size[i] - 14) for i in range(2)])
+	Apple([random.randint(0, manager.canvas_size[i] - 14) for i in range(2)])
 
 for _ in range(5):
-	Fish([random.randint(0, manager.screen_size[i] - 14) for i in range(2)])
+	Fish([random.randint(0, manager.canvas_size[i] - 14) for i in range(2)])
 
 manager.run()
 

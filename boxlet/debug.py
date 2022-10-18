@@ -22,10 +22,10 @@ class Debug(Entity):
 
 		if world_space:
 			def draw(): 
-				pygame.draw.line(manager.screen, color, start - manager.screen_pos, end - manager.screen_pos)
+				pygame.draw.line(manager.canvas, color, start - manager.screen_pos, end - manager.screen_pos)
 		else:
 			def draw(): 
-				pygame.draw.line(manager.screen, color, start, end)
+				pygame.draw.line(manager.canvas, color, start, end)
 
 		Debug(draw, life_time)
 

@@ -9,24 +9,28 @@ class Manager:
 
 		from os import environ
 
-		# settings TODO : windowed vs fullscreen
-
-		self.display_size = np.array([int(i) for i in environ.get('BOXLET_RESOLUTION', '960,540').split(',')])
+		self.fullscreen = int(environ.get('BOXLET_FULLSCREEN', '0'))
+		if not self.fullscreen:
+			self.display_size = np.array([int(i) for i in environ.get('BOXLET_RESOLUTION', '960,540').split(',')])
 		
 		self.render_mode = environ.get('BOXLET_RENDER_MODE', 'sdl2')
 		if self.render_mode == 'sdl2':
 			self.vsync = 0
 			self.screen_pos = np.zeros(2)
-			self.display = pygame.display.set_mode(self.display_size, flags = pygame.DOUBLEBUF)
+			if self.fullscreen:
+				self.display = pygame.display.set_mode(flags = pygame.DOUBLEBUF | pygame.FULLSCREEN)
+				self.display_size = np.array(self.display.get_size())
+			else:
+				self.display = pygame.display.set_mode(self.display_size, flags = pygame.DOUBLEBUF)
 
 			self.fill_color = environ.get('BOXLET_FILL_COLOR', 'black')
 			if self.fill_color.count(',') > 0: # instead create a list
 				self.fill_color = [int(c) for c in self.fill_color.split(',')]
 
-			self.pixel_scale = int(environ.get('BOXLET_PIXEL_SCALE', '1'))
-			self.screen_size = np.round(self.display_size / self.pixel_scale)
-			if self.pixel_scale > 1:
-				self.screen = pygame.surface.Surface(self.screen_size)
+			self.canvas_size = np.array([int(i) for i in environ.get('BOXLET_CANVAS_SIZE', '0,0').split(',')])
+			if 0 in self.canvas_size:
+				self.canvas_size = np.array(self.display_size)
+			self.canvas = pygame.surface.Surface(self.canvas_size)
 		
 		elif self.render_mode == 'opengl':
 			self.vsync = int(environ.get('BOXLET_OPENGL_VSYNC', '1'))
@@ -35,7 +39,11 @@ class Manager:
 				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MAJOR_VERSION, int(environ.get('BOXLET_GL_CONTEXT_MAJOR_VERSION', '3')))
 				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MINOR_VERSION, int(environ.get('BOXLET_GL_CONTEXT_MINOR_VERSION', '3')))
 				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_PROFILE_MASK, pygame.GL_CONTEXT_PROFILE_CORE)
-			self.display = pygame.display.set_mode(self.display_size, flags = pygame.OPENGL | pygame.DOUBLEBUF, vsync = self.vsync)
+			if self.fullscreen:
+				self.display = pygame.display.set_mode(flags = pygame.OPENGL | pygame.FULLSCREEN, vsync = self.vsync)
+				self.display_size = np.array(self.display.get_size())
+			else:
+				self.display = pygame.display.set_mode(self.display_size, flags = pygame.OPENGL | pygame.DOUBLEBUF, vsync = self.vsync)
 
 		else:
 			raise Exception('Unrecognized render mode.')
@@ -119,20 +127,40 @@ class Manager:
 
 	def render(self):
 		if self.render_mode == 'sdl2':
-			if self.pixel_scale != 1:
-				self.screen.fill(self.fill_color)
-				Entity.__call_function__('render')
-				pygame.transform.scale(self.screen, self.display.get_size(), self.display)
-
-			else:
-				self.display.fill(self.fill_color)
-				Entity.__call_function__('render')
-
+			self.canvas.fill(self.fill_color)
+			Entity.__call_function__('render')
+			pygame.transform.scale(self.canvas, self.display.get_size(), self.display)
 			pygame.display.update()
 		
 		else:
 			Renderer.render_all()
 			pygame.display.flip()
+
+	def set_display(self, display_size = None, canvas_size = None, fullscreen = None, vsync = None):
+		self.fullscreen = fullscreen
+		if not self.fullscreen and not display_size:
+			self.display_size = np.array([960, 540])
+		
+		if self.render_mode == 'sdl2':
+			if self.fullscreen:
+				self.display = pygame.display.set_mode(flags = pygame.DOUBLEBUF | pygame.FULLSCREEN)
+				self.display_size = np.array(self.display.get_size())
+			else:
+				self.display = pygame.display.set_mode(self.display_size, flags = pygame.DOUBLEBUF)
+
+			if canvas_size is not None:
+				self.canvas_size = np.array(canvas_size)
+			if 0 in self.canvas_size:
+				self.canvas_size = np.array(self.display_size)
+			self.canvas = pygame.surface.Surface(self.canvas_size)
+
+		elif self.render_mode == 'opengl':
+			self.vsync = vsync or self.vsync
+			if self.fullscreen:
+				self.display = pygame.display.set_mode(flags = pygame.OPENGL | pygame.FULLSCREEN, vsync = self.vsync)
+				self.display_size = np.array(self.display.get_size())
+			else:
+				self.display = pygame.display.set_mode(self.display_size, flags = pygame.OPENGL | pygame.DOUBLEBUF, vsync = self.vsync)
 
 	def quit(self):
 		self.exit_program = True
