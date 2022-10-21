@@ -49,8 +49,25 @@ class Shader:
 			n = ''.join(chr(c) for c in name.value)
 			if var_size.value > 1:
 				n = n[:-3]
+
 			self.uniforms[n] = [var_size.value, var_type.value, glGetUniformLocation(self.program, n)]
 			# print(n, name_length.value, var_size.value, var_type.value, self.uniforms[n])
+
+		# Gets all the available uniform blocks
+		self.uniform_blocks:dict[str, int] = dict()
+		param = ctypes.c_int()
+		glGetProgramiv(self.program, GL_ACTIVE_UNIFORM_BLOCKS, count)
+		for i in range(count.value):
+			glGetActiveUniformBlockiv(self.program, i, GL_UNIFORM_BLOCK_BINDING, param)
+			block_binding = param.value
+
+			glGetActiveUniformBlockiv(self.program, i, GL_UNIFORM_BLOCK_NAME_LENGTH, name_length)
+			block_name = ctypes.create_string_buffer(name_length.value)
+			glGetActiveUniformBlockName(self.program, i, name_length, param, block_name)
+			n = ''.join(chr(c) for c in block_name.value)
+
+			self.uniform_blocks[n] = block_binding
+			# print(n)
 
 	@staticmethod
 	def add_global_uniform(name, start_value):
