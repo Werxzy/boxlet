@@ -1,73 +1,5 @@
 import numpy as np
-
-vec4 = np.dtype('(4,)f4')
-vec3 = np.dtype('(3,)f4')
-light_data = np.dtype([('position', vec4), ('direction', vec4), ('color', vec4)])
-d = np.dtype([('light_count','i4'), ('data', light_data, 16)])
-# d = np.dtype([('light_count','i4'), ('position', vec4, 16)])
-
-print(d)
-
-a = np.array([(0,0)],d)
-# print(a)
-# print(a[0])
-# print(a[0]['data'])
-# print(a[0]['data'][0])
-# print(a[0]['data'][0]['position'])
-# print(a.strides)
-# print(a.strides[0] / 4)
-b = a[0]
-b['light_count'] = 2
-c = a[0]['data'][0]
-c['position'] = [1,2,3,4]
-a[0]['data'][1]['position'] = c['position']
-c['position'] = [5,5,5,5]
-
-d = a[0]['data']['direction']
-d[0] = [2,2,2,2]
-
-e = a[0]['data']['position']
-e[3] = [6,3,6,3]
-print(a)
-a[0]['data'][0] = a[0]['data'][1]
-
-print(a)
-
-# asdf = np.dtype([('', vec3),('', 'f4')])
-# print(asdf)
-# print({'names' : ['']} | {'formats' : ['(4,)f4'], 'itemsize' : 16})
-# asdf = np.dtype({'names' : [''], 'formats' : ['(3,)f4'], 'itemsize' : 16})
-# print(asdf)
-# print(np.array([0,0], asdf)[0])
-# asdf = np.dtype({'names' : [''], 'formats' : [vec3], 'itemsize' : 16})
-# # asdf = np.dtype('(4,)f4')
-# print(asdf)
-# print(np.array([0,0], asdf)[0])
-# asdf = np.dtype({
-# 	'names' : ['position', 'color'],
-# 	'formats' : [vec3, vec3],
-# 	'offsets' : [0, 16],
-# 	'itemsize' : 32
-# 	})
-
-# print(asdf)
-# test = np.array([0,0], asdf)
-# print(test)
-# print(test[0][0])
-# test[0] = [1,2,3]
-# print(test)
-# print(test.tobytes())
-# print(len(test.tobytes()))
-
-# asdf = np.dtype({
-# 	'names' : ['position','a', 'color','b'],
-# 	'formats' : [vec3, np.flexible, vec3, np.flexible],
-# 	})
-
-# print(asdf)
-# print(np.zeros(1, asdf))
-# print(np.zeros(1, asdf).tobytes())
-
+from OpenGL.GL import *
 
 DATATYPES = {
 	# glsl type : (how data is stored, size, alignment)
@@ -96,29 +28,24 @@ DATATYPES = {
 # size is the element type's size, rounded up to nearest 4, time the number of elements
 # for structs, alignment is the same as it's largest member, 
 
-# only going to support mat4, because the gaps on the other array types are too annoying to manage
-
+# only going to support mat4 for now
 
 class UBOStructProperty:
-	def __init__(self, data:np.ndarray, base = True) -> None:
+	def __init__(self, data:np.ndarray, base = None) -> None:
 		super().__setattr__('attributes', set())
 		super().__setattr__('other_attrs', {})
 		super().__setattr__('data', data)
 		super().__setattr__('base', base)
-		# self.attributes = set()
-		# self.other_attrs = {}
-		# self.data = data
+		if base is None:
+			super().__setattr__('needs_to_update', True)
 
 		for d in data.dtype.names:
 			next_names = data[d].dtype.names
 
 			if next_names is None:
 				self.attributes.add(d)
-
 			elif '_' in next_names:
 				self.other_attrs[d] = UBOArrayProperty(data[d]['_'][0])
-				print('a',data[d]['_'])
-
 			else:
 				self.other_attrs[d] = UBOStructProperty(data[d], False)
 
@@ -135,23 +62,34 @@ class UBOStructProperty:
 			return super().__getattribute__(key)
 
 	def __setattr__(self, key, value):
-		try:
-			if key in self.attributes:
-				if self.base:
-					self.data[key][0] = value
-				else:
-					self.data[key] = value
+		if key in self.attributes:
+			if self.base:
+				self.data[key][0] = value
 			else:
-				self.other_attrs[key] = value
-		except KeyError:
+				self.data[key] = value
+			self._update_alert()
+
+		elif key in self.other_attrs:
+			self.other_attrs[key] = value
+			self._update_alert()
+
+		else:
 			super().__setattr__(key, value)
+
+	def _update_alert(self):
+		if self.base is None:
+			self.needs_to_update = True
+		else:
+			self.base.needs_to_update = True
 
 	def __str__(self):
 		return str(self.data)
 
+
 class UBOArrayProperty:
-	def __init__(self, data:np.ndarray) -> None:
+	def __init__(self, data:np.ndarray, base = None) -> None:
 		self._orig_data = data
+		self.base = None
 		if data[0].dtype.names is None:
 			self.data = data
 		else:
@@ -161,7 +99,24 @@ class UBOArrayProperty:
 		return self.data[key]
 
 	def __setitem__ (self, key, item):
-		self.data[key] = item
+		if isinstance(item, UBOStructProperty) and self.data[key].data.dtype == item.data.dtype:
+			self._orig_data[key] = item.data
+		else:
+			self.data[key] = item
+		self.base.needs_to_update = True
+
+	def swap_data(self, a, b):
+		self._orig_data[[a,b]] = self._orig_data[[b,a]]
+		self.base.needs_to_update = True
+
+	def swap_properties(self, a, b):
+		if isinstance(self.data[a], UBOStructProperty):
+			(self.data[a], self.data[b]) = (self.data[b], self.data[a])
+			(self.data[a].data, self.data[b].data) = (self.data[b].data, self.data[a].data) 
+			(self.data[a].other_attrs, self.data[b].other_attrs) = (self.data[b].other_attrs, self.data[a].other_attrs)
+
+		self.swap_data(a,b)
+
 
 	def __str__(self):
 		return str(self._orig_data)
@@ -169,13 +124,44 @@ class UBOArrayProperty:
 
 class UniformBufferObject:
 
+	'The purpose of this class is to structure data so that it can be used in a uniform buffer object with layout std140'
+
 	structure = None
+	_test_without_opengl = False
+	_binding_point_count = 0
 
 	def __init__(self, structure = None):
 		self.structure = self.structure or structure
 		self._data_type, _, _ = self._recursive_check(self.structure)
 		self._numpy_data = np.zeros(1, self._data_type)
 		self.data = UBOStructProperty(self._numpy_data)
+
+		if not self._test_without_opengl:
+			self.binding_point = self.new_binding_point()
+			self.uniform_buffer = glGenBuffers(1)
+
+			glBindBuffer(GL_UNIFORM_BUFFER, self.uniform_buffer)
+			glBindBufferBase(GL_UNIFORM_BUFFER, self.binding_point, self.uniform_buffer)
+			glBufferData(GL_UNIFORM_BUFFER, self._numpy_data.itemsize, self._numpy_data, GL_DYNAMIC_DRAW)
+
+
+	def bind(self, shader, index):
+		# Earlier the following needs to be called
+		# index = glGetUniformBlockIndex(shader.program, name)
+
+		glUniformBlockBinding(shader.program, index, self.binding_point)
+
+	def update_data(self):
+		if self.data.needs_to_update:
+			self.data.needs_to_update = False
+			glBindBuffer(GL_UNIFORM_BUFFER, self.uniform_buffer)
+			glBufferData(GL_UNIFORM_BUFFER, self.light_data.strides[0], self.light_data, GL_DYNAMIC_DRAW)
+			# it would be a bit too difficult in this version to use glBufferSubData
+			
+	@staticmethod
+	def new_binding_point():
+		UniformBufferObject._binding_point_count += 1
+		return UniformBufferObject._binding_point_count
 
 	@staticmethod
 	def _recursive_check(struct):
@@ -199,8 +185,10 @@ class UniformBufferObject:
 				am = get_needed_offset(16, a)
 				a += am
 				s += am
-				s *= s * v[2]
-				f = np.dtype({'names' : ['_'], 'formats' : [np.dtype((f, v[2]))], 'itemsize' : s})
+
+				f = np.dtype({'names':['_'], 'formats':[f], 'itemsize':s})
+				f = np.dtype((f, v[2]))
+				s *= v[2]
 
 			names.append(v[0]) # append name
 			formats.append(f) # append dtype
@@ -227,38 +215,42 @@ class LightUniformBuffer(UniformBufferObject):
 		], 16)
 	]
 
-# How this should be accessed
-# data.light_count = 1
-# l = data.lights[0]
-# l.position = [3,3,3,1]
-# data.lights[0].direction = [1,0,0,0]
 
-f = LightUniformBuffer()
-print(f.data.light_count)
-print(f.data.lights[0].position)
-f.data.light_count = 1
-l = f.data.lights[0]
-l.position = [2,2,2,1]
-print(f.data.light_count)
-print(f.data.lights[0].position)
-print(f.data.lights)
-# print(f._data_type)
-# print(f.data.tobytes())
-# print(f.data.tobytes())
-# print(f.data.data)
-# print('light_count' in f.data.dtype.names, f.data.dtype.names)
-# print('_' in f.data['lights'].dtype.names, f.data['lights'].dtype.names)
-# print(f.data['lights']['_'].dtype.names)
-# print(f.data['lights']['_']['position'].dtype.names)
-# print(f.data[0].dtype)
-# print(f.data.dtype)
+if __name__ == '__main__':
+	UBOStructProperty._test_without_opengl = True
 
-# structobject
-#	list[tuple(contained_type, starting_pos, stride_length)]
-#	
+	# Buffer initialized with all 0s
+	f = LightUniformBuffer()
 
-# arrayobject
-#	contained_type
-#	starting_pos
-#	stride_length
-#	count
+	# values can be assigned
+	# single component values need to be assigned with a single value
+	f.data.light_count = 2
+
+	# values in an array of structs can be assigned to like normal
+	# multiple component types need to be assigned with an array
+	f.data.lights[0].position = [2,2,2,2]
+
+	# stucts can be stored like objects and their properties assigned to normally
+	l = f.data.lights[1]
+	l.position = [1,1,1,1]
+
+	# when assigning from one struct to another of the type while using the index, 
+	# the data values will be copied over.
+	f.data.lights[2] = l
+
+	# attributes of structs will also affect the data's values
+	# NOTE however, this is pointing to the memory location and not the struct reference
+	#	This is more apparent between swap_data() and swap_properties()
+	pos = l.position
+	pos += 2
+	# print(l.position) # will print [3,3,3,3]
+
+	# values in an array can be easily swapped without messing with
+	# This will affect previous references
+	f.data.lights.swap_data(1, 3)
+	# print(l.position, pos) # will both print [0,0,0,0]
+
+	# structs themselves can be swapped without affecting any reference's data
+	f.data.lights.swap_properties(1, 3)
+	print(l.position) # will still print [0,0,0,0]
+	# print(pos) # BUT this will now print [3,3,3,3], since pos is pointing to the position in raw data
