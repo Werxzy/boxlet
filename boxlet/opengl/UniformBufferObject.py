@@ -30,14 +30,14 @@ DATATYPES = {
 
 # only going to support mat4 for now
 
-class UBOStructProperty:
+class UBOStruct:
 	def __init__(self, data:np.ndarray, base = None) -> None:
 		super().__setattr__('attributes', set())
 		super().__setattr__('other_attrs', {})
-		super().__setattr__('data', data)
-		super().__setattr__('base', base)
+		self._data = data
+		self._base = base or self
 		if base is None:
-			super().__setattr__('needs_to_update', True)
+			self.needs_to_update = True
 
 		for d in data.dtype.names:
 			next_names = data[d].dtype.names
@@ -45,17 +45,17 @@ class UBOStructProperty:
 			if next_names is None:
 				self.attributes.add(d)
 			elif '_' in next_names:
-				self.other_attrs[d] = UBOArrayProperty(data[d]['_'][0])
+				self.other_attrs[d] = UBOArray(data[d]['_'][0], self._base)
 			else:
-				self.other_attrs[d] = UBOStructProperty(data[d], False)
+				self.other_attrs[d] = UBOStruct(data[d], self._base)
 
 	def __getattr__(self, key):
 		try:
 			if key in self.attributes:
-				if self.base:
-					return self.data[key][0]
+				if self._base is self:
+					return self._data[key][0]
 				else:
-					return self.data[key]
+					return self._data[key]
 			else:
 				return self.other_attrs[key]
 		except KeyError:
@@ -63,10 +63,10 @@ class UBOStructProperty:
 
 	def __setattr__(self, key, value):
 		if key in self.attributes:
-			if self.base:
-				self.data[key][0] = value
+			if self._base is self:
+				self._data[key][0] = value
 			else:
-				self.data[key] = value
+				self._data[key] = value
 			self._update_alert()
 
 		elif key in self.other_attrs:
@@ -77,32 +77,29 @@ class UBOStructProperty:
 			super().__setattr__(key, value)
 
 	def _update_alert(self):
-		if self.base is None:
-			self.needs_to_update = True
-		else:
-			self.base.needs_to_update = True
+		self._base.needs_to_update = True
 
 	def __str__(self):
-		return str(self.data)
+		return str(self._data)
 
 
-class UBOArrayProperty:
-	def __init__(self, data:np.ndarray, base = None) -> None:
+class UBOArray:
+	def __init__(self, data:np.ndarray, base:UBOStruct) -> None:
 		self._orig_data = data
-		self.base = None
+		self.base = base
 		if data[0].dtype.names is None:
-			self.data = data
+			self._data = data
 		else:
-			self.data = [UBOStructProperty(d, False) for d in data]
+			self._data = [UBOStruct(d, self.base) for d in data]
 
 	def __getitem__(self, key):
-		return self.data[key]
+		return self._data[key]
 
 	def __setitem__ (self, key, item):
-		if isinstance(item, UBOStructProperty) and self.data[key].data.dtype == item.data.dtype:
-			self._orig_data[key] = item.data
+		if isinstance(item, UBOStruct) and self._data[key]._data.dtype == item._data.dtype:
+			self._orig_data[key] = item._data
 		else:
-			self.data[key] = item
+			self._data[key] = item
 		self.base.needs_to_update = True
 
 	def swap_data(self, a, b):
@@ -110,10 +107,10 @@ class UBOArrayProperty:
 		self.base.needs_to_update = True
 
 	def swap_properties(self, a, b):
-		if isinstance(self.data[a], UBOStructProperty):
-			(self.data[a], self.data[b]) = (self.data[b], self.data[a])
-			(self.data[a].data, self.data[b].data) = (self.data[b].data, self.data[a].data) 
-			(self.data[a].other_attrs, self.data[b].other_attrs) = (self.data[b].other_attrs, self.data[a].other_attrs)
+		if isinstance(self._data[a], UBOStruct):
+			(self._data[a], self._data[b]) = (self._data[b], self._data[a])
+			(self._data[a]._data, self._data[b]._data) = (self._data[b]._data, self._data[a]._data) 
+			(self._data[a].other_attrs, self._data[b].other_attrs) = (self._data[b].other_attrs, self._data[a].other_attrs)
 
 		self.swap_data(a,b)
 
@@ -130,13 +127,13 @@ class UniformBufferObject:
 	_test_without_opengl = False
 	_binding_point_count = 0
 
-	def __init__(self, structure = None):
+	def __init__(self, structure = None, create_opengl_buffer = True):
 		self.structure = self.structure or structure
 		self._data_type, _, _ = self._recursive_check(self.structure)
 		self._numpy_data = np.zeros(1, self._data_type)
-		self.data = UBOStructProperty(self._numpy_data)
+		self.data = UBOStruct(self._numpy_data)
 
-		if not self._test_without_opengl:
+		if create_opengl_buffer:
 			self.binding_point = self.new_binding_point()
 			self.uniform_buffer = glGenBuffers(1)
 
@@ -206,21 +203,55 @@ class UniformBufferObject:
 
 
 class LightUniformBuffer(UniformBufferObject):
+	max_light_count = 16
 	structure = [
 		('light_count', 'int'),
 		('lights', [
-			('position', 'vec4'),
-			('direction', 'vec4'),
-			('color', 'vec4'),
-		], 16)
+			('pos_dir', 'vec4'), # represents position if .w = 1, represents direciton if .w = 0
+			('color_range', 'vec4'), # .xyz = color, while .w is the light's range (if point light)
+		], max_light_count)
 	]
+
+	class LightSource:
+		def __init__(self, data, id, owner:'LightUniformBuffer'):
+			self.data = data
+			self.id = id
+			self.owner = owner
+		
+		def destroy(self):
+			self.owner.destroy(self.id)
+			self.data = self.owner = self.id = None
+
+	def __init__(self, structure=None):
+		super().__init__(structure)
+		self.instances = []
+
+	def new_instance(self):
+		if self.data.light_count >= 0:
+			raise Exception('No room left in Uniform Buffer Object.')
+
+		light = LightUniformBuffer.LightSource(self.data.lights[id], self.data.light_count, self)
+		self.instances.append(light)
+		self.data.light_count += 1
+		return light
+
+	def destroy(self, id):
+		self.data.light_count -= 1
+		if id != self.data.light_count:
+			self.data.lights.swap_properties(id, self.data.light_count)
+			self.instances[id] = self.instances[self.data.light_count]
+		self.instances.pop()
 
 
 if __name__ == '__main__':
-	UBOStructProperty._test_without_opengl = True
-
 	# Buffer initialized with all 0s
-	f = LightUniformBuffer()
+	f = UniformBufferObject([
+		('light_count', 'int'),
+		('lights', [
+			('position', 'vec4'),
+			('color', 'vec4'),
+		], 4)
+	], False)
 
 	# values can be assigned
 	# single component values need to be assigned with a single value
@@ -243,14 +274,19 @@ if __name__ == '__main__':
 	#	This is more apparent between swap_data() and swap_properties()
 	pos = l.position
 	pos += 2
+	assert np.all(l.position == [3,3,3,3])
 	# print(l.position) # will print [3,3,3,3]
 
 	# values in an array can be easily swapped without messing with
 	# This will affect previous references
 	f.data.lights.swap_data(1, 3)
+	assert np.all(l.position == [0,0,0,0])
+	assert np.all(pos == [0,0,0,0])
 	# print(l.position, pos) # will both print [0,0,0,0]
 
 	# structs themselves can be swapped without affecting any reference's data
 	f.data.lights.swap_properties(1, 3)
-	print(l.position) # will still print [0,0,0,0]
+	assert np.all(l.position == [0,0,0,0])
+	assert np.all(pos == [3,3,3,3])
+	# print(l.position) # will still print [0,0,0,0]
 	# print(pos) # BUT this will now print [3,3,3,3], since pos is pointing to the position in raw data
