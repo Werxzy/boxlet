@@ -66,30 +66,30 @@ class FrameBufferStep(Renderer):
 class ApplyShaderToFrame(Renderer):
 	vertex_screen_shader = """
 		#version 330 core
-		layout (location = 0) in vec2 aPos;
-		layout (location = 1) in vec2 aTexCoords;
-		out vec2 TexCoords;
+		layout (location = 0) in vec2 position;
+		layout (location = 1) in vec2 texcoord;
+		out vec2 uv;
 		void main() {
-			TexCoords = aTexCoords;
-			gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0); 
+			uv = texcoord;
+			gl_Position = vec4(position.x, position.y, 0.0, 1.0); 
 		}  
 		"""
 
 	fragment_screen_shader = """
 		#version 330 core
 		out vec4 FragColor;
-		in vec2 TexCoords;
+		in vec2 uv;
 		uniform sampler2D screenTexture;
 		void main() {
-			FragColor = vec4(texture(screenTexture, TexCoords).rgb, 1.0);
+			FragColor = vec4(texture(screenTexture, uv).rgb, 1.0);
 		} 
 		"""
 	default_shader = VertFragShader(vertex_screen_shader, fragment_screen_shader)
 	
-	rect_model = Model([-1, -1, 0, 0,  -1, 1, 0, 1,  1, 1, 1, 1,  1, -1, 1, 0])
+	rect_model = Model({'position':[-1,-1, -1,1, 1,1, 1,-1], 'texcoord':[0,0, 0,1, 1,1, 1,0]})
 	rect_vao = glGenVertexArrays(1)
 	glBindVertexArray(rect_vao)
-	rect_model.bind()
+	rect_model.bind(default_shader)
 	glBindVertexArray(0)
 
 	def __init__(self, from_texture, to_frame = 0, shader:VertFragShader = None, queue = 1000):
@@ -121,7 +121,7 @@ class ApplyDitherToFrame(Renderer):
 	dither_screen_shader = """
 		#version 330 core
 		out vec4 FragColor;
-		in vec2 TexCoords;
+		in vec2 uv;
 		uniform sampler2D screenTexture;
 		uniform float random;
 
@@ -131,7 +131,7 @@ class ApplyDitherToFrame(Renderer):
 		}
 
 		void main() {
-			vec3 col = texture(screenTexture, TexCoords).rgb + dither(TexCoords + fract(random));
+			vec3 col = texture(screenTexture, uv).rgb + dither(uv + fract(random));
 			FragColor = vec4(col, 1.0);
 		} 
 		"""

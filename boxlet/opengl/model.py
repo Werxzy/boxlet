@@ -1,10 +1,40 @@
+from boxlet import *
 from OpenGL.GL import *
-import numpy as np
 from ctypes import sizeof, c_float, c_void_p, c_int
 
 class Model:
-	def __init__(self, vertex = [], index = [], dim = 2) -> None:
-		self._vertex_data = np.array(vertex or [-0.5, -0.5, 0, 0,  -0.5, 0.5, 0, 1,  0.5, 0.5, 1, 1,  0.5, -0.5, 1, 0], np.float32)
+	def __init__(self, vertex = None, index = [], dim = 2) -> None:
+		if vertex is None:
+			vertex = {
+				'position' : [-0.5,-0.5, -0.5,0.5, 0.5,0.5, 0.5,-0.5],
+				'texcoord' : [0,0, 0,1, 1,1, 1,0],
+				'normal' : [0,0, 0,0, 0,0, 0,0],
+				}
+
+		types = []
+		self._stride_data:dict[str, tuple[int,int,int]] = {}
+		self.vertex_stride = 0
+
+		def add_variable(name, size):
+			nonlocal self, types
+			# types.append((name, f'({size},)f4'))
+			types.append((name, np.float32, size))
+			byte_size = size * sizeof(c_float)
+			self._stride_data[name] = (self.vertex_stride, byte_size, size)
+			self.vertex_stride += byte_size
+
+		for v, s in [('position', dim), ('texcoord', 2), ('normal', dim)]:
+			if v in vertex:
+				add_variable(v, s)
+
+		self._vertex_dtype = np.dtype(types)
+		length = len(vertex['position']) // dim
+		self._vertex_data = np.array([0] * length, self._vertex_dtype)
+		for n, d in self._stride_data.items():
+			self._vertex_data[n] = np.array(vertex[n]).reshape((-1,d[2]))
+			# TODO ? may need to put into numpy array and reshape
+
+		# self._vertex_data = np.array(vertex or [-0.5,-0.5, 0,0, -0.5,0.5, 0,1, 0.5,0.5, 1,1, 0.5,-0.5, 1,0], np.float32)
 		self._index_data = np.array(index or [0,1,2, 0,2,3], np.int32)
 		self.size = dim + 2
 		self.dim = dim 
@@ -22,26 +52,28 @@ class Model:
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.ebo)
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, self._index_data, GL_STATIC_DRAW) 
 
-	def bind(self):
+	def bind(self, shader:'Shader' = None, **kwargs):
 		'Binds vertex positions to location 0 in the array buffer, vertex UV coordinates to location 1 in the array buffer, and the indicies to the element array buffer.'
 		
-		# TODO add parameters to allow customization of binding things other than vertex position or uv coordinate
-
 		# Doesn't create buffer unless the model is actually bound
 		if self.vbo is None:
 			self._gen_buffer()
 		
 		glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
 
-		# parts of the vbo is only bound to the vao here ...
-		# glVertexAttribPointer(index, size, type, normalized, stride, pointer)
-		glVertexAttribPointer(0, self.dim, GL_FLOAT, GL_FALSE, sizeof(c_float)*self.size, c_void_p(0))
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(c_float)*self.size, c_void_p(sizeof(c_float)*self.dim))
-			#essentaily, data[(pointer + x)::stride] for x in range(size)
-		# https://registry.khronos.org/OpenGL-Refpages/gl4/html/glVertexAttribPointer.xhtml
+		if shader is not None:
+			for name, (start, _, count) in self._stride_data.items():
+				if name in shader.vertex_attributes:
+					index = shader.vertex_attributes[name][2]
+					glVertexAttribPointer(index, count, GL_FLOAT, GL_FALSE, self.vertex_stride, c_void_p(start))
+					glEnableVertexAttribArray(index)
 
-		glEnableVertexAttribArray(0)
-		glEnableVertexAttribArray(1)
+		else:
+			for name, (start, _, count) in self._stride_data.items():
+				if name in kwargs:
+					index = kwargs[name]
+					glVertexAttribPointer(index, count, GL_FLOAT, GL_FALSE, self.vertex_stride, c_void_p(start))
+					glEnableVertexAttribArray(index)
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.ebo) # ebo is bound to the vao here
 
@@ -55,7 +87,7 @@ class Model:
 		with open(file, 'r') as file:
 
 			data = {'v':[], 'vn':[], 'vt':[]}
-			vertex:list[float] = []
+			vertex = {'position' : [], 'texcoord' : []}
 			index:list[int] = []
 			index_dict = {}
 
@@ -73,8 +105,9 @@ class Model:
 						if ind not in index_dict:
 							i = len(index_dict)
 							index_dict[ind] = i
-							vertex.extend(data['v'][ind[0]])
-							vertex.extend(data['vt'][ind[1]])
+							vertex['position'].extend(data['v'][ind[0]])
+							vertex['texcoord'].extend(data['vt'][ind[1]])
+							#TODO add normal if present
 
 						index.append(index_dict[ind])
 

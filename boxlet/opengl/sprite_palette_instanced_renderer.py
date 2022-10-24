@@ -7,8 +7,8 @@ class SpritePaletteInstancedRenderer(Renderer):
 
 	vertex_shader = """
 		#version 330
-		layout(location = 0) in vec2 pos;
-		layout(location = 1) in vec2 uvIn;
+		layout(location = 0) in vec2 position;
+		layout(location = 1) in vec2 texcoord;
 		layout(location = 2) in vec3 texPos;
 		layout(location = 3) in vec4 uvPos; // .xy = position, .zw = scale
 
@@ -20,10 +20,10 @@ class SpritePaletteInstancedRenderer(Renderer):
 		out vec2 uv;
 
 		void main() {
-			vec2 truePos = pos * texSize * uvPos.zw + texPos.xy;
+			vec2 truePos = position * texSize * uvPos.zw + texPos.xy;
 			vec2 screenPos = (truePos - cameraPos) * 2 / cameraSize;
 			gl_Position = vec4(screenPos, texPos.z, 1);
-			uv = uvIn * uvPos.zw + uvPos.xy;
+			uv = texcoord * uvPos.zw + uvPos.xy;
 		}
 		"""
 	fragment_shader = """

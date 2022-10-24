@@ -7,8 +7,8 @@ class ModelInstancedRenderer(Renderer):
 
 	vertex_shader = """
 		#version 330
-		layout(location = 0) in vec3 pos;
-		layout(location = 1) in vec2 uvIn;
+		layout(location = 0) in vec3 position;
+		layout(location = 1) in vec2 texcoord;
 		layout(location = 2) in mat4 model;
 
 		uniform mat4 viewProj;
@@ -16,8 +16,8 @@ class ModelInstancedRenderer(Renderer):
 		out vec2 uv;
 
 		void main() {
-			gl_Position = viewProj * model * vec4(pos, 1);
-			uv = uvIn;
+			gl_Position = viewProj * model * vec4(position, 1);
+			uv = texcoord;
 		}
 		"""
 	fragment_shader = """
@@ -37,37 +37,24 @@ class ModelInstancedRenderer(Renderer):
 
 	shader = VertFragShader(vertex_shader, fragment_shader)
 	cube_model = Model(
-		vertex = [
-			1,-1,-1, 0,0,
-			1, 1,-1, 1,0,
-			1,-1, 1, 0,1,
-			1, 1, 1, 1,1,
-
-			-1,1,-1, 0,0,
-			-1,1, 1, 0,1,
-			 1,1,-1, 1,0,
-			 1,1, 1, 1,1,
-			 
-			-1,-1,1, 0,0,
-			 1,-1,1, 1,0,
-			-1, 1,1, 0,1,
-			 1, 1,1, 1,1,
-
-			-1,-1,-1, 0,0,
-			-1,-1, 1, 1,0,
-			-1, 1,-1, 0,1,
-			-1, 1, 1, 1,1,
-
-			-1,-1,-1, 0,0,
-			 1,-1,-1, 0,1,
-			-1,-1, 1, 1,0,
-			 1,-1, 1, 1,1,
-			 
-			-1,-1,-1, 0,0,
-			-1, 1,-1, 1,0,
-			 1,-1,-1, 0,1,
-			 1, 1,-1, 1,1,
-		],
+		vertex = {
+			'position' : [
+				 1,-1,-1,	 1, 1,-1,	 1,-1, 1,	 1, 1, 1,
+				-1, 1,-1,	-1, 1, 1,	 1, 1,-1,	 1, 1, 1,
+				-1,-1, 1,	 1,-1, 1,	-1, 1, 1,	 1, 1, 1,
+				-1,-1,-1,	-1,-1, 1,	-1, 1,-1,	-1, 1, 1,
+				-1,-1,-1,	 1,-1,-1,	-1,-1, 1,	 1,-1, 1,
+				-1,-1,-1,	-1, 1,-1,	 1,-1,-1,	 1, 1,-1,
+			],
+			'texcoord' : [
+				0,0, 1,0, 0,1, 1,1,
+				0,0, 0,1, 1,0, 1,1,
+				0,0, 1,0, 0,1, 1,1,
+				0,0, 1,0, 0,1, 1,1,
+				0,0, 0,1, 1,0, 1,1,
+				0,0, 1,0, 0,1, 1,1,
+			]
+		},
 		index = [
 			0,1,2, 1,3,2,
 			4,5,6, 5,7,6,
@@ -90,7 +77,7 @@ class ModelInstancedRenderer(Renderer):
 		self.vao = glGenVertexArrays(1)
 		glBindVertexArray(self.vao)
 
-		self.model.bind()
+		self.model.bind(self.shader)
 	
 		self.instance_list = self.ModelInstance.new_instance_list()
 

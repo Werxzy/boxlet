@@ -9,8 +9,8 @@ class TerrainRenderer(Renderer):
 
 	vertex_shader = """
 		#version 330
-		layout(location = 0) in vec3 pos;
-		layout(location = 1) in vec2 uvIn;
+		layout(location = 0) in vec3 position;
+		layout(location = 1) in vec2 texcoord;
 		
 		uniform mat4 model;
 		uniform mat4 viewProj;
@@ -18,8 +18,8 @@ class TerrainRenderer(Renderer):
 		out vec2 uv;
 
 		void main() {
-			gl_Position = viewProj * model * vec4(pos, 1);
-			uv = uvIn;
+			gl_Position = viewProj * model * vec4(position, 1);
+			uv = texcoord;
 		}
 		"""
 	fragment_shader = """
@@ -45,7 +45,10 @@ class TerrainRenderer(Renderer):
 		w1 = w-1
 		h1 = h-1
 
-		vertex = [j for i in ([x, image.orignal.get_at((x,y))[0] * 0.3, h1-y, x / w, -y / h] for x in range(w) for y in range(h)) for j in i]
+		vertex = {
+			'position' : [j for i in ([x, image.orignal.get_at((x,y))[0] * 0.3, h1-y] for x in range(w) for y in range(h)) for j in i],
+			'texcoord' : [j for i in ([x / w, -y / h] for x in range(w) for y in range(h)) for j in i]
+		}
 		index = [j for i in ([x + y*w, x + (y+1)*w, x+1 + y*w, x+1 + y*w, x + (y+1)*w, x+1 + (y+1)*w] for x in range(w1) for y in range(h1)) for j in i]
 
 		self.model = Model(
@@ -59,7 +62,7 @@ class TerrainRenderer(Renderer):
 		self.vao = glGenVertexArrays(1)
 		glBindVertexArray(self.vao)
 
-		self.model.bind()
+		self.model.bind(self.shader)
 
 		glBindVertexArray(0)
 

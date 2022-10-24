@@ -10,7 +10,7 @@ class Shader:
 	_test_vao = glGenVertexArrays(1)
 	glBindVertexArray(_test_vao)
 	_test_model = Model()
-	_test_model.bind()
+	_test_model.bind(position = 0, texcoord = 1)
 	glBindVertexArray(0)
 
 	global_uniforms = {
@@ -34,14 +34,21 @@ class Shader:
 		var_type = ctypes.c_uint()
 
 		# Gets the the initial inputs for the shader
-		# glGetProgramiv(self.program, GL_ACTIVE_ATTRIBUTES, count)
-		# for i in range(count.value):
-		# 	glGetActiveAttrib(self.program, i, buffer_size, name_length, var_size, var_type, name)
-		# 	print(''.join(chr(c) for c in name.value), name_length.value, var_size.value, var_type.value)
+		self.vertex_attributes:dict[str, tuple[int,int,int]] = dict()
+
+		# print('- - -')
+
+		glGetProgramiv(self.program, GL_ACTIVE_ATTRIBUTES, count)
+		for i in range(count.value):
+			glGetActiveAttrib(self.program, i, buffer_size, name_length, var_size, var_type, name)
+			n = ''.join(chr(c) for c in name.value)
+
+			self.vertex_attributes[n] = (var_size.value, var_type.value, glGetAttribLocation(self.program, n))
+			# print(n, name_length.value, var_size.value, var_type.value)
 
 		# Gets all the available uniforms
 		self.uniforms:dict[str, tuple[int,int,int]] = dict()
-		'key = uniform name\n\nvalue = [count, type, location]'
+		'key = uniform name\n\nvalue = (count, type, location)'
 		
 		glGetProgramiv(self.program, GL_ACTIVE_UNIFORMS, count)
 		for i in range(count.value):
@@ -50,7 +57,7 @@ class Shader:
 			if var_size.value > 1:
 				n = n[:-3]
 
-			self.uniforms[n] = [var_size.value, var_type.value, glGetUniformLocation(self.program, n)]
+			self.uniforms[n] = (var_size.value, var_type.value, glGetUniformLocation(self.program, n))
 			# print(n, name_length.value, var_size.value, var_type.value, self.uniforms[n])
 
 		# Gets all the available uniform blocks

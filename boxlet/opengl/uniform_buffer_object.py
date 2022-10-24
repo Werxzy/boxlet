@@ -37,7 +37,7 @@ class UBOStruct:
 		self._data = data
 		self._base = base or self
 		if base is None:
-			self.needs_to_update = True
+			self.needs_to_update = False
 
 		for d in data.dtype.names:
 			next_names = data[d].dtype.names
@@ -143,7 +143,7 @@ class UniformBufferObject:
 
 
 	def bind(self, shader, index):
-		# Earlier the following needs to be called
+		# Earlier the following, or something similar, needs to be called
 		# index = glGetUniformBlockIndex(shader.program, name)
 
 		glUniformBlockBinding(shader.program, index, self.binding_point)
@@ -152,7 +152,7 @@ class UniformBufferObject:
 		if self.data.needs_to_update:
 			self.data.needs_to_update = False
 			glBindBuffer(GL_UNIFORM_BUFFER, self.uniform_buffer)
-			glBufferData(GL_UNIFORM_BUFFER, self.light_data.strides[0], self.light_data, GL_DYNAMIC_DRAW)
+			glBufferData(GL_UNIFORM_BUFFER, self._numpy_data.itemsize, self._numpy_data, GL_DYNAMIC_DRAW)
 			# it would be a bit too difficult in this version to use glBufferSubData
 			
 	@staticmethod
@@ -222,15 +222,15 @@ class LightUniformBuffer(UniformBufferObject):
 			self.owner.destroy(self.id)
 			self.data = self.owner = self.id = None
 
-	def __init__(self, structure=None):
-		super().__init__(structure)
+	def __init__(self):
+		super().__init__()
 		self.instances = []
 
 	def new_instance(self):
-		if self.data.light_count >= 0:
+		if self.data.light_count >= self.max_light_count:
 			raise Exception('No room left in Uniform Buffer Object.')
 
-		light = LightUniformBuffer.LightSource(self.data.lights[id], self.data.light_count, self)
+		light = LightUniformBuffer.LightSource(self.data.lights[self.data.light_count], self.data.light_count, self)
 		self.instances.append(light)
 		self.data.light_count += 1
 		return light
