@@ -17,14 +17,13 @@ class Model:
 
 		def add_variable(name, size):
 			nonlocal self, types
-			# types.append((name, f'({size},)f4'))
 			types.append((name, np.float32, size))
 			byte_size = size * sizeof(c_float)
 			self._stride_data[name] = (self.vertex_stride, byte_size, size)
 			self.vertex_stride += byte_size
 
 		for v, s in [('position', dim), ('texcoord', 2), ('normal', dim)]:
-			if v in vertex:
+			if v in vertex and vertex[v]:
 				add_variable(v, s)
 
 		self._vertex_dtype = np.dtype(types)
@@ -32,9 +31,7 @@ class Model:
 		self._vertex_data = np.array([0] * length, self._vertex_dtype)
 		for n, d in self._stride_data.items():
 			self._vertex_data[n] = np.array(vertex[n]).reshape((-1,d[2]))
-			# TODO ? may need to put into numpy array and reshape
 
-		# self._vertex_data = np.array(vertex or [-0.5,-0.5, 0,0, -0.5,0.5, 0,1, 0.5,0.5, 1,1, 0.5,-0.5, 1,0], np.float32)
 		self._index_data = np.array(index or [0,1,2, 0,2,3], np.int32)
 		self.size = dim + 2
 		self.dim = dim 
@@ -84,10 +81,16 @@ class Model:
 
 	@classmethod
 	def load_obj(cls, file):
+		def try_int(s):
+			try:
+				return int(s)-1
+			except ValueError:
+				return -1
+
 		with open(file, 'r') as file:
 
-			data = {'v':[], 'vn':[], 'vt':[]}
-			vertex = {'position' : [], 'texcoord' : []}
+			data = {'v':[], 'vt':[], 'vn':[]}
+			vertex = {'position' : [], 'texcoord' : [], 'normal' : []}
 			index:list[int] = []
 			index_dict = {}
 
@@ -98,16 +101,13 @@ class Model:
 				
 				if l[0] == 'f':
 					for index_data in l[1:]:
-						vd = index_data.split('/')
-						ind = (int(vd[0])-1, int(vd[1])-1)
+						ind = tuple(try_int(vd) for vd in index_data.split('/'))
 
 						# if the pairing doesn't already exist in the list of vertices
 						if ind not in index_dict:
-							i = len(index_dict)
-							index_dict[ind] = i
-							vertex['position'].extend(data['v'][ind[0]])
-							vertex['texcoord'].extend(data['vt'][ind[1]])
-							#TODO add normal if present
+							index_dict[ind] = len(index_dict)
+							for ind_2, (name, obj_name) in zip(ind, [('position', 'v'), ('texcoord', 'vt'), ('normal', 'vn')]):
+								vertex[name].extend(data[obj_name][ind_2])
 
 						index.append(index_dict[ind])
 
@@ -115,6 +115,9 @@ class Model:
 
 
 class MultiModel:
+
+	# This class isn't compatible with Model yet as it doesn't apply the recent changes to Model.
+
 	def __init__(self, *models:Model):
 		# All models need to contain the same type of data.
 
