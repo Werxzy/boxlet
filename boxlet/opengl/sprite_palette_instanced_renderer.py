@@ -63,7 +63,7 @@ class SpritePaletteInstancedRenderer(Renderer):
 		self.vao = glGenVertexArrays(1)
 		glBindVertexArray(self.vao)
 
-		self.model.bind()
+		self.model.bind(self.shader)
 		self.instance_list = self.SpritePaletteInstance.new_instance_list(self)
 
 		glBindVertexArray(0)

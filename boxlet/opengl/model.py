@@ -66,6 +66,8 @@ class Model:
 					glEnableVertexAttribArray(index)
 
 		else:
+			if not kwargs:
+				raise Exception('No bind points provided')
 			for name, (start, _, count) in self._stride_data.items():
 				if name in kwargs:
 					index = kwargs[name]
