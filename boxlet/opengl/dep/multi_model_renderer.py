@@ -101,7 +101,7 @@ class MultiModelRenderer(Renderer):
 		self.vao = glGenVertexArrays(1)
 		glBindVertexArray(self.vao)
 
-		self.model.bind()
+		self.model.bind(self.shader)
 	
 		self.instance_list = self.ModelInstance.new_instance_list()
 

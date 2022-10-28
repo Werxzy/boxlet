@@ -58,24 +58,22 @@ class Model:
 		
 		glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
 
-		if shader is not None:
+		if shader:
 			for name, (start, _, count) in self._stride_data.items():
 				if name in shader.vertex_attributes:
 					index = shader.vertex_attributes[name][2]
 					glVertexAttribPointer(index, count, GL_FLOAT, GL_FALSE, self.vertex_stride, c_void_p(start))
 					glEnableVertexAttribArray(index)
-
-		else:
-			if not kwargs:
-				raise Exception('No bind points provided')
+		elif kwargs:
 			for name, (start, _, count) in self._stride_data.items():
 				if name in kwargs:
 					index = kwargs[name]
 					glVertexAttribPointer(index, count, GL_FLOAT, GL_FALSE, self.vertex_stride, c_void_p(start))
 					glEnableVertexAttribArray(index)
+		else:
+			raise Exception('No bind points provided')
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.ebo) # ebo is bound to the vao here
-
 
 	# def __del__(self):
 	# 	glDeleteVertexArrays(1, [self.vbo])
