@@ -73,7 +73,7 @@ def look_at(eye, target, up):
 	m[:3,:3] = np.vstack([-s,u,f])
 	return np.matmul(m, translate(eye))
 
-def make_matrix(pos, forward, up):
+def look_at_forward(pos, forward, up):
 	'like look_at(), but instead uses a forward vector and preserves the up vector'
 	u = normalize(up)
 	s = normalize(np.cross(up, normalize(forward)))

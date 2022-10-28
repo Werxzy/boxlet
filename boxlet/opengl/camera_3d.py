@@ -1,24 +1,19 @@
 import numpy as np
 import math
 
-from boxlet import Renderer, Shader, Tmath, manager
+from boxlet import Renderer, Shader, Tmath, manager, Transform
 
 
-class Camera3D(Renderer):
+class Camera3D(Transform, Renderer):
 	def __init__(self, queue) -> None:
 		super().__init__(queue)
 
-		self.view_matrix = np.identity(4)
 		self.perspective(90, 16.0/9.0, 0.1, 1000)
 		# self.orthographic(-5, 5, -5 * 9 / 16, 5 * 9 / 16, 0.1, 1000)
 		Shader.add_global_matrix_uniform('viewProj', np.identity(4, dtype=np.float32))
 
 	def render(self):
-		Shader.set_global_uniform('viewProj', np.matmul(np.linalg.inv(self.view_matrix), self.proj_matrix))
-
-	def move(self, amount):
-		# self.view_matrix = np.matmul(self.translate(amount), self.view_matrix)
-		self.view_matrix[3,:3] += amount # simpler
+		Shader.set_global_uniform('viewProj', np.matmul(np.linalg.inv(self.model_matrix), self.proj_matrix))
 
 	def perspective(self, fov:float, aspect:float, near:float, far:float):
 		f = math.tan(math.radians(fov)/2)
@@ -30,8 +25,7 @@ class Camera3D(Renderer):
 		z1 = (near + far) / (near - far)
 		z2 = 2 * near * far / (near - far)
 
-		# return np.array([[x, 0, 0, 0], [0, y, 0, 0], [0, 0, z1, -1], [0, 0, z2, 0]])
-		self.proj_matrix = np.array([[x, 0, 0, 0], [0, y, 0, 0], [0, 0, -z1, 1], [0, 0, z2, 0]]) # tempting to flip the z axis for (0,0,1) to be the camera forward
+		self.proj_matrix = np.array([[x, 0, 0, 0], [0, y, 0, 0], [0, 0, -z1, 1], [0, 0, z2, 0]])
 		self.inv_proj_matrix = np.linalg.inv(self.proj_matrix)
 		self.proj_type_perspective = True
 
@@ -62,62 +56,6 @@ class Camera3D(Renderer):
 		# self.inv_proj_matrix = np.linalg.inv(self.proj_matrix)
 
 
-	def look_at(self, eye, target, up):
-		self.view_matrix = Tmath.look_at(eye, target, up)
-
-	def look_at_2(self, pos, forward, up):
-		self.view_matrix = Tmath.make_matrix(pos, forward, up)
-
-	def reset_pos(self):
-		self.view_matrix = np.identity(4)
-
-	def fps_look(self, pos, x, y):
-		self.view_matrix = Tmath.fps_look(pos, x, y)
-
-	@property
-	def right(self):
-		return Tmath.normalize(self.view_matrix[0,:3])
-
-	@property
-	def up(self):
-		return Tmath.normalize(self.view_matrix[1,:3])
-
-	@property
-	def forward(self):
-		return Tmath.normalize(self.view_matrix[2,:3])
-
-	@property
-	def position(self):
-		return self.view_matrix[3,:3]
-
-	@position.setter
-	def position(self, value):
-		self.view_matrix[3,:3] = value
-
-	@property
-	def x(self):
-		return self.view_matrix[3,0]
-
-	@x.setter
-	def x(self, value):
-		self.view_matrix[3,0] = value
-
-	@property
-	def y(self):
-		return self.view_matrix[3,1]
-
-	@y.setter
-	def y(self, value):
-		self.view_matrix[3,1] = value
-
-	@property
-	def z(self):
-		return self.view_matrix[3,2]
-
-	@z.setter
-	def z(self, value):
-		self.view_matrix[3,2] = value
-
 	def get_mouse_ray(self, pos):
 		'Returns the ray of the given mouse coordinate from screen space to world space.\n\nreturns (pos, direction)'
 
@@ -125,15 +63,13 @@ class Camera3D(Renderer):
 
 		if self.proj_type_perspective:
 			ray_eye = np.matmul(self.inv_proj_matrix, np.array([coord[0],-coord[1],-1,1]))		
-			ray_world = np.matmul(np.linalg.inv(self.view_matrix), np.array([ray_eye[0],ray_eye[1],1,0]))
+			ray_world = np.matmul(np.linalg.inv(self.model_matrix), np.array([ray_eye[0],ray_eye[1],1,0]))
 
 			return self.position, Tmath.normalize(ray_world[0:3])
 
 		else: # orthographic projection
 			start_eye = np.matmul(self.inv_proj_matrix.T, np.array([coord[0],-coord[1],-1,1]))		
-			start_world = np.matmul(self.view_matrix.T, np.array([start_eye[0],start_eye[1],start_eye[2],1]))
+			start_world = np.matmul(self.model_matrix.T, np.array([start_eye[0],start_eye[1],start_eye[2],1]))
 
 			return start_world[:3], Tmath.normalize(self.forward)
-
-
 
