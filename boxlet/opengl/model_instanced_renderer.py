@@ -41,9 +41,7 @@ class ModelInstancedRenderer(Renderer):
 	class ModelInstance(RenderInstance):
 		model_matrix:np.ndarray = 'mat4', 2
 
-	def __init__(self, model:Model, image:Texture, queue = 0):	
-		super().__init__(queue)
-		
+	def __init__(self, model:Model, image:Texture, pass_name = 'default'):			
 		self.model = model or self.cube_model
 		self.image = image
 
@@ -58,7 +56,7 @@ class ModelInstancedRenderer(Renderer):
 
 		#TODO this is sort of an example
 		#TODO, allow for premade vao and multimodel to reduce vao bind count
-		BoxletGL.add_render_call('default', self.shader, self.render)
+		BoxletGL.add_render_call(pass_name, self.shader, self.render)
 
 	def new_instance(self, **kwargs):
 		return self.instance_list.new_instance(**kwargs)
@@ -73,10 +71,9 @@ class ModelInstancedRenderer(Renderer):
 		glEnable(GL_CULL_FACE)
 		glCullFace(GL_FRONT)
 		
-		glBindVertexArray(self.vao)
+		BoxletGL.bind_vao(self.vao)
 		
-		glActiveTexture(GL_TEXTURE0)
-		glBindTexture(GL_TEXTURE_2D, self.image.image_texture)
+		BoxletGL.bind_texture(GL_TEXTURE0, GL_TEXTURE_2D, self.image.image_texture)
 
 		self.instance_list.update_data()
 

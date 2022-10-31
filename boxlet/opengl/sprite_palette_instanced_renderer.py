@@ -1,4 +1,4 @@
-from boxlet import Renderer, MultiTexture, VertFragShader, Model, RenderInstance
+from boxlet import BoxletGL, Renderer, MultiTexture, VertFragShader, Model, RenderInstance
 from OpenGL.GL import *
 
 
@@ -81,10 +81,8 @@ class SpritePaletteInstancedRenderer(Renderer):
 		self.shader.apply_global_uniforms('cameraSize', 'cameraPos')
 		self.shader.apply_uniform('texSize', self.image.size)
 		
-		glBindVertexArray(self.vao)
-		
-		glActiveTexture(GL_TEXTURE0)
-		glBindTexture(GL_TEXTURE_2D, self.image.image_texture)
+		BoxletGL.bind_vao(self.vao)
+		BoxletGL.bind_texture(GL_TEXTURE0, GL_TEXTURE_2D, self.image.image_texture)
 
 		self.instance_list.update_data()
 

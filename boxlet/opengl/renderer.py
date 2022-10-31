@@ -7,12 +7,9 @@ class Renderer:
 			
 	def destroy(self):
 		pass
+	
+	# Is this really all that I'm putting into the base class?
 
-	def render(self):
-		pass
-
-	def rebuild(self, rebind = True):
-		pass
 
 
 # I think the real performance booster is an instance renderer which sends an array of matricies and other data all at once

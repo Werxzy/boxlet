@@ -3,6 +3,8 @@ from OpenGL.GL import *
 from ctypes import c_void_p
 import numpy as np
 
+# would need to be reworked
+
 class SpriteRenderer(Renderer):
 	# position and size are in pixel coordinates
 

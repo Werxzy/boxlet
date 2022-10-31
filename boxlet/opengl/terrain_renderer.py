@@ -1,5 +1,5 @@
 from math import ceil, floor
-from boxlet import Renderer, Texture, VertFragShader, Model, lerp
+from boxlet import BoxletGL, Renderer, Texture, VertFragShader, Model, lerp
 from OpenGL.GL import *
 import numpy as np
 
@@ -74,10 +74,8 @@ class TerrainRenderer(Renderer):
 		glEnable(GL_CULL_FACE)
 		glCullFace(GL_FRONT)
 		
-		glBindVertexArray(self.vao)
-		
-		glActiveTexture(GL_TEXTURE0)
-		glBindTexture(GL_TEXTURE_2D, self.image.image_texture)
+		BoxletGL.bind_vao(self.vao)
+		BoxletGL.bind_texture(GL_TEXTURE0, GL_TEXTURE_2D, self.image.image_texture)
 
 		glDrawElements(GL_TRIANGLES, self.model.index_count, GL_UNSIGNED_INT, None)
 

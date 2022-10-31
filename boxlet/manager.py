@@ -133,7 +133,7 @@ class Manager:
 			pygame.display.update()
 		
 		else:
-			Renderer.render_all()
+			BoxletGL.render()
 			pygame.display.flip()
 
 	def set_display(self, display_size = None, canvas_size = None, fullscreen = None, vsync = None):

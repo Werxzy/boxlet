@@ -1,4 +1,4 @@
-from boxlet import Renderer, Texture, VertFragShader, Model, RenderInstance, np, Tmath
+from boxlet import BoxletGL, Renderer, Texture, VertFragShader, Model, RenderInstance, np, Tmath
 from OpenGL.GL import *
 
 
@@ -126,10 +126,8 @@ class MultiModelRenderer(Renderer):
 		glEnable(GL_CULL_FACE)
 		glCullFace(GL_FRONT)
 		
-		glBindVertexArray(self.vao)
-		
-		glActiveTexture(GL_TEXTURE0)
-		glBindTexture(GL_TEXTURE_2D, self.image.image_texture)
+		BoxletGL.bind_vao(self.vao)
+		BoxletGL.bind_texture(GL_TEXTURE0, GL_TEXTURE_2D, self.image.image_texture)
 
 		self.instance_list.update_data()
 

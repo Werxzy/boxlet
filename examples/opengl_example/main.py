@@ -9,9 +9,15 @@ import random
 box_model = Model.load_obj("examples/opengl_example/cube.obj")
 box_texture = Texture(pygame.image.load("examples/opengl_example/box.png"), nearest=False)
 
-SimpleClearStep(queue = 0)
-camera = Camera3D(queue = 50)
-models = ModelInstancedRenderer(box_model, box_texture, queue = 100)
+# SimpleClearStep(queue = 0)
+# camera = Camera3D(queue = 50)
+# models = ModelInstancedRenderer(box_model, box_texture, queue = 100)
+
+
+camera = Camera3D(queue = 0, pass_names = ['default'])
+default_pass = PassOpaque('default', 0)
+models = ModelInstancedRenderer(box_model, box_texture, pass_name = 'default')
+apply_frame = ApplyShaderToFrame(camera.texture, queue = 1000)
 
 
 # world assets

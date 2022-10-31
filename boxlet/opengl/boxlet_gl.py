@@ -8,7 +8,7 @@ class BoxletGL:
 	render_passes:dict[str, 'RenderPass'] = dict()
 	render_groups:dict[str, dict['Shader', list[Callable]]] = dict()
 	vao = 0
-	bound_textures:dict[int, tuple(int, int)] = dict([(int(GL_TEXTURE0) + i, (-1, -1)) for i in range(int(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS))])
+	bound_textures:dict[int, tuple[int, int]] = dict([(int(GL_TEXTURE0) + i, (-1, -1)) for i in range(int(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS))])
 	update_order = True
 	_viewport_data = (0,0,0,0)
 	
@@ -48,12 +48,12 @@ class BoxletGL:
 
 	@staticmethod
 	def add_render_pass(render_pass:'RenderPass'):
-		BoxletGL.render_passes[render_pass.name]
+		BoxletGL.render_passes[render_pass.name] = render_pass
 		BoxletGL.update_order = True
 
 	@staticmethod
 	def add_render_call(pass_name:str, shader:'Shader', call:Callable):
-		BoxletGL.render_groups.get(pass_name, dict()).get(shader, list()).append(call)
+		BoxletGL.render_groups.setdefault(pass_name, dict()).setdefault(shader, list()).append(call)
 
 	@staticmethod
 	def bind_vao(vao):
@@ -73,7 +73,7 @@ class BoxletGL:
 	@staticmethod
 	def viewport(x,y,w,h):
 		if BoxletGL._viewport_data != (x,y,w,h):
-			glViewport(x,y,w,h)
 			BoxletGL._viewport_data = (x,y,w,h)
+			glViewport(x,y,w,h)
 	
 		
