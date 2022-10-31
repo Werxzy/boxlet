@@ -2,6 +2,18 @@ from boxlet import manager, Shader, VertFragShader, Model, Renderer, Shader
 from OpenGL.GL import *
 
 
+class RenderTarget:
+	def __init__(self, queue = 0, pass_names:list[str] = None) -> None:
+		self.queue = queue
+		self.pass_names = pass_names or []
+	
+	def prepare(self):
+		...
+	
+	def post(self):
+		...
+	
+
 class FrameBufferStep(Renderer):
 	# creates a frame
 

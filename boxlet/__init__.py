@@ -8,7 +8,11 @@ from boxlet.math_extra import *
 if USE_OPENGL:
 	import boxlet.opengl.transform_math as Tmath 
 
+	from boxlet.opengl.boxlet_gl import BoxletGL
+	
 	from boxlet.opengl.renderer import Renderer
+	from boxlet.opengl.render_pass import RenderPass
+	from boxlet.opengl.render_steps import RenderTarget
 	from boxlet.opengl.render_instance_metaclass import RenderInstance
 
 from boxlet.entity import Entity
@@ -20,6 +24,7 @@ if USE_OPENGL:
 	from boxlet.opengl.model import Model
 	from boxlet.opengl.shader import Shader, VertFragShader, ComputeShader
 	from boxlet.opengl.texture import Texture, MultiTexture
+
 
 	# anything using opengl when imported needs to be imported AFTER pygame is initialized
 	# from boxlet.opengl.sprite_renderer import SpriteRenderer

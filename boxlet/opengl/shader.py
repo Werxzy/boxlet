@@ -76,6 +76,10 @@ class Shader:
 			self.uniform_blocks[n] = block_binding
 			# print(n)
 
+	def use(self):
+		glUseProgram(self.program)
+		#TODO, setup global uniforms
+
 	@staticmethod
 	def add_global_uniform(name, start_value):
 		Shader.global_uniforms[name] = [start_value]

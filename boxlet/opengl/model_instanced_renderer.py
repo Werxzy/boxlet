@@ -1,4 +1,4 @@
-from boxlet import Renderer, Texture, VertFragShader, Model, RenderInstance, np
+from boxlet import BoxletGL, Renderer, Texture, VertFragShader, Model, RenderInstance, np
 from OpenGL.GL import *
 
 
@@ -55,6 +55,10 @@ class ModelInstancedRenderer(Renderer):
 		self.instance_list = self.ModelInstance.new_instance_list()
 
 		glBindVertexArray(0)
+
+		#TODO this is sort of an example
+		#TODO, allow for premade vao and multimodel to reduce vao bind count
+		BoxletGL.add_render_call('default', self.shader, self.render)
 
 	def new_instance(self, **kwargs):
 		return self.instance_list.new_instance(**kwargs)

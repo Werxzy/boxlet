@@ -4,19 +4,7 @@ from OpenGL.GL import *
 # it's HIGHLY recommended to put uniform data into numpy arrays for decent performance boosts
 
 class Renderer:
-
-	current_shader = None
-	current_model = None
-	current_textrues = []
-	
-	groups:list['Renderer'] = []
-	_viewport_data = (0,0,0,0)
-
-	def __init__(self, queue = 0):
-		self.queue = queue
-		Renderer.groups.append(self)
-		Renderer.groups.sort(key = lambda q: q.queue)
-		
+			
 	def destroy(self):
 		pass
 
@@ -25,18 +13,6 @@ class Renderer:
 
 	def rebuild(self, rebind = True):
 		pass
-
-	@staticmethod
-	def render_all():
-		for c in Renderer.groups:
-			c.render()
-
-	@staticmethod
-	def viewport(x,y,w,h):
-		if Renderer._viewport_data != (x,y,w,h):
-			glViewport(x,y,w,h)
-			Renderer._viewport_data = (x,y,w,h)
-
 
 
 # I think the real performance booster is an instance renderer which sends an array of matricies and other data all at once
