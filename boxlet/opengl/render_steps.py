@@ -86,7 +86,7 @@ class ApplyShaderToFrame(Renderer):
 		"""
 	default_shader = VertFragShader(vertex_screen_shader, fragment_screen_shader)
 	
-	rect_model = Model({'position':[-1,-1, -1,1, 1,1, 1,-1], 'texcoord':[0,0, 0,1, 1,1, 1,0]})
+	rect_model = Model.gen_quad_2d()
 	rect_vao = glGenVertexArrays(1)
 	glBindVertexArray(rect_vao)
 	rect_model.bind(default_shader)
