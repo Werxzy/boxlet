@@ -55,8 +55,8 @@ class SpritePaletteInstancedRenderer(Renderer):
 			self.uv_pos = data[0:2]
 			self.uv_size = data[2:4]
 
-	def __init__(self, image:MultiTexture, queue = 0, pass_name = ''):	
-		super().__init__(queue)
+	def __init__(self, image:MultiTexture, pass_name = ''):	
+		super().__init__()
 		
 		self.image = image
 
