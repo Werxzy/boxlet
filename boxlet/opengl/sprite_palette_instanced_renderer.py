@@ -12,8 +12,8 @@ class SpritePaletteInstancedRenderer(Renderer):
 		layout(location = 2) in vec3 texPos;
 		layout(location = 3) in vec4 uvPos; // .xy = position, .zw = scale
 
-		uniform vec2 cameraSize;
-		uniform vec2 cameraPos;
+		uniform vec2 box_cameraSize;
+		uniform vec2 box_cameraPos;
 
 		uniform vec2 texSize;
 		
@@ -21,7 +21,7 @@ class SpritePaletteInstancedRenderer(Renderer):
 
 		void main() {
 			vec2 truePos = position * texSize * uvPos.zw + texPos.xy;
-			vec2 screenPos = (truePos - cameraPos) * 2 / cameraSize;
+			vec2 screenPos = (truePos - box_cameraPos) * 2 / box_cameraSize;
 			gl_Position = vec4(screenPos, texPos.z, 1);
 			uv = texcoord * uvPos.zw + uvPos.xy;
 		}
@@ -55,7 +55,7 @@ class SpritePaletteInstancedRenderer(Renderer):
 			self.uv_pos = data[0:2]
 			self.uv_size = data[2:4]
 
-	def __init__(self, image:MultiTexture, queue = 0):	
+	def __init__(self, image:MultiTexture, queue = 0, pass_name = ''):	
 		super().__init__(queue)
 		
 		self.image = image
@@ -67,6 +67,8 @@ class SpritePaletteInstancedRenderer(Renderer):
 		self.instance_list = self.SpritePaletteInstance.new_instance_list(self)
 
 		glBindVertexArray(0)
+		
+		BoxletGL.add_render_call(pass_name, self.shader, self.render)
 
 	def new_instance(self, **kwargs):
 		return self.instance_list.new_instance(**kwargs)
@@ -75,10 +77,7 @@ class SpritePaletteInstancedRenderer(Renderer):
 		if self.instance_list.instance_count == 0:
 			return
 
-		glUseProgram(self.shader.program)
-
 		# apply uniform values
-		self.shader.apply_global_uniforms('cameraSize', 'cameraPos')
 		self.shader.apply_uniform('texSize', self.image.size)
 		
 		BoxletGL.bind_vao(self.vao)

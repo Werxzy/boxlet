@@ -13,12 +13,12 @@ class TerrainRenderer(Renderer):
 		layout(location = 1) in vec2 texcoord;
 		
 		uniform mat4 model;
-		uniform mat4 viewProj;
+		uniform mat4 box_viewProj;
 
 		out vec2 uv;
 
 		void main() {
-			gl_Position = viewProj * model * vec4(position, 1);
+			gl_Position = box_viewProj * model * vec4(position, 1);
 			uv = texcoord;
 		}
 		"""
@@ -37,7 +37,7 @@ class TerrainRenderer(Renderer):
 
 	shader = VertFragShader(vertex_shader, fragment_shader)
 
-	def __init__(self, image:Texture, queue = 0):	
+	def __init__(self, image:Texture, queue = 0, pass_name = ''):	
 		super().__init__(queue)
 		
 		self.image = image
@@ -65,14 +65,10 @@ class TerrainRenderer(Renderer):
 		self.model.bind(self.shader)
 
 		glBindVertexArray(0)
+		BoxletGL.add_render_call(pass_name, self.shader, self.render)
 
 	def render(self):
-		glUseProgram(self.shader.program)
-		self.shader.apply_global_uniforms('viewProj')
 		self.shader.apply_uniform_matrix('model', self.model_matrix)
-
-		glEnable(GL_CULL_FACE)
-		glCullFace(GL_FRONT)
 		
 		BoxletGL.bind_vao(self.vao)
 		BoxletGL.bind_texture(GL_TEXTURE0, GL_TEXTURE_2D, self.image.image_texture)

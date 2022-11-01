@@ -13,8 +13,8 @@ class Camera2D(Renderer):
 		self.zoom:float = 1
 
 	def render(self):
-		Shader.set_global_uniform('cameraPos', self.position)
-		Shader.set_global_uniform('cameraSize', [i * self.zoom for i in Shader.get_global_uniform('frameSize')])
+		Shader.set_global_uniform('box_cameraPos', self.position)
+		Shader.set_global_uniform('box_cameraSize', [i * self.zoom for i in Shader.get_global_uniform('frameSize')])
 
 	def move(self, amount):
 		self.position += amount

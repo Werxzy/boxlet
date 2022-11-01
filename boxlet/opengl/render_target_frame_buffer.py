@@ -50,8 +50,8 @@ class FrameBufferStep(RenderTarget):
 	def prepare(self):
 		size = self.get_size()
 		BoxletGL.viewport(0, 0, *size)
-		Shader.set_global_uniform('frameSize', size)
-		Shader.set_global_uniform('cameraSize', size)
+		Shader.set_global_uniform('box_frameSize', size)
+		Shader.set_global_uniform('box_cameraSize', size)
 
 		glBindFramebuffer(GL_FRAMEBUFFER, self._frame_buffer)
 		glEnable(GL_DEPTH_TEST)

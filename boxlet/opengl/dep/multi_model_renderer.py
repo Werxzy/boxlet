@@ -14,12 +14,12 @@ class MultiModelRenderer(Renderer):
 		layout(std140) uniform paramData {
 			mat4 model[64];
 		} parry;
-		uniform mat4 viewProj;
+		uniform mat4 box_viewProj;
 
 		out vec2 uv;
 
 		void main() {
-			gl_Position = viewProj * parry.model[gl_DrawIDARB] * vec4(pos, 1);
+			gl_Position = box_viewProj * parry.model[gl_DrawIDARB] * vec4(pos, 1);
 			uv = uvIn;
 		}
 		"""
@@ -38,7 +38,7 @@ class MultiModelRenderer(Renderer):
 		}
 		"""
 
-	shader = VertFragShader(vertex_shader, fragment_shader, ['viewProj', 'parry'])
+	shader = VertFragShader(vertex_shader, fragment_shader)
 	cube_model = Model(
 		vertex = [
 			1,-1,-1, 0,0,
@@ -92,7 +92,7 @@ class MultiModelRenderer(Renderer):
 	class ModelInstance(RenderInstance):
 		model_matrix:np.ndarray = 'mat4', 2
 
-	def __init__(self, model:Model, image:Texture, queue = 0):	
+	def __init__(self, model:Model, image:Texture, queue = 0, pass_name = ''):	
 		super().__init__(queue)
 		
 		self.model = model or self.cube_model
@@ -110,7 +110,8 @@ class MultiModelRenderer(Renderer):
 		for i in range(4):
 			self.new_instance(model_matrix = Tmath.translate((i * 2.5, 0, 0)))
 
-		
+		BoxletGL.add_render_call(pass_name, self.shader, self.render)
+
 
 	def new_instance(self, **kwargs):
 		return self.instance_list.new_instance(**kwargs)
@@ -119,12 +120,6 @@ class MultiModelRenderer(Renderer):
 		# if self.instance_list.instance_count == 0:
 		if self.instance_list.instance_count < 4:
 			return
-
-		glUseProgram(self.shader.program)
-		self.shader.apply_global_uniforms('viewProj')
-
-		glEnable(GL_CULL_FACE)
-		glCullFace(GL_FRONT)
 		
 		BoxletGL.bind_vao(self.vao)
 		BoxletGL.bind_texture(GL_TEXTURE0, GL_TEXTURE_2D, self.image.image_texture)
@@ -133,7 +128,7 @@ class MultiModelRenderer(Renderer):
 
 
 		# uniform struct test
-		from ctypes import c_void_p, c_int, c_float
+		from ctypes import c_int, c_float
 		bindingPoint = 1
 		buffer = glGenBuffers(1)
 		glBindBuffer(GL_UNIFORM_BUFFER, buffer)

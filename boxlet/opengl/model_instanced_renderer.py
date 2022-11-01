@@ -11,12 +11,12 @@ class ModelInstancedRenderer(Renderer):
 		layout(location = 1) in vec2 texcoord;
 		layout(location = 2) in mat4 model;
 
-		uniform mat4 viewProj;
+		uniform mat4 box_viewProj;
 
 		out vec2 uv;
 
 		void main() {
-			gl_Position = viewProj * model * vec4(position, 1);
+			gl_Position = box_viewProj * model * vec4(position, 1);
 			uv = texcoord;
 		}
 		"""
@@ -64,15 +64,8 @@ class ModelInstancedRenderer(Renderer):
 	def render(self):
 		if self.instance_list.instance_count == 0:
 			return
-
-		glUseProgram(self.shader.program)
-		self.shader.apply_global_uniforms('viewProj')
-
-		glEnable(GL_CULL_FACE)
-		glCullFace(GL_FRONT)
 		
 		BoxletGL.bind_vao(self.vao)
-		
 		BoxletGL.bind_texture(GL_TEXTURE0, GL_TEXTURE_2D, self.image.image_texture)
 
 		self.instance_list.update_data()

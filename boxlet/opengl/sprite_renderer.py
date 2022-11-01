@@ -22,14 +22,14 @@ class SpriteRenderer(Renderer):
 		#version 330
 		layout(location = 0) in vec2 pos;
 		layout(location = 1) in vec2 uvIn;
-		uniform vec2 cameraSize;
-		uniform vec2 cameraPos;
+		uniform vec2 box_cameraSize;
+		uniform vec2 box_cameraPos;
 		uniform vec2 texSize;
 		uniform vec3 texPos;
 		out vec2 uv;
 		void main() {
 			vec2 truePos = pos * texSize + texPos.xy; // may need to adjust model
-			vec2 screenPos = truePos / cameraSize + cameraPos; // may want to floor
+			vec2 screenPos = truePos / box_cameraSize + box_cameraPos; // may want to floor
 			gl_Position = vec4(screenPos, texPos.z, 1);
 			uv = uvIn;
 		}
@@ -44,7 +44,7 @@ class SpriteRenderer(Renderer):
 		}
 		"""
 
-	shader = VertFragShader(vertex_shader, fragment_shader, ['cameraSize', 'cameraPos', 'texSize', 'texPos'])
+	shader = VertFragShader(vertex_shader, fragment_shader)
 	model = Model()
 	instances:list['SpriteRenderer'] = []
 
@@ -74,7 +74,7 @@ class SpriteRenderer(Renderer):
 
 		glUseProgram(SpriteRenderer.shader.program)
 
-		cs, cp, ts, tp = (SpriteRenderer.shader.uniforms[u] for u in ['cameraSize', 'cameraPos', 'texSize', 'texPos'])
+		cs, cp, ts, tp = (SpriteRenderer.shader.uniforms[u] for u in ['box_cameraSize', 'box_cameraPos', 'texSize', 'texPos'])
 
 		# apply camera values
 		glUniform2fv(cs, 1, manager.display_size * 0.5)

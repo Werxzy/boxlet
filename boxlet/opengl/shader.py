@@ -14,9 +14,9 @@ class Shader:
 	glBindVertexArray(0)
 
 	global_uniforms = {
-		'frameSize': [[0,0]],
-		'cameraSize': [[0,0]],
-		'cameraPos': [[0,0]],
+		'box_frameSize': [[0,0]],
+		'box_cameraSize': [[0,0]],
+		'box_cameraPos': [[0,0]],
 	}
 	
 	def __init__(self, program) -> None:
@@ -48,6 +48,7 @@ class Shader:
 
 		# Gets all the available uniforms
 		self.uniforms:dict[str, tuple[int,int,int]] = dict()
+		self.tracked_global_uniforms:list[str] = []
 		'key = uniform name\n\nvalue = (count, type, location)'
 		
 		glGetProgramiv(self.program, GL_ACTIVE_UNIFORMS, count)
@@ -58,6 +59,8 @@ class Shader:
 				n = n[:-3]
 
 			self.uniforms[n] = (var_size.value, var_type.value, glGetUniformLocation(self.program, n))
+			if n.startswith('box_'):
+				self.tracked_global_uniforms.append(n)
 			# print(n, name_length.value, var_size.value, var_type.value, self.uniforms[n])
 
 		# Gets all the available uniform blocks
@@ -78,7 +81,7 @@ class Shader:
 
 	def use(self):
 		glUseProgram(self.program)
-		#TODO, setup global uniforms
+		self.apply_global_uniforms(*self.tracked_global_uniforms)
 
 	@staticmethod
 	def add_global_uniform(name, start_value):
