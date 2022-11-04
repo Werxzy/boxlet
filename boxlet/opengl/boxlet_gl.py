@@ -58,7 +58,7 @@ class BoxletGL:
 	@staticmethod
 	def bind_vao(vao):
 		'Binds a vertex array object (vao) as long as it is not currenly bound.'
-		if BoxletGL.vao != vao:
+		if BoxletGL.vao != vao: # this check turns out to be not that useful at the moment
 			BoxletGL.vao = vao
 			glBindVertexArray(vao)
 

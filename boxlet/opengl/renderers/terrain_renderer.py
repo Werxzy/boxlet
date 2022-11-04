@@ -37,8 +37,8 @@ class TerrainRenderer(Renderer):
 
 	shader = VertFragShader(vertex_shader, fragment_shader)
 
-	def __init__(self, image:Texture, queue = 0, pass_name = ''):	
-		super().__init__(queue)
+	def __init__(self, image:Texture, pass_name = ''):	
+		super().__init__()
 		
 		self.image = image
 		w,h = image.orignal.get_size()
