@@ -12,15 +12,15 @@ class RenderInstancePropertyFloats:
 		self._offsets = np.arange(size) + offset
 
 	def __get__(self, instance:'RenderInstance', owner):
-		return instance.owner.data[self._offsets + self._stride * instance.id]
+		return instance.owner._data[self._offsets + self._stride * instance.id]
 		
 	def __set__(self, instance:'RenderInstance', value):
 		r = self._offsets + self._stride * instance.id
-		instance.owner.update_range = [
-			min(r[0], instance.owner.update_range[0]),
-			max(r[-1], instance.owner.update_range[1])
+		instance.owner._update_range = [
+			min(r[0], instance.owner._update_range[0]),
+			max(r[-1], instance.owner._update_range[1])
 		]
-		instance.owner.data[r] = value
+		instance.owner._data[r] = value
 
 
 class RenderInstancePropertyMatrix4:
@@ -29,15 +29,26 @@ class RenderInstancePropertyMatrix4:
 		self._offsets = np.arange(16) + offset
 
 	def __get__(self, instance:'RenderInstance', owner):
-		return instance.owner.data[self._offsets + self._stride * instance.id].reshape((4,4))
+		return instance.owner._data[self._offsets + self._stride * instance.id].reshape((4,4))
 		
 	def __set__(self, instance:'RenderInstance', value):
 		r = self._offsets + self._stride * instance.id
-		instance.owner.update_range = [
-			min(r[0], instance.owner.update_range[0]),
-			max(r[-1], instance.owner.update_range[1])
+		instance.owner._update_range = [
+			min(r[0], instance.owner._update_range[0]),
+			max(r[-1], instance.owner._update_range[1])
 		]
-		instance.owner.data[r] = value.reshape((16,))
+		instance.owner._data[r] = value.reshape((16,))
+
+
+class RenderInstanceListProperty:
+	def __init__(self, name) -> None:
+		self._name = name
+
+	def __get__(self, instance:'RenderInstance', owner):
+		return getattr(instance.owner, self._name)
+
+	def __set__(self, instance:'RenderInstance', value):
+		setattr(instance.owner, self._name, value)
 
 
 class RenderInstanceMetaclass(type):
@@ -96,41 +107,41 @@ class RenderInstanceMetaclass(type):
 T = TypeVar('T', bound='RenderInstance')
 class RenderInstanceList(Generic[T]):
 	def __init__(self, cls:T, data_vbo, renderer = None):	
-		self.cls = cls
-		self.instances:list[T] = []
-		self.data = np.zeros(0, np.float32)
-		self.data_vbo = data_vbo
-		self.update_range = [maxsize, -1]
-		self.update_full = False # if set to true, sets the full set of data
-		self.renderer = renderer
+		self._cls = cls
+		self._instances:list[T] = []
+		self._data = np.zeros(0, np.float32)
+		self._data_vbo = data_vbo
+		self._update_range = [maxsize, -1]
+		self._update_full = False # if set to true, sets the full set of data
+		self.renderer = renderer # TODO remove this
 
-		self.free_indices = list()
-		self.to_delete = set()
+		self._free_indices = list()
+		self._to_delete = set()
 		self.instance_count = 0
-		self.instance_total_space = 0
+		self._instance_total_space = 0
 
 		self._expand_data(16)
 
 	# TODO make a function for creating multiple instances at once, or even one for just making room ahead of time
 	def new_instance(self, **kwargs) -> T:
-		if not self.free_indices:
-			self._expand_data(self.instance_total_space) # Currently just double the amount every time it needs more space.
-			self.update_full = True
+		if not self._free_indices:
+			self._expand_data(self._instance_total_space) # Currently just double the amount every time it needs more space.
+			self._update_full = True
 
-		id = self.free_indices.pop(0)
-		new_inst = self.cls(self, id)
-		if id in self.to_delete:
-			self.to_delete.remove(id)
-			self.instances[id] = new_inst
+		id = self._free_indices.pop(0)
+		new_inst = self._cls(self, id)
+		if id in self._to_delete:
+			self._to_delete.remove(id)
+			self._instances[id] = new_inst
 		else:
-			self.instances.append(new_inst)
+			self._instances.append(new_inst)
 		self.instance_count += 1
 
-		r = self.cls.get_stride_range(id)
-		self.data[r] = self.cls.get_defaults()
-		self.update_range = [
-			min(r[0], self.update_range[0]),
-			max(r[-1], self.update_range[1])
+		r = self._cls.get_stride_range(id)
+		self._data[r] = self._cls.get_defaults()
+		self._update_range = [
+			min(r[0], self._update_range[0]),
+			max(r[-1], self._update_range[1])
 		]
 
 		for k,v in kwargs.items():
@@ -139,15 +150,15 @@ class RenderInstanceList(Generic[T]):
 		return new_inst
 
 	def _expand_data(self, amount):
-		self.free_indices.extend(range(self.instance_total_space, self.instance_total_space + amount))
-		self.instance_total_space += amount
+		self._free_indices.extend(range(self._instance_total_space, self._instance_total_space + amount))
+		self._instance_total_space += amount
 		# self.data = np.append(self.data, np.tile(self.cls.get_defaults(), amount)).astype(np.float32)
-		self.data = np.append(self.data, [0] * (amount*self.cls._bind_stride)).astype(np.float32)
-		self.update_full = True
+		self._data = np.append(self._data, [0] * (amount*self._cls._bind_stride)).astype(np.float32)
+		self._update_full = True
 
 	def destroy_instance(self, id):
-		self.to_delete.add(id)
-		bisect.insort(self.free_indices, id)
+		self._to_delete.add(id)
+		bisect.insort(self._free_indices, id)
 		self.instance_count -= 1
 
 	def update_data(self):
@@ -155,19 +166,19 @@ class RenderInstanceList(Generic[T]):
 		Updates the data to the VBO.
 		"""
 
-		if self.to_delete:
-			for i in sorted(self.to_delete, reverse=True):
-				self.instances.pop(i)
-			self.to_delete.clear()
+		if self._to_delete:
+			for i in sorted(self._to_delete, reverse=True):
+				self._instances.pop(i)
+			self._to_delete.clear()
 
 			mi = None
 			ma = 0
 
-			for i, inst in enumerate(self.instances): # instances should preserve order
+			for i, inst in enumerate(self._instances): # instances should preserve order
 				if i == inst.id: continue
 
-				r = self.cls.get_stride_range(i)
-				self.data[r] = self.data[self.cls.get_stride_range(inst.id)]
+				r = self._cls.get_stride_range(i)
+				self._data[r] = self._data[self._cls.get_stride_range(inst.id)]
 				inst.id = i
 
 				# must be 'is None'
@@ -175,21 +186,21 @@ class RenderInstanceList(Generic[T]):
 				ma = r[-1]
 
 			if mi is not None:
-				self.update_range = [mi, ma]
+				self._update_range = [mi, ma]
 			
-			self.free_indices = list(range(self.instance_count, self.instance_total_space))
+			self._free_indices = list(range(self.instance_count, self._instance_total_space))
 
-		if self.update_full: # updates the entire buffer object, needed if the size changes.
-			self.update_full = False
-			glBindBuffer(GL_ARRAY_BUFFER, self.data_vbo)
-			glBufferData(GL_ARRAY_BUFFER, self.data, GL_STREAM_DRAW)
-			self.update_range = [maxsize, -1]
+		if self._update_full: # updates the entire buffer object, needed if the size changes.
+			self._update_full = False
+			glBindBuffer(GL_ARRAY_BUFFER, self._data_vbo)
+			glBufferData(GL_ARRAY_BUFFER, self._data, GL_STREAM_DRAW)
+			self._update_range = [maxsize, -1]
 
-		elif self.update_range[1] != -1: # updates part of the buffer object
-			a, b = self.update_range[0], self.update_range[1] + 1
-			glBindBuffer(GL_ARRAY_BUFFER, self.data_vbo)
-			glBufferSubData(GL_ARRAY_BUFFER, sizeof(c_float) * a, sizeof(c_float) * (b - a), self.data[a:b])
-			self.update_range = [maxsize, -1]
+		elif self._update_range[1] != -1: # updates part of the buffer object
+			a, b = self._update_range[0], self._update_range[1] + 1
+			glBindBuffer(GL_ARRAY_BUFFER, self._data_vbo)
+			glBufferSubData(GL_ARRAY_BUFFER, sizeof(c_float) * a, sizeof(c_float) * (b - a), self._data[a:b])
+			self._update_range = [maxsize, -1]
 			# this method is a bit weak to updates that include few bytes, but from opposite ends of the data
 
 

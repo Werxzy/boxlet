@@ -1,6 +1,6 @@
 from OpenGL.GL import *
 from OpenGL.GL import shaders
-from boxlet import Model
+from boxlet import Model, RenderInstance, Texture, np
 
 class Shader:
 
@@ -174,6 +174,44 @@ class VertFragShader(Shader):
 		super().__init__(shaders.compileProgram(self.vertex, self.fragment))
 		glBindVertexArray(0)
 
+	@staticmethod
+	def gen_basic_shader(include_instancer = False):
+		vertex_shader = """
+			#version 330
+			layout(location = 0) in vec3 position;
+			layout(location = 1) in vec2 texcoord;
+			layout(location = 2) in mat4 model;
+
+			uniform mat4 box_viewProj;
+
+			out vec2 uv;
+
+			void main() {
+				gl_Position = box_viewProj * model * vec4(position, 1);
+				uv = texcoord;
+			}
+			"""
+		fragment_shader = """
+			#version 330
+			in vec2 uv;
+
+			uniform sampler2D tex;
+
+			out vec4 fragColor;
+
+			void main() {
+				fragColor = texture(tex, uv);
+			}
+			"""
+		if not include_instancer:
+			return VertFragShader(vertex_shader, fragment_shader)
+		
+		class ModelInstance(RenderInstance):
+			model_matrix:np.ndarray = 'attrib', 'mat4', 'model'
+			texture:Texture = 'uniform', 'sampler2D', 'tex'
+
+		return VertFragShader(vertex_shader, fragment_shader), ModelInstance
+		
 
 class ComputeShader(Shader):
 	def __init__(self, compute):

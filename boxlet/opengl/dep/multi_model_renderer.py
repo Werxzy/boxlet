@@ -133,7 +133,7 @@ class MultiModelRenderer(Renderer):
 		buffer = glGenBuffers(1)
 		glBindBuffer(GL_UNIFORM_BUFFER, buffer)
 		glBindBufferBase(GL_UNIFORM_BUFFER, bindingPoint, buffer)
-		glBufferData(GL_UNIFORM_BUFFER, self.instance_list.data.size * sizeof(c_float), self.instance_list.data, GL_DYNAMIC_DRAW)
+		glBufferData(GL_UNIFORM_BUFFER, self.instance_list._data.size * sizeof(c_float), self.instance_list._data, GL_DYNAMIC_DRAW)
 
 		u = glGetUniformBlockIndex(self.shader.program, 'paramData')
 		glUniformBlockBinding(self.shader.program, u, bindingPoint)
