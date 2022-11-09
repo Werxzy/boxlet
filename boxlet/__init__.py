@@ -22,8 +22,8 @@ from boxlet.vary_floats import VaryFloats
 if USE_OPENGL:
 	from boxlet.opengl.transform import Transform
 	from boxlet.opengl.model import Model
-	from boxlet.opengl.shader import Shader, VertFragShader, ComputeShader
 	from boxlet.opengl.texture import Texture, MultiTexture
+	from boxlet.opengl.shader import Shader, VertFragShader, ComputeShader
 
 	from boxlet.opengl.render_bases.render_pass import PassOpaque
 

@@ -61,7 +61,7 @@ class Shader:
 			self.uniforms[n] = (var_size.value, var_type.value, glGetUniformLocation(self.program, n))
 			if n.startswith('box_'):
 				self.tracked_global_uniforms.append(n)
-			# print(n, name_length.value, var_size.value, var_type.value, self.uniforms[n])
+			print(n, name_length.value, var_size.value, var_type.value, self.uniforms[n])
 
 		# Gets all the available uniform blocks
 		self.uniform_blocks:dict[str, int] = dict()

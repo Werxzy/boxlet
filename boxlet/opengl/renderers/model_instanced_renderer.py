@@ -39,7 +39,7 @@ class ModelInstancedRenderer(Renderer):
 	cube_model = Model.gen_cube()
 
 	class ModelInstance(RenderInstance):
-		model_matrix:np.ndarray = 'mat4', 2
+		model_matrix:np.ndarray = 'attrib', 'mat4', 'model'
 
 	def __init__(self, model:Model, image:Texture, pass_name = 'default'):			
 		self.model = model or self.cube_model
@@ -50,7 +50,7 @@ class ModelInstancedRenderer(Renderer):
 
 		self.model.bind(self.shader)
 	
-		self.instance_list = self.ModelInstance.new_instance_list()
+		self.instance_list = self.ModelInstance.new_instance_list(self.shader)
 
 		glBindVertexArray(0)
 

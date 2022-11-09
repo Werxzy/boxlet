@@ -45,15 +45,12 @@ class SpritePaletteInstancedRenderer(Renderer):
 	model = Model()
 
 	class SpritePaletteInstance(RenderInstance):
-		position = [0,0], 2
-		z = [0], 2
-		uv_pos = [0,0], 3
-		uv_size = [1,1], 3
+		position = 'attrib', [0,0,0], 'texPos'
+		uv_pos = 'attrib', [0,0,1,1], 'uvPos'
 
 		def set_sprite(self, id):
 			data = self.owner.renderer.image.sub_image_data[id]
-			self.uv_pos = data[0:2]
-			self.uv_size = data[2:4]
+			self.uv_pos = data
 
 	def __init__(self, image:MultiTexture, pass_name = ''):	
 		super().__init__()
