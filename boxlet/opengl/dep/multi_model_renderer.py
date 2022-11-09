@@ -91,6 +91,7 @@ class MultiModelRenderer(Renderer):
 
 	class ModelInstance(RenderInstance):
 		model_matrix:np.ndarray = 'mat4', 2
+		texture:Texture = 'texture', 'tex'
 
 	def __init__(self, model:Model, image:Texture, queue = 0, pass_name = ''):	
 		super().__init__(queue)

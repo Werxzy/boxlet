@@ -47,9 +47,11 @@ class SpritePaletteInstancedRenderer(Renderer):
 	class SpritePaletteInstance(RenderInstance):
 		position = 'attrib', [0,0,0], 'texPos'
 		uv_pos = 'attrib', [0,0,1,1], 'uvPos'
+		texture:MultiTexture = 'texture', 'tex'
+		texture_size = 'uniform', 'texSize'
 
 		def set_sprite(self, id):
-			data = self.owner.renderer.image.sub_image_data[id]
+			data = self.texture.sub_image_data[id]
 			self.uv_pos = data
 
 	def __init__(self, image:MultiTexture, pass_name = ''):	
@@ -61,7 +63,9 @@ class SpritePaletteInstancedRenderer(Renderer):
 		glBindVertexArray(self.vao)
 
 		self.model.bind(self.shader)
-		self.instance_list = self.SpritePaletteInstance.new_instance_list(self)
+		self.instance_list = self.SpritePaletteInstance.new_instance_list(self.shader)
+		self.instance_list.uniform_data['texture'] = image
+		self.instance_list.uniform_data['texture_size'] = image.size
 
 		glBindVertexArray(0)
 		
@@ -73,14 +77,11 @@ class SpritePaletteInstancedRenderer(Renderer):
 	def render(self):
 		if self.instance_list.instance_count == 0:
 			return
-
-		# apply uniform values
-		self.shader.apply_uniform('texSize', self.image.size)
 		
 		BoxletGL.bind_vao(self.vao)
-		BoxletGL.bind_texture(GL_TEXTURE0, GL_TEXTURE_2D, self.image.image_texture)
 
 		self.instance_list.update_data()
+		self.instance_list.update_uniforms()
 
 		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, None, self.instance_list.instance_count)
 

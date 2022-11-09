@@ -40,6 +40,7 @@ class ModelInstancedRenderer(Renderer):
 
 	class ModelInstance(RenderInstance):
 		model_matrix:np.ndarray = 'attrib', 'mat4', 'model'
+		texture = 'texture', 'tex'
 
 	def __init__(self, model:Model, image:Texture, pass_name = 'default'):			
 		self.model = model or self.cube_model
@@ -51,6 +52,7 @@ class ModelInstancedRenderer(Renderer):
 		self.model.bind(self.shader)
 	
 		self.instance_list = self.ModelInstance.new_instance_list(self.shader)
+		self.instance_list.uniform_data['texture'] = self.image
 
 		glBindVertexArray(0)
 
@@ -66,9 +68,9 @@ class ModelInstancedRenderer(Renderer):
 			return
 		
 		BoxletGL.bind_vao(self.vao)
-		BoxletGL.bind_texture(GL_TEXTURE0, GL_TEXTURE_2D, self.image.image_texture)
 
 		self.instance_list.update_data()
+		self.instance_list.update_uniforms()
 
 		glDrawElementsInstanced(GL_TRIANGLES, self.model.index_count, GL_UNSIGNED_INT, None, self.instance_list.instance_count)
 

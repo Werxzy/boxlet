@@ -5,42 +5,8 @@ import numpy as np
 from sys import maxsize
 import bisect
 import boxlet.opengl.extra_gl_constants as extra_gl
-# from boxlet import Shader
+# from boxlet import Shader # causes an import loop, used for debugging
 from itertools import chain
-
-
-class RenderInstancePropertyFloats:
-	def __init__(self, size, offset, stride) -> None:
-		self._stride = stride
-		self._offsets = np.arange(size) + offset
-
-	def __get__(self, instance:'RenderInstance', owner):
-		return instance.owner._data[self._offsets + self._stride * instance.id]
-		
-	def __set__(self, instance:'RenderInstance', value):
-		r = self._offsets + self._stride * instance.id
-		instance.owner._update_range = [
-			min(r[0], instance.owner._update_range[0]),
-			max(r[-1], instance.owner._update_range[1])
-		]
-		instance.owner._data[r] = value
-
-
-class RenderInstancePropertyMatrix4:
-	def __init__(self, offset, stride) -> None:
-		self._stride = stride
-		self._offsets = np.arange(16) + offset
-
-	def __get__(self, instance:'RenderInstance', owner):
-		return instance.owner._data[self._offsets + self._stride * instance.id].reshape((4,4))
-		
-	def __set__(self, instance:'RenderInstance', value):
-		r = self._offsets + self._stride * instance.id
-		instance.owner._update_range = [
-			min(r[0], instance.owner._update_range[0]),
-			max(r[-1], instance.owner._update_range[1])
-		]
-		instance.owner._data[r] = value.reshape((16,))
 
 
 class RenderInstanceProperty:
@@ -57,7 +23,10 @@ class RenderInstanceProperty:
 		]
 		instance.owner._data[instance.id][self._name] = value
 
+
 class RenderInstanceListProperty:
+	# not 100% sure if I can just remove this class
+	# or if there's a better way to manage uniform data
 	def __init__(self, name) -> None:
 		self._name = name
 
@@ -81,7 +50,7 @@ class RenderInstanceMetaclass(type):
 		shader_textures = dict()
 
 		for k, v in attrs.items():
-			if not k.startswith('_') and isinstance(v, tuple) and len(v) == 3:
+			if not k.startswith('_') and isinstance(v, tuple):
 				attr_type  = v[1]
 				if v[0] == 'attrib':
 					default = None
@@ -109,41 +78,38 @@ class RenderInstanceMetaclass(type):
 					else:
 						raise Exception()
 
-					s *= sizeof(c_float)
+					
 					total += s
-					shader_attributes.append((k, v[2], t, default, s))
+					shader_attributes.append((k, v[2], t, default, s, attr_type))
 					dtype_names.append(k)
 					dtype_formats.append(extra_gl.UNIFORM_TYPE_DICT[t][3])
 
 				elif v[0] == 'uniform':
-					# TODO, probably add texture since the types are entirely based on the shader
-					#	and aren't needed here since no data is needed for building it early
+					shader_uniforms[v[1]] = k
+					attrs[k] = RenderInstanceListProperty(k)
 
-					if isinstance(attr_type, str):
-						t = extra_gl.UNIFORM_SYMBOL_DICT[attr_type]
-					else:
-						raise Exception()
-
-					if t in extra_gl.UNIFORM_TYPE_DICT:
-						shader_uniforms[v[2]] = local_name
-					elif t in extra_gl.UNIFORM_TEXTURE_DICT:
-						shader_textures[v[2]] = local_name
-					else:
-						raise Exception()
-
-					attrs[local_name] = RenderInstanceListProperty(local_name)
+				elif v[0] == 'texture':
+					shader_textures[v[1]] = k
+					attrs[k] = RenderInstanceListProperty(k)
 
 		full_dtype = np.dtype({'names' : dtype_names, 'formats' : dtype_formats})
 		full_default = np.array([0], full_dtype)
-		bind_info = dict() 
+		bind_info = []
+		total *= sizeof(c_float)
 		offset = 0
 
-		for local_name, shader_name, attr_type, default, size in shader_attributes:
+		for local_name, shader_name, attr_type, default, size, full_type in shader_attributes:
 			attrs[local_name] = RenderInstanceProperty(local_name)
 			if default is not None:
 				full_default[local_name] = default
-			bind_info[shader_name] = (size, extra_gl.UNIFORM_TYPE_DICT[attr_type][1], GL_FALSE, total, c_void_p(offset))
-			offset += size
+			
+			if full_type == 'mat4': # matricies take up multiple locations
+				for i in range(4):
+					bind_info.append((shader_name, i, (size//4, extra_gl.UNIFORM_TYPE_DICT[attr_type][1], GL_FALSE, total, c_void_p(offset + i * sizeof(c_float) * 4))))
+			else:
+				bind_info.append((shader_name, 0, (size, extra_gl.UNIFORM_TYPE_DICT[attr_type][1], GL_FALSE, total, c_void_p(offset))))
+			
+			offset += size * sizeof(c_float)
 
 		attrs['_bind_defaults'] = full_default
 		attrs['_bind_stride'] = total	
@@ -171,9 +137,9 @@ class RenderInstanceList(Generic[T]):
 		self._to_delete = set()
 		self.instance_count = 0
 		self._instance_total_space = 0
-		self.uniform_data = {(u[0],None) for u in chain(cls._uniform_texture_info, cls._uniform_info)}
+		self.uniform_data = dict((u,None) for u in chain(cls._uniform_texture_info.values(), cls._uniform_info.values()))
 		self.uniform_info = [(sn, ln) for sn, ln in cls._uniform_info.items() if sn in shader.uniforms ]
-		self.uniform_texture_info = [()]
+		self.uniform_texture_info = [(sn, ln) for sn, ln in cls._uniform_texture_info.items() if sn in shader.textures ]
 
 		self._expand_data(16)
 
@@ -207,7 +173,7 @@ class RenderInstanceList(Generic[T]):
 	def _expand_data(self, amount):
 		self._free_indices.extend(range(self._instance_total_space, self._instance_total_space + amount))
 		self._instance_total_space += amount
-		self._data = np.append(self._data, [0] * amount) # TODO double check that this creates the proper space
+		self._data = np.append(self._data, np.array([0]*amount, dtype=self._data.dtype)) # TODO double check that this creates the proper space
 		self._update_full = True
 
 	def destroy_instance(self, id):
@@ -252,7 +218,7 @@ class RenderInstanceList(Generic[T]):
 
 		elif self._update_range[1] != -1: # updates part of the buffer object
 			a, b = self._update_range[0], self._update_range[1] + 1
-			s = sizeof(c_float) * self._cls._bind_stride
+			s = self._cls._bind_stride
 			glBindBuffer(GL_ARRAY_BUFFER, self._data_vbo)
 			glBufferSubData(GL_ARRAY_BUFFER, s * a, s * (b - a), self._data[a:b])
 			self._update_range = [maxsize, -1]
@@ -262,8 +228,8 @@ class RenderInstanceList(Generic[T]):
 		for shader_name, local_name in self.uniform_info:
 			self._shader.apply_uniform(shader_name, self.uniform_data[local_name])
 
-		# TODO textures
-		# probably use 'if isinstance(data, int):'
+		for shader_name, local_name in self.uniform_texture_info:
+			self._shader.bind_texture(shader_name, self.uniform_data[local_name])
 
 
 class RenderInstance(metaclass = RenderInstanceMetaclass):
@@ -300,12 +266,14 @@ class RenderInstance(metaclass = RenderInstanceMetaclass):
 		glBindBuffer(GL_ARRAY_BUFFER, data_vbo)
 		glBufferData(GL_ARRAY_BUFFER, np.zeros(0, np.float32), GL_STREAM_DRAW) # just in case it needs something to start with
 
-		for name, info in shader.vertex_attributes.items():
-			if name in cls._bind_info:
-				loc = info[2]
-				glVertexAttribPointer(loc, *cls._bind_info[name]) 
+		for name, locOffset, binds in cls._bind_info:
+			if name in shader.vertex_attributes:
+				loc = shader.vertex_attributes[name][2] + locOffset
+				glVertexAttribPointer(loc, *binds) 
 				glEnableVertexAttribArray(loc)
 				glVertexAttribDivisor(loc, 1)
+
+		return data_vbo
 
 	@classmethod
 	def get_defaults(cls):

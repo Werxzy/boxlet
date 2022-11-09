@@ -48,12 +48,12 @@ class Player(Entity):
 	def __init__(self):
 		self.facing_dir = 3
 		self.animation_time = 0
-		self.pos = np.zeros(2, int)
+		self.pos = np.zeros(3, int)
 		self.sprite = sprite_renderer.new_instance(position = self.pos)
 
 	def fixed_update(self):
 		b = pygame.key.get_pressed()
-		mov = np.zeros(2, int)
+		mov = np.zeros(3, int)
 		dir = [1,1]
 
 		if b[pygame.K_a] != b[pygame.K_d]: 
@@ -74,7 +74,7 @@ class Player(Entity):
 
 	def vary_update(self):
 		frame = 1 if self.animation_time == 0 else floor(self.animation_time) % 4
-		bump = [0, (frame+1) % 2]
+		bump = [0, (frame+1) % 2, 0]
 		self.sprite.set_sprite(self.sprite_animation[self.facing_dir][frame])
 		self.sprite.position = self.pos + bump
 
@@ -85,29 +85,29 @@ class Player(Entity):
 
 
 class Item(Entity):
-	def __init__(self, sprite_id = None, pos = [0,0]):
+	def __init__(self, sprite_id = None, pos = [0,0,0]):
 		self.pos = np.array(pos)
 		self.sprite = sprite_renderer.new_instance(position = self.pos)
 		self.sprite.set_sprite(sprite_id)
 
 
 class Apple(Item):
-	def __init__(self, pos = [0,0]):
+	def __init__(self, pos = [0,0,0]):
 		super().__init__(18, pos)
 
 
 class Fish(Item):
-	def __init__(self, pos = [0,0]):
+	def __init__(self, pos = [0,0,0]):
 		super().__init__(19, pos)
 
 
 Player()
 
 for _ in range(10):
-	Apple([random.randint(-50, 50) for i in range(2)])
+	Apple([random.randint(-50, 50) for i in range(2)] + [0])
 
 for _ in range(5):
-	Fish([random.randint(-50, 50) for i in range(2)])
+	Fish([random.randint(-50, 50) for i in range(2)] + [0])
 
 manager.run()
 
