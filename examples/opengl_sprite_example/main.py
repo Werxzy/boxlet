@@ -1,9 +1,11 @@
 import os
+
 os.environ['BOXLET_RENDER_MODE'] = 'opengl'
 os.environ['BOXLET_OPENGL_VSYNC'] = '1'
 
 
 from boxlet import *
+from boxlet.opengl.renderers.instanced_renderer import InstancedRenderer
 from math import floor
 import random
 
@@ -19,10 +21,60 @@ sub_locs = [tuple([i[0]/w + 0.0001, i[1]/h + 0.0001, i[2]/w, i[3]/h]) for i in s
 # converting coords, the '+ 0.0001's are probably not needed if the width and height are a power of 2
 sub_sprites = MultiTexture(sprite, sub_locs)
 
+sprite_shader = VertFragShader(vertex = """
+	#version 330
+	layout(location = 0) in vec2 position;
+	layout(location = 1) in vec2 texcoord;
+	layout(location = 2) in vec3 texPos;
+	layout(location = 3) in vec4 uvPos; // .xy = position, .zw = scale
+
+	uniform vec2 box_cameraSize;
+	uniform vec2 box_cameraPos;
+
+	uniform vec2 texSize;
+	
+	out vec2 uv;
+
+	void main() {
+		vec2 truePos = position * texSize * uvPos.zw + texPos.xy;
+		vec2 screenPos = (truePos - box_cameraPos) * 2 / box_cameraSize;
+		gl_Position = vec4(screenPos, texPos.z, 1);
+		uv = texcoord * uvPos.zw + uvPos.xy;
+	}
+	""", 
+	frag = """
+	#version 330
+	in vec2 uv;
+
+	uniform sampler2D tex;
+
+	out vec4 fragColor;
+
+	void main() {
+		vec4 color = texture(tex, uv);
+		if(color.a < 0.5) discard;
+		fragColor = color;
+	}
+	""")
+
+class SpriteInstance(RenderInstance):
+	position = 'attrib', [0,0,0], 'texPos'
+	uv_pos = 'attrib', [0,0,1,1], 'uvPos'
+	texture:MultiTexture = 'texture', 'tex'
+	texture_size = 'uniform', 'texSize'
+
+	def set_sprite(self, id):
+		data = self.texture.sub_image_data[id]
+		self.uv_pos = data
+
+quad_model = Model.gen_quad_2d(-0.5, 0.5)
+
 # render pipeline
 camera = Camera2D(width_mult=0.25, height_mult=0.25, nearest=True, queue = 0, pass_names = ['default'])
 default_pass = PassOpaque('default', 0)
-sprite_renderer = SpritePaletteInstancedRenderer(sub_sprites, pass_name = 'default')
+sprite_renderer = InstancedRenderer(quad_model, sprite_shader, SpriteInstance, pass_name = 'default')
+sprite_renderer.set_uniform('texture', sub_sprites)
+sprite_renderer.set_uniform('texture_size', sub_sprites.size)
 apply_frame = ApplyShaderToFrame(camera.texture, queue = 1000)
 
 

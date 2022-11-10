@@ -1,18 +1,55 @@
 import os
+
 os.environ['BOXLET_RENDER_MODE'] = 'opengl'
 os.environ['BOXLET_OPENGL_VSYNC'] = '1'
 
 from boxlet import *
+from boxlet.opengl.renderers.instanced_renderer import InstancedRenderer
 import random
 
 # render assets
 box_model = Model.load_obj("examples/opengl_example/cube.obj")
 box_texture = Texture(pygame.image.load("examples/opengl_example/box.png"), nearest=False)
 
+shader = VertFragShader(vertex = """
+	#version 330
+	layout(location = 0) in vec3 position;
+	layout(location = 1) in vec2 texcoord;
+	layout(location = 2) in mat4 model;
+
+	uniform mat4 box_viewProj;
+
+	out vec2 uv;
+
+	void main() {
+		gl_Position = box_viewProj * model * vec4(position, 1);
+		uv = texcoord;
+	}
+	""", 
+	frag = """
+	#version 330
+	in vec2 uv;
+
+	uniform sampler2D tex;
+
+	out vec4 fragColor;
+
+	void main() {
+		vec4 color = texture(tex, uv);
+		//vec4 color = vec4(uv,0,1);
+		fragColor = color;
+	}
+	""")
+
+class ModelInstance(RenderInstance):
+	model_matrix:np.ndarray = 'attrib', 'mat4', 'model'
+	texture = 'texture', 'tex'
+
 # render pipeline
 camera = Camera3D(queue = 0, pass_names = ['default'])
 default_pass = PassOpaque('default', 0)
-models = ModelInstancedRenderer(box_model, box_texture, pass_name = 'default')
+models = InstancedRenderer(box_model, shader, ModelInstance, pass_name = 'default')
+models.set_uniform('texture', box_texture)
 apply_frame = ApplyShaderToFrame(camera.texture, queue = 1000)
 
 
