@@ -55,8 +55,6 @@ class SpritePaletteInstancedRenderer(Renderer):
 			self.uv_pos = data
 
 	def __init__(self, image:MultiTexture, pass_name = ''):	
-		super().__init__()
-		
 		self.image = image
 
 		self.vao = glGenVertexArrays(1)
