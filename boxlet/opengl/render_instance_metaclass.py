@@ -1,12 +1,14 @@
-from typing import Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, TypeVar
 from OpenGL.GL import *
 from ctypes import c_void_p, c_float
 import numpy as np
 from sys import maxsize
 import bisect
 import boxlet.opengl.extra_gl_constants as extra_gl
-# from boxlet import Shader # causes an import loop, used for debugging
 from itertools import chain
+
+if TYPE_CHECKING:
+	from boxlet import Shader
 
 
 class RenderInstanceProperty:

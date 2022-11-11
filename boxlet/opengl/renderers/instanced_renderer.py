@@ -1,12 +1,16 @@
-from typing import Generic, TypeVar
-from boxlet import BoxletGL, Renderer, VertFragShader, Model, RenderInstance
+from typing import TYPE_CHECKING, Generic, TypeVar
+from boxlet import BoxletGL, Renderer
 from OpenGL.GL import *
 
+if TYPE_CHECKING:
+	from boxlet import RenderInstance, Model, VertFragShader
+	T = TypeVar('T', bound=RenderInstance)
+else:
+	T = TypeVar('T')
 
-T = TypeVar('T', bound='RenderInstance')
 
 class InstancedRenderer(Generic[T], Renderer):
-	def __init__(self, model: Model, shader:VertFragShader, instance_cls: type[T], pass_name = ''):			
+	def __init__(self, model: 'Model', shader:'VertFragShader', instance_cls: type[T], pass_name = ''):			
 		self._model = model
 		self._shader = shader
 		self._instance_cls = instance_cls
