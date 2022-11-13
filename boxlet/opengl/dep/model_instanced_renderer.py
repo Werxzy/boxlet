@@ -1,4 +1,4 @@
-from boxlet import Renderer, Texture, VertFragShader, Model, RenderInstance, np
+from boxlet import BoxletGL, Renderer, Texture, VertFragShader, Model, RenderInstance, np
 from OpenGL.GL import *
 
 
@@ -11,12 +11,12 @@ class ModelInstancedRenderer(Renderer):
 		layout(location = 1) in vec2 texcoord;
 		layout(location = 2) in mat4 model;
 
-		uniform mat4 viewProj;
+		uniform mat4 box_viewProj;
 
 		out vec2 uv;
 
 		void main() {
-			gl_Position = viewProj * model * vec4(position, 1);
+			gl_Position = box_viewProj * model * vec4(position, 1);
 			uv = texcoord;
 		}
 		"""
@@ -39,11 +39,10 @@ class ModelInstancedRenderer(Renderer):
 	cube_model = Model.gen_cube()
 
 	class ModelInstance(RenderInstance):
-		model_matrix:np.ndarray = 'mat4', 2
+		model_matrix:np.ndarray = 'attrib', 'mat4', 'model'
+		texture = 'texture', 'tex'
 
-	def __init__(self, model:Model, image:Texture, queue = 0):	
-		super().__init__(queue)
-		
+	def __init__(self, model:Model, image:Texture, pass_name = 'default'):			
 		self.model = model or self.cube_model
 		self.image = image
 
@@ -52,9 +51,14 @@ class ModelInstancedRenderer(Renderer):
 
 		self.model.bind(self.shader)
 	
-		self.instance_list = self.ModelInstance.new_instance_list()
+		self.instance_list = self.ModelInstance.new_instance_list(self.shader)
+		self.instance_list.uniform_data['texture'] = self.image
 
 		glBindVertexArray(0)
+
+		#TODO this is sort of an example
+		#TODO, allow for premade vao and multimodel to reduce vao bind count
+		BoxletGL.add_render_call(pass_name, self.shader, self.render)
 
 	def new_instance(self, **kwargs):
 		return self.instance_list.new_instance(**kwargs)
@@ -62,19 +66,11 @@ class ModelInstancedRenderer(Renderer):
 	def render(self):
 		if self.instance_list.instance_count == 0:
 			return
-
-		glUseProgram(self.shader.program)
-		self.shader.apply_global_uniforms('viewProj')
-
-		glEnable(GL_CULL_FACE)
-		glCullFace(GL_FRONT)
 		
-		glBindVertexArray(self.vao)
-		
-		glActiveTexture(GL_TEXTURE0)
-		glBindTexture(GL_TEXTURE_2D, self.image.image_texture)
+		BoxletGL.bind_vao(self.vao)
 
 		self.instance_list.update_data()
+		self.instance_list.update_uniforms()
 
 		glDrawElementsInstanced(GL_TRIANGLES, self.model.index_count, GL_UNSIGNED_INT, None, self.instance_list.instance_count)
 

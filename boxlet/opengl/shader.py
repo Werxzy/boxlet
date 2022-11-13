@@ -1,6 +1,7 @@
 from OpenGL.GL import *
 from OpenGL.GL import shaders
-from boxlet import Model
+from boxlet import Model, RenderInstance, Texture, np, BoxletGL
+import boxlet.opengl.extra_gl_constants as extra_gl
 
 class Shader:
 
@@ -14,9 +15,9 @@ class Shader:
 	glBindVertexArray(0)
 
 	global_uniforms = {
-		'frameSize': [[0,0]],
-		'cameraSize': [[0,0]],
-		'cameraPos': [[0,0]],
+		'box_frameSize': [[0,0]],
+		'box_cameraSize': [[0,0]],
+		'box_cameraPos': [[0,0]],
 	}
 	
 	def __init__(self, program) -> None:
@@ -48,7 +49,12 @@ class Shader:
 
 		# Gets all the available uniforms
 		self.uniforms:dict[str, tuple[int,int,int]] = dict()
+		self.textures:dict[str, tuple[int,int]] = dict()
+		self.tracked_global_uniforms:list[str] = []
+		self.tracked_global_textures:list[str] = []
 		'key = uniform name\n\nvalue = (count, type, location)'
+
+		used_textures = []
 		
 		glGetProgramiv(self.program, GL_ACTIVE_UNIFORMS, count)
 		for i in range(count.value):
@@ -57,8 +63,33 @@ class Shader:
 			if var_size.value > 1:
 				n = n[:-3]
 
-			self.uniforms[n] = (var_size.value, var_type.value, glGetUniformLocation(self.program, n))
-			# print(n, name_length.value, var_size.value, var_type.value, self.uniforms[n])
+			location = glGetUniformLocation(self.program, n)
+
+			if var_type.value in extra_gl.UNIFORM_TEXTURE_DICT: # texture uniform
+				texture_Loc = ctypes.c_int()
+				glGetUniformiv(self.program, location, texture_Loc)
+				loc = texture_Loc.value
+				while loc in used_textures:
+					loc += 1
+				used_textures.append(loc) 
+				glProgramUniform1i(self.program, location, loc)
+				# sets the binding for a texture if none exists (really needed for 3.3)
+				# NOTE there is no guarentee the texture's uniforms are in order in the shader
+				# FUTURE NOTE if there is a need to relink programs, this will need to be reapplied
+				
+				vt = extra_gl.UNIFORM_TEXTURE_DICT[var_type.value][0]
+				self.textures[n] = (GL_TEXTURE0 + loc, vt)
+				if n.startswith('box_'):
+					self.tracked_global_textures.append(n)
+
+				# print(n, name_length.value, GL_TEXTURE0 + loc, var_type.value, self.textures[n])
+
+			else: # normal uniform
+				self.uniforms[n] = (var_size.value, var_type.value, location)
+				if n.startswith('box_'):
+					self.tracked_global_uniforms.append(n)
+
+				# print(n, name_length.value, var_size.value, var_type.value, self.uniforms[n])
 
 		# Gets all the available uniform blocks
 		self.uniform_blocks:dict[str, int] = dict()
@@ -75,6 +106,11 @@ class Shader:
 
 			self.uniform_blocks[n] = block_binding
 			# print(n)
+
+	def use(self):
+		glUseProgram(self.program)
+		self.apply_global_uniforms(*self.tracked_global_uniforms)
+		#TODO apply global textures
 
 	@staticmethod
 	def add_global_uniform(name, start_value):
@@ -105,59 +141,32 @@ class Shader:
 
 	def apply_uniform(self, name, value):
 		u = self.uniforms[name]
-		Shader.uniform_type_dict[u[1]](u[2], u[0], value)
+		extra_gl.UNIFORM_TYPE_DICT[u[1]][0](u[2], u[0], value)
 
 	def apply_uniform_matrix(self, name, value, flipped = GL_FALSE):
 		u = self.uniforms[name]
-		Shader.uniform_type_dict[u[1]](u[2], u[0], flipped, value)
+		extra_gl.UNIFORM_TYPE_DICT[u[1]][0](u[2], u[0], flipped, value)
+
+	def bind_texture(self, name, texture:int|Texture):
+		if isinstance(texture, Texture):
+			texture = texture.image_texture
+		BoxletGL.bind_texture(*self.textures[name], texture)
 
 	# def destroy(self):
 	# 	glDeleteShader(self.program)
 
-	uniform_type_dict = {
-		int(GL_FLOAT) : glUniform1fv, 
-		int(GL_FLOAT_VEC2) : glUniform2fv, 
-		int(GL_FLOAT_VEC3) : glUniform3fv, 
-		int(GL_FLOAT_VEC4) : glUniform4fv, 
-		int(GL_DOUBLE) : glUniform1dv, 
-		int(GL_DOUBLE_VEC2) : glUniform2dv, 
-		int(GL_DOUBLE_VEC3) : glUniform3dv, 
-		int(GL_DOUBLE_VEC4) : glUniform4dv, 
-		int(GL_INT) : glUniform1iv, 
-		int(GL_INT_VEC2) : glUniform2iv, 
-		int(GL_INT_VEC3) : glUniform3iv, 
-		int(GL_INT_VEC4) : glUniform4iv, 
-		int(GL_UNSIGNED_INT) : glUniform1uiv, 
-		int(GL_UNSIGNED_INT_VEC2) : glUniform2uiv, 
-		int(GL_UNSIGNED_INT_VEC3) : glUniform3uiv, 
-		int(GL_UNSIGNED_INT_VEC4) : glUniform4uiv, 
-		int(GL_BOOL) : glUniform1iv, 
-		int(GL_BOOL_VEC2) : glUniform2iv, 
-		int(GL_BOOL_VEC3) : glUniform3iv, 
-		int(GL_BOOL_VEC4) : glUniform4iv, 
-		int(GL_FLOAT_MAT2) : glUniformMatrix2fv, 
-		int(GL_FLOAT_MAT3) : glUniformMatrix3fv, 
-		int(GL_FLOAT_MAT4) : glUniformMatrix4fv, 
-		int(GL_FLOAT_MAT2x3) : glUniformMatrix2x3fv, 
-		int(GL_FLOAT_MAT2x4) : glUniformMatrix2x4fv, 
-		int(GL_FLOAT_MAT3x2) : glUniformMatrix3x2fv, 
-		int(GL_FLOAT_MAT3x4) : glUniformMatrix3x4fv, 
-		int(GL_FLOAT_MAT4x2) : glUniformMatrix4x2fv, 
-		int(GL_FLOAT_MAT4x3) : glUniformMatrix4x3fv, 
-		int(GL_DOUBLE_MAT2) : glUniformMatrix2fv, 
-		int(GL_DOUBLE_MAT3) : glUniformMatrix3fv, 
-		int(GL_DOUBLE_MAT4) : glUniformMatrix4fv, 
-		int(GL_DOUBLE_MAT2x3) : glUniformMatrix2x3fv, 
-		int(GL_DOUBLE_MAT2x4) : glUniformMatrix2x4fv, 
-		int(GL_DOUBLE_MAT3x2) : glUniformMatrix3x2fv, 
-		int(GL_DOUBLE_MAT3x4) : glUniformMatrix3x4fv, 
-		int(GL_DOUBLE_MAT4x2) : glUniformMatrix4x2fv, 
-		int(GL_DOUBLE_MAT4x3) : glUniformMatrix4x3fv, 
-	}
-	# There are more, but I don't know yet what else is needed
-	# https://registry.khronos.org/OpenGL-Refpages/gl4/html/glGetActiveUniform.xhtml
 
+def generate_once(func):
+	# Runs the function once and returns the results on the current and future calls.
+	# Expects there to be no parameters for the function.
+	func._data = None
+	def gen():
+		if func._data is None:
+			func._data = func()
+		return func._data
+	return gen
 
+	
 class VertFragShader(Shader):
 	def __init__(self, vertex, frag):
 		glBindVertexArray(Shader._test_vao)
@@ -167,6 +176,46 @@ class VertFragShader(Shader):
 		super().__init__(shaders.compileProgram(self.vertex, self.fragment))
 		glBindVertexArray(0)
 
+	@staticmethod
+	@generate_once
+	def gen_basic_shader():
+		vertex_shader = """
+			#version 330
+			layout(location = 0) in vec3 position;
+			layout(location = 1) in vec2 texcoord;
+			layout(location = 2) in mat4 model;
+
+			uniform mat4 box_viewProj;
+
+			out vec2 uv;
+
+			void main() {
+				gl_Position = box_viewProj * model * vec4(position, 1);
+				uv = texcoord;
+			}
+			"""
+		fragment_shader = """
+			#version 330
+			in vec2 uv;
+
+			uniform sampler2D tex;
+
+			out vec4 fragColor;
+
+			void main() {
+				fragColor = texture(tex, uv);
+			}
+			"""
+		return VertFragShader(vertex_shader, fragment_shader)
+
+	@staticmethod
+	@generate_once
+	def gen_basic_instance_class():
+		class ModelInstance(RenderInstance):
+			model_matrix:np.ndarray = 'attrib', 'mat4', 'model'
+			texture:Texture = 'texture', 'tex'
+		return ModelInstance
+		
 
 class ComputeShader(Shader):
 	def __init__(self, compute):

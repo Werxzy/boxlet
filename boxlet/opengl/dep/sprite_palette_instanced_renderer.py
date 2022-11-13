@@ -1,4 +1,4 @@
-from boxlet import Renderer, MultiTexture, VertFragShader, Model, RenderInstance
+from boxlet import BoxletGL, Renderer, MultiTexture, VertFragShader, Model, RenderInstance
 from OpenGL.GL import *
 
 
@@ -12,8 +12,8 @@ class SpritePaletteInstancedRenderer(Renderer):
 		layout(location = 2) in vec3 texPos;
 		layout(location = 3) in vec4 uvPos; // .xy = position, .zw = scale
 
-		uniform vec2 cameraSize;
-		uniform vec2 cameraPos;
+		uniform vec2 box_cameraSize;
+		uniform vec2 box_cameraPos;
 
 		uniform vec2 texSize;
 		
@@ -21,7 +21,7 @@ class SpritePaletteInstancedRenderer(Renderer):
 
 		void main() {
 			vec2 truePos = position * texSize * uvPos.zw + texPos.xy;
-			vec2 screenPos = (truePos - cameraPos) * 2 / cameraSize;
+			vec2 screenPos = (truePos - box_cameraPos) * 2 / box_cameraSize;
 			gl_Position = vec4(screenPos, texPos.z, 1);
 			uv = texcoord * uvPos.zw + uvPos.xy;
 		}
@@ -45,28 +45,29 @@ class SpritePaletteInstancedRenderer(Renderer):
 	model = Model()
 
 	class SpritePaletteInstance(RenderInstance):
-		position = [0,0], 2
-		z = [0], 2
-		uv_pos = [0,0], 3
-		uv_size = [1,1], 3
+		position = 'attrib', [0,0,0], 'texPos'
+		uv_pos = 'attrib', [0,0,1,1], 'uvPos'
+		texture:MultiTexture = 'texture', 'tex'
+		texture_size = 'uniform', 'texSize'
 
 		def set_sprite(self, id):
-			data = self.owner.renderer.image.sub_image_data[id]
-			self.uv_pos = data[0:2]
-			self.uv_size = data[2:4]
+			data = self.texture.sub_image_data[id]
+			self.uv_pos = data
 
-	def __init__(self, image:MultiTexture, queue = 0):	
-		super().__init__(queue)
-		
+	def __init__(self, image:MultiTexture, pass_name = ''):	
 		self.image = image
 
 		self.vao = glGenVertexArrays(1)
 		glBindVertexArray(self.vao)
 
 		self.model.bind(self.shader)
-		self.instance_list = self.SpritePaletteInstance.new_instance_list(self)
+		self.instance_list = self.SpritePaletteInstance.new_instance_list(self.shader)
+		self.instance_list.uniform_data['texture'] = image
+		self.instance_list.uniform_data['texture_size'] = image.size
 
 		glBindVertexArray(0)
+		
+		BoxletGL.add_render_call(pass_name, self.shader, self.render)
 
 	def new_instance(self, **kwargs):
 		return self.instance_list.new_instance(**kwargs)
@@ -74,19 +75,11 @@ class SpritePaletteInstancedRenderer(Renderer):
 	def render(self):
 		if self.instance_list.instance_count == 0:
 			return
-
-		glUseProgram(self.shader.program)
-
-		# apply uniform values
-		self.shader.apply_global_uniforms('cameraSize', 'cameraPos')
-		self.shader.apply_uniform('texSize', self.image.size)
 		
-		glBindVertexArray(self.vao)
-		
-		glActiveTexture(GL_TEXTURE0)
-		glBindTexture(GL_TEXTURE_2D, self.image.image_texture)
+		BoxletGL.bind_vao(self.vao)
 
 		self.instance_list.update_data()
+		self.instance_list.update_uniforms()
 
 		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, None, self.instance_list.instance_count)
 

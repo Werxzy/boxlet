@@ -41,28 +41,15 @@ class Texture:
 	# 	glDeleteTextures(1, [self.image_texture])
 
 
-class MultiTexture:
-	def __init__(self, image:pygame.Surface, sub_image_data:list[tuple[float, float, float, float]], nearest = True):
-		self.image_texture = glGenTextures(1)
+class MultiTexture(Texture):
+	def __init__(self, image:pygame.Surface, sub_image_data:list[tuple[float, float, float, float]], nearest = True, mipmap = False):
+		super().__init__(image, nearest, mipmap)
 
-		glBindTexture(GL_TEXTURE_2D, self.image_texture)
-
-		self.size = np.array([image.get_width(), image.get_height()], np.int32)
-		self.orignal = image
 		self.sub_image_data = list(sub_image_data)
 
-		glTexImage2D(GL_TEXTURE_2D, 
-			0, 
-			GL_RGBA, 
-			self.size[0], 
-			self.size[1], 
-			0, 
-			GL_RGBA, 
-			GL_UNSIGNED_BYTE, 
-			pygame.image.tostring(image, "RGBA", True))
+	# @staticmethod
+	# def create_from_textures(*images:list[pygame.Surface]):
+	# 	...
+		# TODO creates a single image from multiple images and stores their coordinates in sub_image_data
 
-		# set the filtering mode for the texture
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST if nearest else GL_LINEAR)
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST if nearest else GL_LINEAR)
 
-		glBindTexture(GL_TEXTURE_2D, 0)

@@ -1,136 +1,181 @@
-from typing import Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, TypeVar
 from OpenGL.GL import *
 from ctypes import c_void_p, c_float
 import numpy as np
 from sys import maxsize
 import bisect
+import boxlet.opengl.extra_gl_constants as extra_gl
+from itertools import chain
+
+if TYPE_CHECKING:
+	from boxlet import Shader
 
 
-class RenderInstancePropertyFloats:
-	def __init__(self, size, offset, stride) -> None:
-		self._stride = stride
-		self._offsets = np.arange(size) + offset
-
-	def __get__(self, instance:'RenderInstance', owner):
-		return instance.owner.data[self._offsets + self._stride * instance.id]
-		
-	def __set__(self, instance:'RenderInstance', value):
-		r = self._offsets + self._stride * instance.id
-		instance.owner.update_range = [
-			min(r[0], instance.owner.update_range[0]),
-			max(r[-1], instance.owner.update_range[1])
-		]
-		instance.owner.data[r] = value
-
-
-class RenderInstancePropertyMatrix4:
-	def __init__(self, offset, stride) -> None:
-		self._stride = stride
-		self._offsets = np.arange(16) + offset
+class RenderInstanceProperty:
+	def __init__(self, name) -> None:
+		self._name = name
 
 	def __get__(self, instance:'RenderInstance', owner):
-		return instance.owner.data[self._offsets + self._stride * instance.id].reshape((4,4))
+		return instance.owner._data[instance.id][self._name]
 		
 	def __set__(self, instance:'RenderInstance', value):
-		r = self._offsets + self._stride * instance.id
-		instance.owner.update_range = [
-			min(r[0], instance.owner.update_range[0]),
-			max(r[-1], instance.owner.update_range[1])
+		instance.owner._update_range = [
+			min(instance.id, instance.owner._update_range[0]),
+			max(instance.id, instance.owner._update_range[1])
 		]
-		instance.owner.data[r] = value.reshape((16,))
+		instance.owner._data[instance.id][self._name] = value
+
+
+class RenderInstanceListProperty:
+	# not 100% sure if I can just remove this class
+	# or if there's a better way to manage uniform data
+	def __init__(self, name) -> None:
+		self._name = name
+
+	def __get__(self, instance:'RenderInstance', owner):
+		return instance.owner.uniform_data[self._name]
+		# return getattr(instance.owner, self._name)
+
+	def __set__(self, instance:'RenderInstance', value):
+		instance.owner.uniform_data[self._name] = value
+		# setattr(instance.owner, self._name, value)
 
 
 class RenderInstanceMetaclass(type):
 	def __new__(cls, clsname, bases, attrs:dict[str], **kwargs):
-		vars:list[tuple[str, tuple[tuple, int]]] = []
-		total = 0
-
 		# collects all variables
+		shader_attributes:list[tuple[str, str, int, np.ndarray | None, int]] = []
+		total = 0
+		dtype_names = []
+		dtype_formats = []
+		shader_uniforms = dict()
+		shader_textures = dict()
+
 		for k, v in attrs.items():
-			if not k.startswith('_') and isinstance(v, (tuple, list)):
-				vars.append((k, v))
-				if isinstance(v[0], str):
-					if v[0] == 'mat4':
-						total += 16
-				else:
-					total += len(v[0]) if isinstance(v[0], (list, tuple)) else 1
+			if not k.startswith('_') and isinstance(v, tuple):
+				attr_type  = v[1]
+				if v[0] == 'attrib':
+					default = None
+					if isinstance(attr_type, str):
+						t = extra_gl.UNIFORM_SYMBOL_DICT[attr_type]
+						s = extra_gl.UNIFORM_TYPE_DICT[t][2]
+						if attr_type.startswith('mat4'):
+							default = np.identity(4)
 
-		vars.sort(key = lambda kv: kv[1][1])
+					elif isinstance(attr_type, list):
+						s = len(attr_type)
+						t = extra_gl.VECTOR_TYPES['f'][s - 1]
+						default = np.array(attr_type)
 
-		running_total = 0
-		bind_data:dict[int, list[int, int]] = {} # shader_location : [size, offset]
-		attrs['_bind_defaults'] = []
-		
-		for k, (d, loc) in vars:
-			if isinstance(d, str):
-				if d == 'mat4':
-					attrs[k] = RenderInstancePropertyMatrix4(running_total, total)
+					elif isinstance(attr_type, np.ndarray):
+						t = attr_type.dtype.kind
+						s = attr_type.size
+						default = np.array(attr_type)
 
-					for i in range(4):
-						bind_data[loc + i] = (4, running_total + i * 4)
+						if t not in extra_gl.VECTOR_TYPES:
+							raise Exception('Invalid numpy type.')
 
-					running_total += 16
+						t = extra_gl.VECTOR_TYPES[t][s - 1]
 
-					attrs['_bind_defaults'].extend([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]) 
-					# identity matrix is the default, maybe allow for custom default
+					else:
+						raise Exception()
 
+					
+					total += s
+					shader_attributes.append((k, v[2], t, default, s, attr_type))
+					dtype_names.append(k)
+					dtype_formats.append(extra_gl.UNIFORM_TYPE_DICT[t][3])
+
+				elif v[0] == 'uniform':
+					shader_uniforms[v[1]] = k
+					attrs[k] = RenderInstanceListProperty(k)
+
+				elif v[0] == 'texture':
+					shader_textures[v[1]] = k
+					attrs[k] = RenderInstanceListProperty(k)
+
+		full_dtype = np.dtype({'names' : dtype_names, 'formats' : dtype_formats})
+		full_default = np.array([0], full_dtype)
+		bind_info = []
+		total *= sizeof(c_float)
+		offset = 0
+
+		for local_name, shader_name, attr_type, default, size, full_type in shader_attributes:
+			attrs[local_name] = RenderInstanceProperty(local_name)
+			if default is not None:
+				full_default[local_name] = default
+			
+			if full_type == 'mat4': # matricies take up multiple locations
+				for i in range(4):
+					bind_info.append((shader_name, i, (size//4, extra_gl.UNIFORM_TYPE_DICT[attr_type][1], GL_FALSE, total, c_void_p(offset + i * sizeof(c_float) * 4))))
 			else:
-				s = len(d) if isinstance(d, (list, tuple)) else 1
-				attrs[k] = RenderInstancePropertyFloats(s, running_total, total)
+				bind_info.append((shader_name, 0, (size, extra_gl.UNIFORM_TYPE_DICT[attr_type][1], GL_FALSE, total, c_void_p(offset))))
+			
+			offset += size * sizeof(c_float)
 
-				if loc not in bind_data:
-					bind_data[loc] = (s, running_total)
-				else:
-					bind_data[loc] = (bind_data[loc][0] + s, bind_data[loc][1])
-
-				running_total += s
-
-				attrs['_bind_defaults'].extend(d)
-
-		attrs['_bind_data'] = bind_data
+		attrs['_bind_defaults'] = full_default
 		attrs['_bind_stride'] = total	
-		
+		attrs['_bind_info'] = bind_info
+		attrs['_bind_dtype'] = full_dtype
+
+		attrs['_uniform_texture_info'] = shader_textures
+		attrs['_uniform_info'] = shader_uniforms
+
 		return super().__new__(cls, clsname, bases, attrs)
 
 
 T = TypeVar('T', bound='RenderInstance')
 class RenderInstanceList(Generic[T]):
-	def __init__(self, cls:T, data_vbo, renderer = None):	
-		self.cls = cls
-		self.instances:list[T] = []
-		self.data = np.zeros(0, np.float32)
-		self.data_vbo = data_vbo
-		self.update_range = [maxsize, -1]
-		self.update_full = False # if set to true, sets the full set of data
-		self.renderer = renderer
+	def __init__(self, cls:T, shaders:'tuple[Shader]|list[Shader]'):	
+		self._cls = cls
+		self._instances:list[T] = []
+		self._data = np.zeros(0, cls._bind_dtype)
+		self._data_vbo = cls.bind_new_vbo(shaders)
+		self._update_range = [maxsize, -1]
+		self._update_full = False # if set to true, sets the full set of data
 
-		self.free_indices = list()
-		self.to_delete = set()
+		self._free_indices = list()
+		self._to_delete = set()
 		self.instance_count = 0
-		self.instance_total_space = 0
+		self._instance_total_space = 0
+		self.uniform_data = dict((u,None) for u in chain(cls._uniform_texture_info.values(), cls._uniform_info.values()))
+		self.uniform_info:dict['Shader', list[tuple[str,str]]] = dict([
+				(
+					s, 
+					[(sn, ln) for sn, ln in cls._uniform_info.items() if sn in s.uniforms]
+				) 
+				for s in shaders
+			])
+		self.uniform_texture_info:dict['Shader', list[tuple[str,str]]] = dict([
+				(
+					s, 
+					[(sn, ln) for sn, ln in cls._uniform_texture_info.items() if sn in s.textures]
+				) 
+				for s in shaders
+			])
 
 		self._expand_data(16)
 
 	# TODO make a function for creating multiple instances at once, or even one for just making room ahead of time
 	def new_instance(self, **kwargs) -> T:
-		if not self.free_indices:
-			self._expand_data(self.instance_total_space) # Currently just double the amount every time it needs more space.
-			self.update_full = True
+		if not self._free_indices:
+			self._expand_data(self._instance_total_space) # Currently just double the amount every time it needs more space.
+			self._update_full = True
 
-		id = self.free_indices.pop(0)
-		new_inst = self.cls(self, id)
-		if id in self.to_delete:
-			self.to_delete.remove(id)
-			self.instances[id] = new_inst
+		id = self._free_indices.pop(0)
+		new_inst = self._cls(self, id)
+		if id in self._to_delete:
+			self._to_delete.remove(id)
+			self._instances[id] = new_inst
 		else:
-			self.instances.append(new_inst)
+			self._instances.append(new_inst)
 		self.instance_count += 1
 
-		r = self.cls.get_stride_range(id)
-		self.data[r] = self.cls.get_defaults()
-		self.update_range = [
-			min(r[0], self.update_range[0]),
-			max(r[-1], self.update_range[1])
+		r = id
+		self._data[r] = self._cls.get_defaults()
+		self._update_range = [
+			min(r, self._update_range[0]),
+			max(r, self._update_range[1])
 		]
 
 		for k,v in kwargs.items():
@@ -139,15 +184,14 @@ class RenderInstanceList(Generic[T]):
 		return new_inst
 
 	def _expand_data(self, amount):
-		self.free_indices.extend(range(self.instance_total_space, self.instance_total_space + amount))
-		self.instance_total_space += amount
-		# self.data = np.append(self.data, np.tile(self.cls.get_defaults(), amount)).astype(np.float32)
-		self.data = np.append(self.data, [0] * (amount*self.cls._bind_stride)).astype(np.float32)
-		self.update_full = True
+		self._free_indices.extend(range(self._instance_total_space, self._instance_total_space + amount))
+		self._instance_total_space += amount
+		self._data = np.append(self._data, np.array([0]*amount, dtype=self._data.dtype)) # TODO double check that this creates the proper space
+		self._update_full = True
 
 	def destroy_instance(self, id):
-		self.to_delete.add(id)
-		bisect.insort(self.free_indices, id)
+		self._to_delete.add(id)
+		bisect.insort(self._free_indices, id)
 		self.instance_count -= 1
 
 	def update_data(self):
@@ -155,42 +199,50 @@ class RenderInstanceList(Generic[T]):
 		Updates the data to the VBO.
 		"""
 
-		if self.to_delete:
-			for i in sorted(self.to_delete, reverse=True):
-				self.instances.pop(i)
-			self.to_delete.clear()
+		if self._to_delete:
+			for i in sorted(self._to_delete, reverse=True):
+				self._instances.pop(i)
+			self._to_delete.clear()
 
 			mi = None
 			ma = 0
 
-			for i, inst in enumerate(self.instances): # instances should preserve order
+			for i, inst in enumerate(self._instances): # instances should preserve order
 				if i == inst.id: continue
 
-				r = self.cls.get_stride_range(i)
-				self.data[r] = self.data[self.cls.get_stride_range(inst.id)]
+				r = i
+				self._data[r] = self._data[inst.id]
 				inst.id = i
 
 				# must be 'is None'
-				if mi is None: mi = r[0]
-				ma = r[-1]
+				if mi is None: mi = r
+				ma = r
 
 			if mi is not None:
-				self.update_range = [mi, ma]
+				self._update_range = [mi, ma]
 			
-			self.free_indices = list(range(self.instance_count, self.instance_total_space))
+			self._free_indices = list(range(self.instance_count, self._instance_total_space))
 
-		if self.update_full: # updates the entire buffer object, needed if the size changes.
-			self.update_full = False
-			glBindBuffer(GL_ARRAY_BUFFER, self.data_vbo)
-			glBufferData(GL_ARRAY_BUFFER, self.data, GL_STREAM_DRAW)
-			self.update_range = [maxsize, -1]
+		if self._update_full: # updates the entire buffer object, needed if the size changes.
+			self._update_full = False
+			glBindBuffer(GL_ARRAY_BUFFER, self._data_vbo)
+			glBufferData(GL_ARRAY_BUFFER, self._data, GL_STREAM_DRAW)
+			self._update_range = [maxsize, -1]
 
-		elif self.update_range[1] != -1: # updates part of the buffer object
-			a, b = self.update_range[0], self.update_range[1] + 1
-			glBindBuffer(GL_ARRAY_BUFFER, self.data_vbo)
-			glBufferSubData(GL_ARRAY_BUFFER, sizeof(c_float) * a, sizeof(c_float) * (b - a), self.data[a:b])
-			self.update_range = [maxsize, -1]
+		elif self._update_range[1] != -1: # updates part of the buffer object
+			a, b = self._update_range[0], self._update_range[1] + 1
+			s = self._cls._bind_stride
+			glBindBuffer(GL_ARRAY_BUFFER, self._data_vbo)
+			glBufferSubData(GL_ARRAY_BUFFER, s * a, s * (b - a), self._data[a:b])
+			self._update_range = [maxsize, -1]
 			# this method is a bit weak to updates that include few bytes, but from opposite ends of the data
+
+	def update_uniforms(self, shader:'Shader'):
+		for shader_name, local_name in self.uniform_info[shader]:
+			shader.apply_uniform(shader_name, self.uniform_data[local_name])
+
+		for shader_name, local_name in self.uniform_texture_info[shader]:
+			shader.bind_texture(shader_name, self.uniform_data[local_name])
 
 
 class RenderInstance(metaclass = RenderInstanceMetaclass):
@@ -202,33 +254,33 @@ class RenderInstance(metaclass = RenderInstanceMetaclass):
 		self.owner.destroy_instance(self.id)
 
 	@classmethod
-	def bind_new_vbo(cls):
+	def bind_new_vbo(cls, shaders:'tuple[Shader]|list[Shader]'):
 		""" 
 		Generates a VBO to hold data for all instances of the class and binds it to the current VAO
 		"""
+
 		data_vbo = glGenBuffers(1)
 		glBindBuffer(GL_ARRAY_BUFFER, data_vbo)
 		glBufferData(GL_ARRAY_BUFFER, np.zeros(0, np.float32), GL_STREAM_DRAW) # just in case it needs something to start with
 
-		for loc, (si, off) in cls._bind_data.items():
-			glVertexAttribPointer(loc, si, GL_FLOAT, GL_FALSE, sizeof(c_float) * cls._bind_stride, c_void_p(sizeof(c_float) * off)) 
-			glEnableVertexAttribArray(loc)
-			glVertexAttribDivisor(loc, 1)
-		
+		for name, locOffset, binds in cls._bind_info:
+			for s in shaders:
+				if name in s.vertex_attributes:
+					loc = s.vertex_attributes[name][2] + locOffset
+					glVertexAttribPointer(loc, *binds) 
+					glEnableVertexAttribArray(loc)
+					glVertexAttribDivisor(loc, 1)
+
 		return data_vbo
-	
+
 	@classmethod
 	def get_defaults(cls):
 		return cls._bind_defaults
 
 	@classmethod
-	def get_stride_range(cls, id:int):
-		return np.arange(cls._bind_stride) + cls._bind_stride * id
-
-	@classmethod
-	def new_instance_list(cls:type[T], renderer = None) -> RenderInstanceList[T]:
+	def new_instance_list(cls:type[T], *shaders:'Shader') -> RenderInstanceList[T]:
 		"""
 		Creates a new render instance manager and binds a vbo for the data to the current vao.
 		"""
-		return RenderInstanceList(cls, cls.bind_new_vbo(), renderer)
+		return RenderInstanceList(cls, shaders)
 

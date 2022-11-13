@@ -40,7 +40,7 @@ class Manager:
 				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MINOR_VERSION, int(environ.get('BOXLET_GL_CONTEXT_MINOR_VERSION', '3')))
 				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_PROFILE_MASK, pygame.GL_CONTEXT_PROFILE_CORE)
 			if self.fullscreen:
-				self.display = pygame.display.set_mode(flags = pygame.OPENGL | pygame.FULLSCREEN, vsync = self.vsync)
+				self.display = pygame.display.set_mode(flags = pygame.OPENGL | pygame.FULLSCREEN | pygame.DOUBLEBUF, vsync = self.vsync)
 				self.display_size = np.array(self.display.get_size())
 			else:
 				self.display = pygame.display.set_mode(self.display_size, flags = pygame.OPENGL | pygame.DOUBLEBUF, vsync = self.vsync)
@@ -133,7 +133,7 @@ class Manager:
 			pygame.display.update()
 		
 		else:
-			Renderer.render_all()
+			BoxletGL.render()
 			pygame.display.flip()
 
 	def set_display(self, display_size = None, canvas_size = None, fullscreen = None, vsync = None):

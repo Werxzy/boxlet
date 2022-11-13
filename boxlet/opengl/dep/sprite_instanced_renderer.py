@@ -3,6 +3,8 @@ from OpenGL.GL import *
 from ctypes import c_float
 import numpy as np
 
+# currently will need to be reworked
+
 class SpriteInstancedRenderer(Renderer):
 	# position and size are in pixel coordinates
 
@@ -12,8 +14,8 @@ class SpriteInstancedRenderer(Renderer):
 		layout(location = 1) in vec2 uvIn;
 		layout(location = 2) in vec3 texPos;
 
-		uniform vec2 cameraSize;
-		uniform vec2 cameraPos;
+		uniform vec2 box_cameraSize;
+		uniform vec2 box_cameraPos;
 
 		uniform vec2 texSize;
 		
@@ -21,7 +23,7 @@ class SpriteInstancedRenderer(Renderer):
 
 		void main() {
 			vec2 truePos = pos * texSize + texPos.xy; // may need to adjust model
-			vec2 screenPos = truePos / cameraSize + cameraPos; // may want to floor
+			vec2 screenPos = truePos / box_cameraSize + box_cameraPos; // may want to floor
 			gl_Position = vec4(screenPos, texPos.z, 1);
 			uv = uvIn;
 		}
@@ -39,7 +41,7 @@ class SpriteInstancedRenderer(Renderer):
 		}
 		"""
 
-	shader = VertFragShader(vertex_shader, fragment_shader, ['cameraSize', 'cameraPos', 'texSize'])
+	shader = VertFragShader(vertex_shader, fragment_shader)
 	model = Model()
 
 	vao = glGenVertexArrays(1)
