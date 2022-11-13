@@ -35,9 +35,7 @@ shader = VertFragShader(vertex = """
 	out vec4 fragColor;
 
 	void main() {
-		vec4 color = texture(tex, uv);
-		//vec4 color = vec4(uv,0,1);
-		fragColor = color;
+		fragColor = texture(tex, uv);
 	}
 	""")
 

@@ -39,7 +39,7 @@ class InstancedRenderer(Generic[T], Renderer):
 		BoxletGL.bind_vao(self.vao)
 
 		self.instance_list.update_data()
-		self.instance_list.update_uniforms()
+		self.instance_list.update_uniforms(self._shader)
 
 		glDrawElementsInstanced(GL_TRIANGLES, self._model.index_count, GL_UNSIGNED_INT, None, self.instance_list.instance_count)
 

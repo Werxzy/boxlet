@@ -126,12 +126,11 @@ class RenderInstanceMetaclass(type):
 
 T = TypeVar('T', bound='RenderInstance')
 class RenderInstanceList(Generic[T]):
-	def __init__(self, cls:T, shader:'Shader'):	
+	def __init__(self, cls:T, shaders:'tuple[Shader]|list[Shader]'):	
 		self._cls = cls
-		self._shader = shader
 		self._instances:list[T] = []
 		self._data = np.zeros(0, cls._bind_dtype)
-		self._data_vbo = cls.bind_new_vbo(shader)
+		self._data_vbo = cls.bind_new_vbo(shaders)
 		self._update_range = [maxsize, -1]
 		self._update_full = False # if set to true, sets the full set of data
 
@@ -140,8 +139,20 @@ class RenderInstanceList(Generic[T]):
 		self.instance_count = 0
 		self._instance_total_space = 0
 		self.uniform_data = dict((u,None) for u in chain(cls._uniform_texture_info.values(), cls._uniform_info.values()))
-		self.uniform_info = [(sn, ln) for sn, ln in cls._uniform_info.items() if sn in shader.uniforms ]
-		self.uniform_texture_info = [(sn, ln) for sn, ln in cls._uniform_texture_info.items() if sn in shader.textures ]
+		self.uniform_info:dict['Shader', list[tuple[str,str]]] = dict([
+				(
+					s, 
+					[(sn, ln) for sn, ln in cls._uniform_info.items() if sn in s.uniforms]
+				) 
+				for s in shaders
+			])
+		self.uniform_texture_info:dict['Shader', list[tuple[str,str]]] = dict([
+				(
+					s, 
+					[(sn, ln) for sn, ln in cls._uniform_texture_info.items() if sn in s.textures]
+				) 
+				for s in shaders
+			])
 
 		self._expand_data(16)
 
@@ -226,12 +237,12 @@ class RenderInstanceList(Generic[T]):
 			self._update_range = [maxsize, -1]
 			# this method is a bit weak to updates that include few bytes, but from opposite ends of the data
 
-	def update_uniforms(self):
-		for shader_name, local_name in self.uniform_info:
-			self._shader.apply_uniform(shader_name, self.uniform_data[local_name])
+	def update_uniforms(self, shader:'Shader'):
+		for shader_name, local_name in self.uniform_info[shader]:
+			shader.apply_uniform(shader_name, self.uniform_data[local_name])
 
-		for shader_name, local_name in self.uniform_texture_info:
-			self._shader.bind_texture(shader_name, self.uniform_data[local_name])
+		for shader_name, local_name in self.uniform_texture_info[shader]:
+			shader.bind_texture(shader_name, self.uniform_data[local_name])
 
 
 class RenderInstance(metaclass = RenderInstanceMetaclass):
@@ -242,24 +253,8 @@ class RenderInstance(metaclass = RenderInstanceMetaclass):
 	def destroy(self):
 		self.owner.destroy_instance(self.id)
 
-	# @classmethod
-	# def bind_new_vbo(cls):
-	# 	""" 
-	# 	Generates a VBO to hold data for all instances of the class and binds it to the current VAO
-	# 	"""
-	# 	data_vbo = glGenBuffers(1)
-	# 	glBindBuffer(GL_ARRAY_BUFFER, data_vbo)
-	# 	glBufferData(GL_ARRAY_BUFFER, np.zeros(0, np.float32), GL_STREAM_DRAW) # just in case it needs something to start with
-
-	# 	for loc, (si, off) in cls._bind_data.items():
-	# 		glVertexAttribPointer(loc, si, GL_FLOAT, GL_FALSE, sizeof(c_float) * cls._bind_stride, c_void_p(sizeof(c_float) * off)) 
-	# 		glEnableVertexAttribArray(loc)
-	# 		glVertexAttribDivisor(loc, 1)
-		
-	# 	return data_vbo
-
 	@classmethod
-	def bind_new_vbo(cls, shader:'Shader'):
+	def bind_new_vbo(cls, shaders:'tuple[Shader]|list[Shader]'):
 		""" 
 		Generates a VBO to hold data for all instances of the class and binds it to the current VAO
 		"""
@@ -269,11 +264,12 @@ class RenderInstance(metaclass = RenderInstanceMetaclass):
 		glBufferData(GL_ARRAY_BUFFER, np.zeros(0, np.float32), GL_STREAM_DRAW) # just in case it needs something to start with
 
 		for name, locOffset, binds in cls._bind_info:
-			if name in shader.vertex_attributes:
-				loc = shader.vertex_attributes[name][2] + locOffset
-				glVertexAttribPointer(loc, *binds) 
-				glEnableVertexAttribArray(loc)
-				glVertexAttribDivisor(loc, 1)
+			for s in shaders:
+				if name in s.vertex_attributes:
+					loc = s.vertex_attributes[name][2] + locOffset
+					glVertexAttribPointer(loc, *binds) 
+					glEnableVertexAttribArray(loc)
+					glVertexAttribDivisor(loc, 1)
 
 		return data_vbo
 
@@ -282,9 +278,9 @@ class RenderInstance(metaclass = RenderInstanceMetaclass):
 		return cls._bind_defaults
 
 	@classmethod
-	def new_instance_list(cls:type[T], shader:'Shader') -> RenderInstanceList[T]:
+	def new_instance_list(cls:type[T], *shaders:'Shader') -> RenderInstanceList[T]:
 		"""
 		Creates a new render instance manager and binds a vbo for the data to the current vao.
 		"""
-		return RenderInstanceList(cls, shader)
+		return RenderInstanceList(cls, shaders)
 
