@@ -1,7 +1,9 @@
 from math import ceil, floor
-from boxlet import BoxletGL, Renderer, Texture, VertFragShader, Model, lerp
-from OpenGL.GL import *
+
 import numpy as np
+from OpenGL.GL import *
+
+from ... import BoxletGL, Model, Renderer, Texture, VertFragShader, lerp
 
 
 class TerrainRenderer(Renderer):

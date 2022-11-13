@@ -1,7 +1,9 @@
+from . import extra_gl_constants as extra_gl
 from OpenGL.GL import *
 from OpenGL.GL import shaders
-from boxlet import Model, RenderInstance, Texture, np, BoxletGL
-import boxlet.opengl.extra_gl_constants as extra_gl
+
+from .. import BoxletGL, Model, RenderInstance, Texture, np
+
 
 class Shader:
 

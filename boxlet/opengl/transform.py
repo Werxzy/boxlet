@@ -1,4 +1,4 @@
-from boxlet import Tmath, np
+from .. import Tmath, np
 
 
 class Transform:

@@ -1,4 +1,4 @@
-from boxlet import *
+from .. import Entity, Camera3D, np, pygame, manager, Tmath, clamp
 
 
 class CameraController(Entity):

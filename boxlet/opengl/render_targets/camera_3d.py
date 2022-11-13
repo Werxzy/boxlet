@@ -1,7 +1,8 @@
-import numpy as np
 import math
 
-from boxlet import Shader, Tmath, manager, Transform, FrameBufferStep
+import numpy as np
+
+from ... import FrameBufferStep, Shader, Tmath, Transform, manager
 
 
 class Camera3D(Transform, FrameBufferStep):

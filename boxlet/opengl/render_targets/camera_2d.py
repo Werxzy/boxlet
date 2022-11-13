@@ -1,5 +1,6 @@
 import numpy as np
-from boxlet import FrameBufferStep, Shader
+
+from ... import FrameBufferStep, Shader
 
 
 class Camera2D(FrameBufferStep):

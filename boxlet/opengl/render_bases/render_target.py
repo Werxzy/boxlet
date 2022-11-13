@@ -1,4 +1,5 @@
-from boxlet import BoxletGL
+from ... import BoxletGL
+
 
 class RenderTarget:
 	def __init__(self, queue = 0, pass_names:list[str] = None) -> None:

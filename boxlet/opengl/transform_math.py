@@ -1,5 +1,6 @@
-import numpy as np
 import math
+
+import numpy as np
 
 # https://community.khronos.org/t/view-and-perspective-matrices/74154/2
 

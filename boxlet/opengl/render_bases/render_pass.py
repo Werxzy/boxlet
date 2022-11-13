@@ -1,5 +1,6 @@
-from boxlet import BoxletGL
 from OpenGL.GL import *
+
+from ... import BoxletGL
 
 
 class RenderPass:

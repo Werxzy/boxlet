@@ -1,41 +1,48 @@
+import os
+
 import pygame
 import numpy as np
 
-import os
 USE_OPENGL = os.environ.get('BOXLET_RENDER_MODE', 'sdl2') == 'opengl'
 
-from boxlet.math_extra import *
+from .math_extra import *
 if USE_OPENGL:
-	import boxlet.opengl.transform_math as Tmath 
+	from .opengl import transform_math as Tmath 
 
-	from boxlet.opengl.boxlet_gl import BoxletGL
+	from .opengl.boxlet_gl import BoxletGL
 	
-	from boxlet.opengl.render_bases.renderer import Renderer
-	from boxlet.opengl.render_bases.render_pass import RenderPass
-	from boxlet.opengl.render_bases.render_target import RenderTarget
-	from boxlet.opengl.render_instance_metaclass import RenderInstance
+	from .opengl.render_bases.renderer import Renderer
+	from .opengl.render_bases.render_pass import RenderPass
+	from .opengl.render_bases.render_target import RenderTarget
+	from .opengl.render_instance_metaclass import RenderInstance
 
-from boxlet.entity import Entity
-from boxlet.manager import instance as manager
-from boxlet.vary_floats import VaryFloats
+else:
+	class BoxletGL:
+		@staticmethod
+		def render():
+			raise Exception('BoxletGL not imported properly')
+
+from .entity import Entity
+from .manager import instance as manager
+from .vary_floats import VaryFloats
 
 # anything using opengl when imported needs to be imported AFTER pygame is initialized
 if USE_OPENGL:
-	from boxlet.opengl.transform import Transform
-	from boxlet.opengl.model import Model
-	from boxlet.opengl.texture import Texture, MultiTexture
-	from boxlet.opengl.shader import Shader, VertFragShader, ComputeShader
+	from .opengl.transform import Transform
+	from .opengl.model import Model
+	from .opengl.texture import Texture, MultiTexture
+	from .opengl.shader import Shader, VertFragShader, ComputeShader
 
-	from boxlet.opengl.render_bases.render_pass import PassOpaque
+	from .opengl.render_bases.render_pass import PassOpaque
 
-	from boxlet.opengl.render_targets.render_target_frame_buffer import FrameBufferStep, ApplyShaderToFrame, ApplyDitherToFrame, SimpleClearStep
-	from boxlet.opengl.render_targets.camera_3d import Camera3D
-	from boxlet.opengl.render_targets.camera_2d import Camera2D
-	from boxlet.opengl.renderers.terrain_renderer import TerrainRenderer
+	from .opengl.render_targets.render_target_frame_buffer import FrameBufferStep, ApplyShaderToFrame, ApplyDitherToFrame, SimpleClearStep
+	from .opengl.render_targets.camera_3d import Camera3D
+	from .opengl.render_targets.camera_2d import Camera2D
+	from .opengl.renderers.terrain_renderer import TerrainRenderer
 
-	from boxlet.opengl.camera_controller import CameraController
+	from .opengl.camera_controller import CameraController
 
 # if build:
-from boxlet.debug import Debug
+from .debug import Debug
 
 del USE_OPENGL

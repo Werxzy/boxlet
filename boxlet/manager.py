@@ -1,19 +1,18 @@
 import time
-from boxlet import *
 
+from . import Entity, clamp, np, pygame, os, BoxletGL
+	
 
 class Manager:
 
 	def __init__(self) -> None:
 		pygame.init()
 
-		from os import environ
-
-		self.fullscreen = int(environ.get('BOXLET_FULLSCREEN', '0'))
+		self.fullscreen = int(os.environ.get('BOXLET_FULLSCREEN', '0'))
 		if not self.fullscreen:
-			self.display_size = np.array([int(i) for i in environ.get('BOXLET_RESOLUTION', '960,540').split(',')])
+			self.display_size = np.array([int(i) for i in os.environ.get('BOXLET_RESOLUTION', '960,540').split(',')])
 		
-		self.render_mode = environ.get('BOXLET_RENDER_MODE', 'sdl2')
+		self.render_mode = os.environ.get('BOXLET_RENDER_MODE', 'sdl2')
 		if self.render_mode == 'sdl2':
 			self.vsync = 0
 			self.screen_pos = np.zeros(2)
@@ -23,21 +22,21 @@ class Manager:
 			else:
 				self.display = pygame.display.set_mode(self.display_size, flags = pygame.DOUBLEBUF)
 
-			self.fill_color = environ.get('BOXLET_FILL_COLOR', 'black')
+			self.fill_color = os.environ.get('BOXLET_FILL_COLOR', 'black')
 			if self.fill_color.count(',') > 0: # instead create a list
 				self.fill_color = [int(c) for c in self.fill_color.split(',')]
 
-			self.canvas_size = np.array([int(i) for i in environ.get('BOXLET_CANVAS_SIZE', '0,0').split(',')])
+			self.canvas_size = np.array([int(i) for i in os.environ.get('BOXLET_CANVAS_SIZE', '0,0').split(',')])
 			if 0 in self.canvas_size:
 				self.canvas_size = np.array(self.display_size)
 			self.canvas = pygame.surface.Surface(self.canvas_size)
 		
 		elif self.render_mode == 'opengl':
-			self.vsync = int(environ.get('BOXLET_OPENGL_VSYNC', '1'))
+			self.vsync = int(os.environ.get('BOXLET_OPENGL_VSYNC', '1'))
 
-			if environ.get('BOXLET_SKIP_GL_CONTEXT_SETUP', '0') == '0':
-				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MAJOR_VERSION, int(environ.get('BOXLET_GL_CONTEXT_MAJOR_VERSION', '3')))
-				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MINOR_VERSION, int(environ.get('BOXLET_GL_CONTEXT_MINOR_VERSION', '3')))
+			if os.environ.get('BOXLET_SKIP_GL_CONTEXT_SETUP', '0') == '0':
+				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MAJOR_VERSION, int(os.environ.get('BOXLET_GL_CONTEXT_MAJOR_VERSION', '3')))
+				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MINOR_VERSION, int(os.environ.get('BOXLET_GL_CONTEXT_MINOR_VERSION', '3')))
 				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_PROFILE_MASK, pygame.GL_CONTEXT_PROFILE_CORE)
 			if self.fullscreen:
 				self.display = pygame.display.set_mode(flags = pygame.OPENGL | pygame.FULLSCREEN | pygame.DOUBLEBUF, vsync = self.vsync)
@@ -53,8 +52,8 @@ class Manager:
 
 		self.clock = pygame.time.Clock()
 
-		self.fps = int(environ.get('BOXLET_FRAME_RATE', '120')) # frames per second, may get replaced by turning on vsync
-		self.ups = int(environ.get('BOXLET_UPDATE_RATE', '60')) # fixed updates per second
+		self.fps = int(os.environ.get('BOXLET_FRAME_RATE', '120')) # frames per second, may get replaced by turning on vsync
+		self.ups = int(os.environ.get('BOXLET_UPDATE_RATE', '60')) # fixed updates per second
 		self.fixed_delta_time = 1 / self.ups # time passed for fixed update
 		self.delta_time = 0.0 # time passed for vary update
 		self.max_delta_time = self.fixed_delta_time * 3 # prevents large jumps in time, either from lag or changing the clock

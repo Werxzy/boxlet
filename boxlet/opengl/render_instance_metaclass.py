@@ -1,14 +1,16 @@
-from typing import TYPE_CHECKING, Generic, TypeVar
-from OpenGL.GL import *
-from ctypes import c_void_p, c_float
-import numpy as np
-from sys import maxsize
 import bisect
-import boxlet.opengl.extra_gl_constants as extra_gl
+from ctypes import c_float, c_void_p
 from itertools import chain
+from sys import maxsize
+from typing import TYPE_CHECKING, Generic, TypeVar
+
+import numpy as np
+from OpenGL.GL import *
+
+from . import extra_gl_constants as extra_gl
 
 if TYPE_CHECKING:
-	from boxlet import Shader
+	from .. import Shader
 
 
 class RenderInstanceProperty:

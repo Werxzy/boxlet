@@ -1,5 +1,7 @@
-from boxlet import BoxletGL, manager, Shader, VertFragShader, Model, RenderTarget
 from OpenGL.GL import *
+
+from ... import BoxletGL, Model, RenderTarget, Shader, VertFragShader, manager
+
 
 class FrameBufferStep(RenderTarget):
 	# creates a frame

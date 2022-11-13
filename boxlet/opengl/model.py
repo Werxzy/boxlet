@@ -1,6 +1,9 @@
-from boxlet import *
+from ctypes import c_float, c_int, c_void_p, sizeof
+
 from OpenGL.GL import *
-from ctypes import sizeof, c_float, c_void_p, c_int
+
+from .. import *
+
 
 class Model:
 	def __init__(self, vertex = None, index = [], dim = 2) -> None:

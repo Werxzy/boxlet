@@ -1,5 +1,4 @@
 from typing import Callable, TypeVar, final
-from boxlet import *
 
 
 class Entity:

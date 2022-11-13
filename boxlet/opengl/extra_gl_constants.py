@@ -1,6 +1,6 @@
 from typing import Callable
-from OpenGL.GL import *
 
+from OpenGL.GL import *
 
 UNIFORM_TYPE_DICT:dict[int, tuple[Callable, int, int, str]] = {
 	GL_FLOAT : (glUniform1fv, GL_FLOAT, 1, 'f4'), 

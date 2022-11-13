@@ -1,9 +1,11 @@
 from typing import TYPE_CHECKING, Generic, TypeVar
-from boxlet import BoxletGL, Renderer
+
 from OpenGL.GL import *
 
+from ... import BoxletGL, Renderer
+
 if TYPE_CHECKING:
-	from boxlet import RenderInstance, Model, VertFragShader
+	from boxlet import Model, RenderInstance, VertFragShader
 	T = TypeVar('T', bound=RenderInstance)
 else:
 	T = TypeVar('T')

@@ -1,5 +1,6 @@
-from boxlet import *
 import time
+
+from . import Entity, manager, pygame
 
 
 class Debug(Entity):

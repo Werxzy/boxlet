@@ -1,4 +1,5 @@
 from math import ceil
+
 import numpy as np
 
 # this is a very early version that may need to switch to cython, numba, or something else

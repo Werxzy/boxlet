@@ -1,6 +1,7 @@
+import numpy as np
 import pygame
 from OpenGL.GL import *
-import numpy as np
+
 
 class Texture:
 	def __init__(self, image:pygame.Surface, nearest = True, mipmap = False) -> None:
