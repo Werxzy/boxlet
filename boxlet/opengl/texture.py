@@ -47,3 +47,9 @@ class MultiTexture(Texture):
 
 		self.sub_image_data = list(sub_image_data)
 
+	# @staticmethod
+	# def create_from_textures(*images:list[pygame.Surface]):
+	# 	...
+		# TODO creates a single image from multiple images and stores their coordinates in sub_image_data
+
+
