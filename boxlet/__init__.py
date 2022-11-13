@@ -19,6 +19,7 @@ from boxlet.entity import Entity
 from boxlet.manager import instance as manager
 from boxlet.vary_floats import VaryFloats
 
+# anything using opengl when imported needs to be imported AFTER pygame is initialized
 if USE_OPENGL:
 	from boxlet.opengl.transform import Transform
 	from boxlet.opengl.model import Model
@@ -27,11 +28,6 @@ if USE_OPENGL:
 
 	from boxlet.opengl.render_bases.render_pass import PassOpaque
 
-	# anything using opengl when imported needs to be imported AFTER pygame is initialized
-	# from boxlet.opengl.sprite_renderer import SpriteRenderer
-	# from boxlet.opengl.sprite_instanced_renderer import SpriteInstancedRenderer
-	from boxlet.opengl.renderers.sprite_palette_instanced_renderer import SpritePaletteInstancedRenderer
-	from boxlet.opengl.renderers.model_instanced_renderer import ModelInstancedRenderer
 	from boxlet.opengl.render_targets.render_target_frame_buffer import FrameBufferStep, ApplyShaderToFrame, ApplyDitherToFrame, SimpleClearStep
 	from boxlet.opengl.render_targets.camera_3d import Camera3D
 	from boxlet.opengl.render_targets.camera_2d import Camera2D
