@@ -11,37 +11,42 @@ import random
 box_model = Model.load_obj("examples/opengl_example/cube.obj")
 box_texture = Texture(pygame.image.load("examples/opengl_example/box.png"), nearest=False)
 
-shader = VertFragShader(vertex = """
-	#version 330
-	layout(location = 0) in vec3 position;
-	layout(location = 1) in vec2 texcoord;
-	layout(location = 2) in mat4 model;
+# shader = VertFragShader(vertex = """
+# 	#version 330
+# 	layout(location = 0) in vec3 position;
+# 	layout(location = 1) in vec2 texcoord;
+# 	layout(location = 2) in mat4 model;
 
-	uniform mat4 box_viewProj;
+# 	uniform mat4 box_viewProj;
 
-	out vec2 uv;
+# 	out vec2 uv;
 
-	void main() {
-		gl_Position = box_viewProj * model * vec4(position, 1);
-		uv = texcoord;
-	}
-	""", 
-	frag = """
-	#version 330
-	in vec2 uv;
+# 	void main() {
+# 		gl_Position = box_viewProj * model * vec4(position, 1);
+# 		uv = texcoord;
+# 	}
+# 	""", 
+# 	frag = """
+# 	#version 330
+# 	in vec2 uv;
 
-	uniform sampler2D tex;
+# 	uniform sampler2D tex;
 
-	out vec4 fragColor;
+# 	out vec4 fragColor;
 
-	void main() {
-		fragColor = texture(tex, uv);
-	}
-	""")
+# 	void main() {
+# 		fragColor = texture(tex, uv);
+# 	}
+# 	""")
 
-class ModelInstance(RenderInstance):
-	model_matrix:np.ndarray = 'attrib', 'mat4', 'model'
-	texture = 'texture', 'tex'
+# class ModelInstance(RenderInstance):
+# 	model_matrix:np.ndarray = 'attrib', 'mat4', 'model'
+# 	texture = 'texture', 'tex'
+
+# Creates the same shader object and instance class as above, but is generated once
+shader = VertFragShader.gen_basic_shader()
+ModelInstance = VertFragShader.gen_basic_instance_class()
+
 
 # render pipeline
 camera = Camera3D(queue = 0, pass_names = ['default'])

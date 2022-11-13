@@ -114,7 +114,6 @@ class UBOArray:
 
 		self.swap_data(a,b)
 
-
 	def __str__(self):
 		return str(self._orig_data)
 
@@ -140,7 +139,6 @@ class UniformBufferObject:
 			glBindBuffer(GL_UNIFORM_BUFFER, self.uniform_buffer)
 			glBindBufferBase(GL_UNIFORM_BUFFER, self.binding_point, self.uniform_buffer)
 			glBufferData(GL_UNIFORM_BUFFER, self._numpy_data.itemsize, self._numpy_data, GL_DYNAMIC_DRAW)
-
 
 	def bind(self, shader, index):
 		# Earlier the following, or something similar, needs to be called

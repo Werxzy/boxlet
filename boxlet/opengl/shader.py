@@ -156,6 +156,17 @@ class Shader:
 	# 	glDeleteShader(self.program)
 
 
+def generate_once(func):
+	# Runs the function once and returns the results on the current and future calls.
+	# Expects there to be no parameters for the function.
+	func._data = None
+	def gen():
+		if func._data is None:
+			func._data = func()
+		return func._data
+	return gen
+
+	
 class VertFragShader(Shader):
 	def __init__(self, vertex, frag):
 		glBindVertexArray(Shader._test_vao)
@@ -166,7 +177,8 @@ class VertFragShader(Shader):
 		glBindVertexArray(0)
 
 	@staticmethod
-	def gen_basic_shader(include_instancer = False):
+	@generate_once
+	def gen_basic_shader():
 		vertex_shader = """
 			#version 330
 			layout(location = 0) in vec3 position;
@@ -194,14 +206,15 @@ class VertFragShader(Shader):
 				fragColor = texture(tex, uv);
 			}
 			"""
-		if not include_instancer:
-			return VertFragShader(vertex_shader, fragment_shader)
-		
+		return VertFragShader(vertex_shader, fragment_shader)
+
+	@staticmethod
+	@generate_once
+	def gen_basic_instance_class():
 		class ModelInstance(RenderInstance):
 			model_matrix:np.ndarray = 'attrib', 'mat4', 'model'
-			texture:Texture = 'uniform', 'sampler2D', 'tex'
-
-		return VertFragShader(vertex_shader, fragment_shader), ModelInstance
+			texture:Texture = 'texture', 'tex'
+		return ModelInstance
 		
 
 class ComputeShader(Shader):
