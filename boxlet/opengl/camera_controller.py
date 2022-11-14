@@ -29,7 +29,6 @@ class CameraController(Entity):
 			self.y_rot += event.rel[1] * -0.5
 			self.y_rot = clamp(self.y_rot, -90, 90)
 			
-
 	@Entity.watch_event(pygame.KEYDOWN)
 	def keydown(self, event):
 		if event.key == pygame.K_ESCAPE:
@@ -42,7 +41,7 @@ class CameraController(Entity):
 	@Entity.watch_event(pygame.MOUSEWHEEL)
 	def scroll(self, event):
 		# self.speed *= 1.5 if event.y > 0 else 1.0/1.5
-		self.speed *= 1 / (1 + event.y*0.1)
+		self.speed *= 1 / (1 - event.y*0.2)
 		print(self.speed)
 
 	def lock_mouse(self, on):
