@@ -1,6 +1,7 @@
 from . import extra_gl_constants as extra_gl
 from OpenGL.GL import *
-from OpenGL.GL import shaders
+from OpenGL.GL import shaders as ogl_shaders
+import re
 
 from .. import BoxletGL, Model, RenderInstance, Texture, np
 
@@ -21,6 +22,9 @@ class Shader:
 		'box_cameraSize': [[0,0]],
 		'box_cameraPos': [[0,0]],
 	}
+
+	_preprocessor_includes:dict[str, str] = {}
+	INCLUDE_REGEX = '#include\\s+"(.+)"'
 	
 	def __init__(self, program) -> None:
 		self.program = program
@@ -130,6 +134,36 @@ class Shader:
 	def get_global_uniform(name):
 		return Shader.global_uniforms[name][0]
 
+	@staticmethod
+	def add_include(name, code):
+		'''
+		Adds to dictionary of preprocessing includes macros.
+		
+		If in a shader `#include "[name]"` is added, it is replaced by an earlier all_include(name, code) call.
+
+		Include code can contain include macros, but they cannot be cause cyclical includes.
+		'''
+
+		includes_found:list[str] = [found for found in re.findall(Shader.INCLUDE_REGEX, code)]
+		while includes_found:
+			f = includes_found.pop()
+			if f in Shader._preprocessor_includes:
+				for found in re.findall(Shader.INCLUDE_REGEX, Shader._preprocessor_includes[f]):
+					if found == name:
+						raise Exception('Shader include loop discovered.')
+					includes_found.append(found)
+
+		Shader._preprocessor_includes[name] = code
+
+	@staticmethod
+	def preprocess_shader(code:str):
+		while found := re.search(Shader.INCLUDE_REGEX, code):
+			name = found.group(1)
+			if name not in Shader._preprocessor_includes:
+				raise Exception('Include key does not exist:', name)
+			code = ''.join([code[:found.start(0)], Shader._preprocessor_includes[name], code[found.end(0):]])
+		return code
+
 	def apply_global_uniform(self, name):
 		u = Shader.global_uniforms[name]
 		if len(u) > 1:
@@ -172,10 +206,10 @@ def generate_once(func):
 class VertFragShader(Shader):
 	def __init__(self, vertex, frag):
 		glBindVertexArray(Shader._test_vao)
-		self.vertex = shaders.compileShader(vertex, GL_VERTEX_SHADER)
-		self.fragment = shaders.compileShader(frag, GL_FRAGMENT_SHADER)
+		self.vertex = ogl_shaders.compileShader(Shader.preprocess_shader(vertex), GL_VERTEX_SHADER)
+		self.fragment = ogl_shaders.compileShader(Shader.preprocess_shader(frag), GL_FRAGMENT_SHADER)
 		
-		super().__init__(shaders.compileProgram(self.vertex, self.fragment))
+		super().__init__(ogl_shaders.compileProgram(self.vertex, self.fragment))
 		glBindVertexArray(0)
 
 	@staticmethod
@@ -221,7 +255,7 @@ class VertFragShader(Shader):
 
 class ComputeShader(Shader):
 	def __init__(self, compute):
-		self.compute = shaders.compileShader(compute, GL_COMPUTE_SHADER)
+		self.compute = ogl_shaders.compileShader(Shader.preprocess_shader(compute), GL_COMPUTE_SHADER)
 		
-		super().__init__(shaders.compileProgram(self.compute))
+		super().__init__(ogl_shaders.compileProgram(self.compute))
 
