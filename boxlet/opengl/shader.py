@@ -24,7 +24,9 @@ class Shader:
 	}
 
 	_preprocessor_includes:dict[str, str] = {}
-	_INCLUDE_REGEX = '#include\\s+"(.+)"'
+	_INCLUDE_REGEX = '#pragma\\s+include\\s+"(.+)"'
+	_EXO_INCLUDE_REGEX = '#pragma\\s+exoInclude\\s+"(.+)"'
+	_ENDO_INCLUDE_REGEX = '#pragma\\s+endoInclude'
 	
 	def __init__(self, program) -> None:
 		self.program = program
@@ -157,11 +159,44 @@ class Shader:
 
 	@staticmethod
 	def preprocess_shader(code:str):
-		while found := re.search(Shader._INCLUDE_REGEX, code):
-			name = found.group(1)
-			if name not in Shader._preprocessor_includes:
-				raise Exception('Include key does not exist:', name)
-			code = ''.join([code[:found.start(0)], Shader._preprocessor_includes[name], code[found.end(0):]])
+		processing_count = 0
+		
+		while True:
+			processing_count += 1
+			if processing_count > 100:
+				raise Exception('Potential include loop discovered:', name)
+
+			if found := re.search(Shader._INCLUDE_REGEX, code):
+				name = found.group(1)
+				if name not in Shader._preprocessor_includes:
+					raise Exception(f'Include key "{name}" does not exist.')
+				code = ''.join([
+					code[:found.start(0)], 
+					Shader._preprocessor_includes[name], 
+					code[found.end(0):]
+					])
+				continue
+
+			if found := re.search(Shader._EXO_INCLUDE_REGEX, code):
+				name = found.group(1)
+				if name not in Shader._preprocessor_includes:
+					raise Exception(f'Include key "{name}" does not exist.')
+
+				incl = Shader._preprocessor_includes[name]
+				found2 = re.search(Shader._ENDO_INCLUDE_REGEX, incl)
+				if found2 is None:
+					raise Exception(f'Include "{name}" does not contain #endoInclude')
+
+				code = ''.join([
+					incl[:found2.start(0)], 
+					code[:found.start(0)], 
+					code[found.end(0):],
+					incl[found2.end(0):], 
+					])
+				continue
+
+			break
+
 		return code
 
 	def apply_global_uniform(self, name):

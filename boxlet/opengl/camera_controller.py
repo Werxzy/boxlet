@@ -8,6 +8,7 @@ class CameraController(Entity):
 		self.y_rot = 0
 		self.camera = camera
 		self.lock_mouse(True)
+		self.speed = 1
 
 	def vary_update(self):
 		b = pygame.key.get_pressed()
@@ -18,7 +19,7 @@ class CameraController(Entity):
 		if b[pygame.K_q] != b[pygame.K_e]: mov += self.camera.up * (1 if b[pygame.K_e] else -1)
 		mov = Tmath.clip_vector(mov)
 
-		self.pos[:] += mov * manager.delta_time * (30 if b[pygame.K_LSHIFT] else 10)
+		self.pos[:] += mov * manager.delta_time * (30 if b[pygame.K_LSHIFT] else 10) * self.speed
 		self.camera.fps_look(self.pos, self.x_rot, self.y_rot)
 	
 	@Entity.watch_event(pygame.MOUSEMOTION)
@@ -37,6 +38,12 @@ class CameraController(Entity):
 			self.lock_mouse(not self.mouse_is_locked)
 		if event.key == pygame.K_t:
 			print(pygame.mouse.get_pos(), self.camera.get_mouse_ray(pygame.mouse.get_pos()))
+
+	@Entity.watch_event(pygame.MOUSEWHEEL)
+	def scroll(self, event):
+		# self.speed *= 1.5 if event.y > 0 else 1.0/1.5
+		self.speed *= 1 / (1 + event.y*0.1)
+		print(self.speed)
 
 	def lock_mouse(self, on):
 		self.mouse_is_locked = on
