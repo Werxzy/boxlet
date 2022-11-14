@@ -50,13 +50,14 @@ class RenderInstanceMetaclass(type):
 		total = 0
 		dtype_names = []
 		dtype_formats = []
-		shader_uniforms = dict()
-		shader_textures = dict()
+		shader_uniforms = {}
+		shader_textures = {}
 
 		for k, v in attrs.items():
 			if not k.startswith('_') and isinstance(v, tuple):
-				attr_type  = v[1]
-				if v[0] == 'attrib':
+				access_type, attr_type = v[0:2]
+
+				if access_type == 'attrib':
 					default = None
 					if isinstance(attr_type, str):
 						t = extra_gl.UNIFORM_SYMBOL_DICT[attr_type]
@@ -88,11 +89,11 @@ class RenderInstanceMetaclass(type):
 					dtype_names.append(k)
 					dtype_formats.append(extra_gl.UNIFORM_TYPE_DICT[t][3])
 
-				elif v[0] == 'uniform':
+				elif access_type == 'uniform':
 					shader_uniforms[v[1]] = k
 					attrs[k] = RenderInstanceListProperty(k)
 
-				elif v[0] == 'texture':
+				elif access_type == 'texture':
 					shader_textures[v[1]] = k
 					attrs[k] = RenderInstanceListProperty(k)
 
@@ -141,20 +142,14 @@ class RenderInstanceList(Generic[T]):
 		self.instance_count = 0
 		self._instance_total_space = 0
 		self.uniform_data = dict((u,None) for u in chain(cls._uniform_texture_info.values(), cls._uniform_info.values()))
-		self.uniform_info:dict['Shader', list[tuple[str,str]]] = dict([
-				(
-					s, 
-					[(sn, ln) for sn, ln in cls._uniform_info.items() if sn in s.uniforms]
-				) 
-				for s in shaders
-			])
-		self.uniform_texture_info:dict['Shader', list[tuple[str,str]]] = dict([
-				(
-					s, 
-					[(sn, ln) for sn, ln in cls._uniform_texture_info.items() if sn in s.textures]
-				) 
-				for s in shaders
-			])
+		self.uniform_info:dict['Shader', list[tuple[str,str]]] = {
+			s: [(sn, ln) for sn, ln in cls._uniform_info.items() if sn in s.uniforms]
+			for s in shaders
+		}
+		self.uniform_texture_info:dict['Shader', list[tuple[str,str]]] = {
+			s: [(sn, ln) for sn, ln in cls._uniform_texture_info.items() if sn in s.textures]
+			for s in shaders
+		}
 
 		self._expand_data(16)
 

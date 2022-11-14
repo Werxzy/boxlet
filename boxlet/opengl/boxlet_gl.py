@@ -7,11 +7,11 @@ if TYPE_CHECKING:
 
 class BoxletGL:
 	
-	render_targets:list['RenderTarget'] = list()
-	render_passes:dict[str, 'RenderPass'] = dict()
-	render_groups:dict[str, dict['Shader', list[Callable]]] = dict()
+	render_targets:list['RenderTarget'] = []
+	render_passes:dict[str, 'RenderPass'] = {}
+	render_groups:dict[str, dict['Shader', list[Callable]]] = {}
 	vao = 0
-	bound_textures:dict[int, tuple[int, int]] = dict([(int(GL_TEXTURE0) + i, (-1, -1)) for i in range(int(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS))])
+	bound_textures:dict[int, tuple[int, int]] = {int(GL_TEXTURE0) + i: (-1, -1) for i in range(int(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS))}
 	update_order = True
 	_viewport_data = (0,0,0,0)
 	

@@ -37,7 +37,7 @@ class Shader:
 		var_type = ctypes.c_uint()
 
 		# Gets the the initial inputs for the shader
-		self.vertex_attributes:dict[str, tuple[int,int,int]] = dict()
+		self.vertex_attributes:dict[str, tuple[int,int,int]] = {}
 
 		# print('- - -')
 
@@ -50,8 +50,8 @@ class Shader:
 			# print(n, name_length.value, var_size.value, var_type.value)
 
 		# Gets all the available uniforms
-		self.uniforms:dict[str, tuple[int,int,int]] = dict()
-		self.textures:dict[str, tuple[int,int]] = dict()
+		self.uniforms:dict[str, tuple[int,int,int]] = {}
+		self.textures:dict[str, tuple[int,int]] = {}
 		self.tracked_global_uniforms:list[str] = []
 		self.tracked_global_textures:list[str] = []
 		'key = uniform name\n\nvalue = (count, type, location)'
@@ -94,7 +94,7 @@ class Shader:
 				# print(n, name_length.value, var_size.value, var_type.value, self.uniforms[n])
 
 		# Gets all the available uniform blocks
-		self.uniform_blocks:dict[str, int] = dict()
+		self.uniform_blocks:dict[str, int] = {}
 		param = ctypes.c_int()
 		glGetProgramiv(self.program, GL_ACTIVE_UNIFORM_BLOCKS, count)
 		for i in range(count.value):

@@ -5,7 +5,7 @@ class Entity:
 
 	watched_callables = ['render', 'vary_update', 'fixed_update']
 	watched_events:list[int] = []
-	entity_callables:dict[str, list[tuple[type, Callable]]] = dict((s, []) for s in watched_callables) 
+	entity_callables:dict[str, list[tuple[type, Callable]]] = {s: [] for s in watched_callables}
 	'''Dictionary of each function name and Entity types that have it, along with their callable.\n
 	Event functions are event by event's id. `f'event_{id}'`'''
 
