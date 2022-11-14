@@ -24,7 +24,7 @@ class Shader:
 	}
 
 	_preprocessor_includes:dict[str, str] = {}
-	INCLUDE_REGEX = '#include\\s+"(.+)"'
+	_INCLUDE_REGEX = '#include\\s+"(.+)"'
 	
 	def __init__(self, program) -> None:
 		self.program = program
@@ -144,11 +144,11 @@ class Shader:
 		Include code can contain include macros, but they cannot be cause cyclical includes.
 		'''
 
-		includes_found:list[str] = [found for found in re.findall(Shader.INCLUDE_REGEX, code)]
+		includes_found:list[str] = [found for found in re.findall(Shader._INCLUDE_REGEX, code)]
 		while includes_found:
 			f = includes_found.pop()
 			if f in Shader._preprocessor_includes:
-				for found in re.findall(Shader.INCLUDE_REGEX, Shader._preprocessor_includes[f]):
+				for found in re.findall(Shader._INCLUDE_REGEX, Shader._preprocessor_includes[f]):
 					if found == name:
 						raise Exception('Shader include loop discovered.')
 					includes_found.append(found)
@@ -157,7 +157,7 @@ class Shader:
 
 	@staticmethod
 	def preprocess_shader(code:str):
-		while found := re.search(Shader.INCLUDE_REGEX, code):
+		while found := re.search(Shader._INCLUDE_REGEX, code):
 			name = found.group(1)
 			if name not in Shader._preprocessor_includes:
 				raise Exception('Include key does not exist:', name)

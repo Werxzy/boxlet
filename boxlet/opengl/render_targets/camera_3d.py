@@ -12,10 +12,13 @@ class Camera3D(Transform, FrameBufferStep):
 		self.perspective(90, 16.0/9.0, 0.1, 1000)
 		# self.orthographic(-5, 5, -5 * 9 / 16, 5 * 9 / 16, 0.1, 1000)
 		Shader.add_global_matrix_uniform('box_viewProj', np.identity(4, dtype=np.float32))
+		Shader.add_global_matrix_uniform('box_view', np.identity(4, dtype=np.float32))
 
 	def prepare(self):
 		super().prepare()
-		Shader.set_global_uniform('box_viewProj', np.matmul(np.linalg.inv(self.model_matrix), self.proj_matrix))
+		inv_mod = np.linalg.inv(self.model_matrix)
+		Shader.set_global_uniform('box_viewProj', np.matmul(inv_mod, self.proj_matrix))
+		Shader.set_global_uniform('box_view', inv_mod)
 
 	def perspective(self, fov:float, aspect:float, near:float, far:float):
 		f = math.tan(math.radians(fov)/2)
