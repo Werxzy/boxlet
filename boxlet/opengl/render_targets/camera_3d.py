@@ -25,7 +25,7 @@ class Camera3D(Transform, FrameBufferStep):
 
 		self.clip_near, self.clip_far = near, far
 
-		x = 1 / f
+		x =  1 / (f * aspect)
 		y = aspect * x
 		z1 = (near + far) / (near - far)
 		z2 = 2 * near * far / (near - far)
@@ -34,6 +34,32 @@ class Camera3D(Transform, FrameBufferStep):
 		self.inv_proj_matrix = np.linalg.inv(self.proj_matrix)
 		self.proj_type_perspective = True
 
+	def perspective_full(self, 
+			fov:float = 90, 
+			aspect:float = 16/9, 
+			left:float = -0.5, right:float = 0.5, 
+			bottom:float = -0.5, top:float = 0.5, 
+			near:float = 0.1, far:float = 1000):
+
+		f = math.tan(math.radians(fov)/2)
+
+		self.clip_near, self.clip_far = near, far
+
+		x = 1 / (f * aspect)
+		y = aspect * x
+		z1 = (near + far) / (near - far)
+		z2 = 2 * near * far / (near - far)
+
+		rl = right - left
+		tb = top - bottom
+
+		self.proj_matrix = np.array([
+			[x/rl, 0, 0, 0], 
+			[0, y/tb, 0, 0], 
+			[-(left+right)/rl, -(top+bottom)/tb, -z1, 1], 
+			[0, 0, z2, 0]])
+		self.inv_proj_matrix = np.linalg.inv(self.proj_matrix)
+		self.proj_type_perspective = True
 
 	def orthographic(self, left:float, right:float, bottom:float, top:float, near:float, far:float):
 		self.clip_near, self.clip_far = near, far

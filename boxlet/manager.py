@@ -10,7 +10,7 @@ class Manager:
 
 		self.fullscreen = int(os.environ.get('BOXLET_FULLSCREEN', '0'))
 		if not self.fullscreen:
-			self.display_size = np.array([int(i) for i in os.environ.get('BOXLET_RESOLUTION', '960,540').split(',')])
+			self.display_size = np.array([i for i in os.environ.get('BOXLET_RESOLUTION', '960,540').split(',')], dtype=int)
 		
 		self.render_mode = os.environ.get('BOXLET_RENDER_MODE', 'sdl2')
 		if self.render_mode == 'sdl2':
@@ -18,7 +18,7 @@ class Manager:
 			self.screen_pos = np.zeros(2)
 			if self.fullscreen:
 				self.display = pygame.display.set_mode(flags = pygame.DOUBLEBUF | pygame.FULLSCREEN)
-				self.display_size = np.array(self.display.get_size())
+				self.display_size = np.array(self.display.get_size(), dtype=int)
 			else:
 				self.display = pygame.display.set_mode(self.display_size, flags = pygame.DOUBLEBUF)
 
@@ -26,9 +26,9 @@ class Manager:
 			if self.fill_color.count(',') > 0: # instead create a list
 				self.fill_color = [int(c) for c in self.fill_color.split(',')]
 
-			self.canvas_size = np.array([int(i) for i in os.environ.get('BOXLET_CANVAS_SIZE', '0,0').split(',')])
+			self.canvas_size = np.array([i for i in os.environ.get('BOXLET_CANVAS_SIZE', '0,0').split(',')], dtype=int)
 			if 0 in self.canvas_size:
-				self.canvas_size = np.array(self.display_size)
+				self.canvas_size = np.array(self.display_size, dtype=int)
 			self.canvas = pygame.surface.Surface(self.canvas_size)
 		
 		elif self.render_mode == 'opengl':
@@ -143,21 +143,21 @@ class Manager:
 		if self.render_mode == 'sdl2':
 			if self.fullscreen:
 				self.display = pygame.display.set_mode(flags = pygame.DOUBLEBUF | pygame.FULLSCREEN)
-				self.display_size = np.array(self.display.get_size())
+				self.display_size = np.array(self.display.get_size(), dtype=int)
 			else:
 				self.display = pygame.display.set_mode(self.display_size, flags = pygame.DOUBLEBUF)
 
 			if canvas_size is not None:
-				self.canvas_size = np.array(canvas_size)
+				self.canvas_size = np.array(canvas_size, dtype=int)
 			if 0 in self.canvas_size:
-				self.canvas_size = np.array(self.display_size)
+				self.canvas_size = np.array(self.display_size, dtype=int)
 			self.canvas = pygame.surface.Surface(self.canvas_size)
 
 		elif self.render_mode == 'opengl':
 			self.vsync = vsync or self.vsync
 			if self.fullscreen:
 				self.display = pygame.display.set_mode(flags = pygame.OPENGL | pygame.FULLSCREEN, vsync = self.vsync)
-				self.display_size = np.array(self.display.get_size())
+				self.display_size = np.array(self.display.get_size(), dtype=int)
 			else:
 				self.display = pygame.display.set_mode(self.display_size, flags = pygame.OPENGL | pygame.DOUBLEBUF, vsync = self.vsync)
 

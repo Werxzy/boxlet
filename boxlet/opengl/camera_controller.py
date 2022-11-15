@@ -40,9 +40,7 @@ class CameraController(Entity):
 
 	@Entity.watch_event(pygame.MOUSEWHEEL)
 	def scroll(self, event):
-		# self.speed *= 1.5 if event.y > 0 else 1.0/1.5
-		self.speed *= 1 / (1 - event.y*0.2)
-		print(self.speed)
+		self.speed *= (1 + event.y*0.1) / (1 - event.y*0.1)
 
 	def lock_mouse(self, on):
 		self.mouse_is_locked = on
