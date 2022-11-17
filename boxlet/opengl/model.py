@@ -26,7 +26,7 @@ class Model:
 			self.vertex_stride += byte_size
 
 		for v, s in [('position', dim), ('texcoord', 2), ('normal', dim)]:
-			if v in vertex and vertex[v]:
+			if v in vertex and vertex[v] is not None and len(vertex[v]) > 0:
 				add_variable(v, s)
 
 		self._vertex_dtype = np.dtype(types)
@@ -117,17 +117,17 @@ class Model:
 			return cls(vertex = vertex, index = index, dim = len(data['v'][0]))
 
 	@staticmethod
-	def gen_cube():
+	def gen_cube(size = 1):
 		return Model(
 			vertex = {
-				'position' : [
-					1,-1,-1,	 1, 1,-1,	 1,-1, 1,	 1, 1, 1,
+				'position' : np.array([
+					 1,-1,-1,	 1, 1,-1,	 1,-1, 1,	 1, 1, 1,
 					-1, 1,-1,	-1, 1, 1,	 1, 1,-1,	 1, 1, 1,
 					-1,-1, 1,	 1,-1, 1,	-1, 1, 1,	 1, 1, 1,
 					-1,-1,-1,	-1,-1, 1,	-1, 1,-1,	-1, 1, 1,
 					-1,-1,-1,	 1,-1,-1,	-1,-1, 1,	 1,-1, 1,
 					-1,-1,-1,	-1, 1,-1,	 1,-1,-1,	 1, 1,-1,
-				],
+				]) * size,
 				'texcoord' : [
 					0,0, 1,0, 0,1, 1,1,
 					0,0, 0,1, 1,0, 1,1,
