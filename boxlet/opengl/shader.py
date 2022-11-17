@@ -212,7 +212,10 @@ class Shader:
 
 	def apply_uniform(self, name, value):
 		u = self.uniforms[name]
-		extra_gl.UNIFORM_TYPE_DICT[u[1]][0](u[2], u[0], value)
+		if u[1] == GL_FLOAT_MAT4: # TODO this is less than ideal
+			self.apply_uniform_matrix(name, value)
+		else:
+			extra_gl.UNIFORM_TYPE_DICT[u[1]][0](u[2], u[0], value)
 
 	def apply_uniform_matrix(self, name, value, flipped = GL_FALSE):
 		u = self.uniforms[name]

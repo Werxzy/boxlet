@@ -28,7 +28,7 @@ class RenderInstanceProperty:
 		instance.owner._data[instance.id][self._name] = value
 
 
-class RenderInstanceListProperty:
+class RenderInstanceUniformProperty:
 	# not 100% sure if I can just remove this class
 	# or if there's a better way to manage uniform data
 	def __init__(self, name) -> None:
@@ -41,6 +41,17 @@ class RenderInstanceListProperty:
 	def __set__(self, instance:'RenderInstance', value):
 		instance.owner.uniform_data[self._name] = value
 		# setattr(instance.owner, self._name, value)
+
+class RenderInstanceListProperty:
+	# probably needs a more consistant method
+	def __init__(self, name) -> None:
+		self._name = name
+
+	def __get__(self, instance:'RenderInstance', owner):
+		return getattr(instance.owner, self._name)
+
+	def __set__(self, instance:'RenderInstance', value):
+		setattr(instance.owner, self._name, value)
 
 
 class RenderInstanceMetaclass(type):
@@ -91,11 +102,14 @@ class RenderInstanceMetaclass(type):
 
 				elif access_type == 'uniform':
 					shader_uniforms[v[1]] = k
-					attrs[k] = RenderInstanceListProperty(k)
+					attrs[k] = RenderInstanceUniformProperty(k)
 
 				elif access_type == 'texture':
 					shader_textures[v[1]] = k
-					attrs[k] = RenderInstanceListProperty(k)
+					attrs[k] = RenderInstanceUniformProperty(k)
+
+			elif v == 'extra':
+				attrs[k] = RenderInstanceListProperty(k)
 
 		full_dtype = np.dtype({'names' : dtype_names, 'formats' : dtype_formats})
 		full_default = np.array([0], full_dtype)
@@ -142,8 +156,8 @@ class RenderInstanceList(Generic[T]):
 		self.instance_count = 0
 		self._instance_total_space = 0
 		self.uniform_data = dict((u,None) for u in chain(cls._uniform_texture_info.values(), cls._uniform_info.values()))
-		self.uniform_info:dict['Shader', list[tuple[str,str]]] = {
-			s: [(sn, ln) for sn, ln in cls._uniform_info.items() if sn in s.uniforms]
+		self.uniform_info:dict['Shader', list[tuple[str,str,bool]]] = {
+			s: [(sn, ln, ) for sn, ln in cls._uniform_info.items() if sn in s.uniforms]
 			for s in shaders
 		}
 		self.uniform_texture_info:dict['Shader', list[tuple[str,str]]] = {

@@ -20,7 +20,14 @@ else:
 	class BoxletGL:
 		@staticmethod
 		def render():
-			raise Exception('BoxletGL not imported properly')
+			if not USE_OPENGL:
+				raise Exception('BoxletGL not imported properly')
+
+		@staticmethod
+		def add_render_call(pass_name, shader, call):
+			if not USE_OPENGL:
+				raise Exception('BoxletGL not imported properly')
+
 
 from .entity import Entity
 from .manager import instance as manager
@@ -39,6 +46,7 @@ if USE_OPENGL:
 	from .opengl.render_targets.camera_3d import Camera3D
 	from .opengl.render_targets.camera_2d import Camera2D
 	from .opengl.renderers.terrain_renderer import TerrainRenderer
+	from .opengl.renderers.instanced_renderer import InstancedRenderer
 
 	from .opengl.camera_controller import CameraController
 
