@@ -6,10 +6,11 @@ from ... import FrameBufferStep, Shader, Tmath, Transform, manager
 
 
 class Camera3D(Transform, FrameBufferStep):
-	def __init__(self, width=0, height=0, width_mult=1, height_mult=1, depth=True, nearest=False, queue=0, pass_names: list[str] = None) -> None:
+	def __init__(self, width=0, height=0, width_mult=1, height_mult=1, depth=True, nearest=False, queue=0, pass_names: list[str] = None, horizontal_fov = False) -> None:
 		super().__init__(width, height, width_mult, height_mult, depth, nearest, queue, pass_names)
 
-		self.perspective(75, 16.0/9.0, 0.1, 1000)
+		self.horizontal_fov = horizontal_fov
+		self.perspective(90, 16.0/9.0, 0.1, 1000)
 		# self.orthographic(-5, 5, -5 * 9 / 16, 5 * 9 / 16, 0.1, 1000)
 		Shader.add_global_matrix_uniform('box_viewProj', np.identity(4, dtype=np.float32))
 		Shader.add_global_matrix_uniform('box_view', np.identity(4, dtype=np.float32))
@@ -25,7 +26,7 @@ class Camera3D(Transform, FrameBufferStep):
 
 		self.clip_near, self.clip_far = near, far
 
-		x =  1 / (f * aspect)
+		x = 1 / (f if self.horizontal_fov else f * aspect)
 		y = aspect * x
 		z1 = (near + far) / (near - far)
 		z2 = 2 * near * far / (near - far)
@@ -45,7 +46,7 @@ class Camera3D(Transform, FrameBufferStep):
 
 		self.clip_near, self.clip_far = near, far
 
-		x = 1 / (f * aspect)
+		x = 1 / (f if self.horizontal_fov else f * aspect)
 		y = aspect * x
 		z1 = (near + far) / (near - far)
 		z2 = 2 * near * far / (near - far)
