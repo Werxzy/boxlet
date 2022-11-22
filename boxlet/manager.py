@@ -2,6 +2,8 @@ import time
 
 from . import Entity, clamp, np, pygame, os, BoxletGL
 	
+class ExitGame(Exception):
+	'Exception to quickly exit game'
 
 class Manager:
 
@@ -66,63 +68,57 @@ class Manager:
 		self.joysticks = []
 		self.current_joystick = None
 
-		self.exit_program = False
-
 	def run(self):
 		pygame.event.set_blocked(None)
 		pygame.event.set_allowed(Entity.watched_events)
 		pygame.event.set_allowed([pygame.WINDOWEXPOSED, pygame.JOYDEVICEADDED, pygame.JOYDEVICEREMOVED, pygame.QUIT])
 
 		self.system_time = time.time()
+		try:
+			while True:
+				for _ in pygame.event.get(eventtype=pygame.WINDOWEXPOSED):
+					self.system_time = time.time() # this still does not help every case it freezes, maybe have a maximum delta time.
 
-		while True:
-			for _ in pygame.event.get(eventtype=pygame.WINDOWEXPOSED):
-				self.system_time = time.time() # this still does not help every case it freezes, maybe have a maximum delta time.
+				new_system_time = time.time()
+				self.delta_time = clamp(new_system_time - self.system_time, 0, self.max_delta_time)
+				self.time += self.delta_time
+				self.system_time = new_system_time
 
-			new_system_time = time.time()
-			self.delta_time = clamp(new_system_time - self.system_time, 0, self.max_delta_time)
-			self.time += self.delta_time
-			self.system_time = new_system_time
+				for event in pygame.event.get(Entity.watched_events, False):
+					Entity.__call_event_function__(event.type, event)
 
-			for event in pygame.event.get(Entity.watched_events, False):
-				Entity.__call_event_function__(event.type, event)
+				for event in pygame.event.get([pygame.JOYDEVICEADDED, pygame.JOYDEVICEREMOVED], False):
+					self.joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
+					if event.type == pygame.JOYDEVICEADDED:
+						self.current_joystick = self.joysticks[event.device_index]
+					elif self.current_joystick.get_instance_id() == event.instance_id:
+						self.current_joystick = None
 
-			if self.exit_program: return
+				for event in pygame.event.get(pygame.QUIT, False):
+					self.quit()
 
-			for event in pygame.event.get([pygame.JOYDEVICEADDED, pygame.JOYDEVICEREMOVED], False):
-				self.joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
-				if event.type == pygame.JOYDEVICEADDED:
-					self.current_joystick = self.joysticks[event.device_index]
-				elif self.current_joystick.get_instance_id() == event.instance_id:
-					self.current_joystick = None
+				pygame.event.clear(pump=False)
+				
+				for i in range(5):
+					if self.time >= self.fixed_time + self.fixed_delta_time:
+						self.fixed_time += self.fixed_delta_time
+						Entity.__call_function__('fixed_update')
+					else:
+						break
+				
+				self.interpolate_time = clamp((self.time - self.fixed_time) / self.fixed_delta_time, 0, 1)
 
-			for event in pygame.event.get(pygame.QUIT, False):
-				pygame.quit()
-				return
+				Entity.__call_function__('vary_update')
+				Entity.__add_new_entities__()
+				Entity.__destroy_entities__()
+				
+				self.render()	
 
-			pygame.event.clear(pump=False)
-			
-			for i in range(5):
-				if self.time >= self.fixed_time + self.fixed_delta_time:
-					self.fixed_time += self.fixed_delta_time
-					Entity.__call_function__('fixed_update')
-				else:
-					break
+				if not self.vsync:
+					self.clock.tick_busy_loop(self.fps)
 
-			if self.exit_program: return
-			
-			self.interpolate_time = clamp((self.time - self.fixed_time) / self.fixed_delta_time, 0, 1)
-
-			Entity.__call_function__('vary_update')
-			Entity.__add_new_entities__()
-			Entity.__destroy_entities__()
-			
-			if self.exit_program: return
-
-			self.render()	
-
-			if not self.vsync:
-				self.clock.tick_busy_loop(self.fps)
+		except ExitGame:
+			...
 
 	def render(self):
 		if self.render_mode == 'sdl2':
@@ -162,8 +158,9 @@ class Manager:
 				self.display = pygame.display.set_mode(self.display_size, flags = pygame.OPENGL | pygame.DOUBLEBUF, vsync = self.vsync)
 
 	def quit(self):
-		self.exit_program = True
+		'Exits the program immediately by raising exception ExitGame.'
 		pygame.quit()
+		raise ExitGame()
 
 
 instance = Manager()
