@@ -6,7 +6,7 @@ class App:
 	def __init__(self, width, height) -> None:
 		# self.build_glfw_window(width, height)
 
-		self.display = pygame.display.set_mode((width,height), flags = pygame.DOUBLEBUF)
+		self.display = pygame.display.set_mode((width,height), flags = pygame.DOUBLEBUF | pygame.RESIZABLE)
 		wm_info = pygame.display.get_wm_info()
 
 		self.graphics_engine = Engine(width, height, wm_info)

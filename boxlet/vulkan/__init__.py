@@ -25,7 +25,7 @@ import pyrr
 	We will look at this later, once we've created an instance and device.
 """
 
-DEBUG_MODE = True
+DEBUG_MODE = False
 
 from pathlib import Path
 
@@ -36,12 +36,12 @@ from . import vk_instance
 from . import vk_logging
 from . import vk_queue_families
 from . import vk_device
+from . import vk_sync
 from . import vk_frame
 from . import vk_swapchain
 from . import vk_shaders
 from . import vk_pipeline
 from . import vk_framebuffer
-from . import vk_sync
 from . import vk_commands
 
 from .engine import Engine

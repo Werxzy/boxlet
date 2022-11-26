@@ -25,8 +25,6 @@ class CommandPool:
 				print('Failed to create command pool')
 			# don't entirely like this error checking method
 
-
-
 	def destroy(self):
 		vkDestroyCommandPool(self.logical_device.device, self.pool, None)
 
@@ -34,7 +32,6 @@ class CommandBuffer:
 	def __init__(self, logical_device:vk_device.LogicalDevice, command_pool:CommandPool, frames:list[vk_frame.SwapChainFrame]) -> None:
 			
 		self.logical_device = logical_device
-		self.command_pool = command_pool
 		self.frames = frames
 
 		alloc_info = VkCommandBufferAllocateInfo(
@@ -62,3 +59,5 @@ class CommandBuffer:
 			self.command_buffer = None
 			if DEBUG_MODE:
 				print(f'Failed to allocate main command buffer')
+		
+		# TODO ? use vkFreeCommandBuffer

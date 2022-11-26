@@ -1,4 +1,5 @@
 from . import *
+from pygame import display as pg_display
 
 class Engine:
 	def __init__(self, width, height, wm_info):
@@ -100,10 +101,18 @@ class Engine:
 			self.swapchain_bundle.frames
 		)
 
-		for frame in self.swapchain_bundle.frames:
-			frame.in_flight = vk_sync.Fence(self.logical_device)
-			frame.image_available = vk_sync.Semaphore(self.logical_device)
-			frame.render_finished = vk_sync.Semaphore(self.logical_device)
+	def recreate_swapchain(self):
+		if DEBUG_MODE:
+			print('recreate swapchain')
+
+		self.swapchain_bundle.remake(self.width, self.height)
+
+		self.command_pool.destroy() 
+		# TODO remove .destroy()? but not destroying the command pool causes a memory leak
+		# probably would need to free what is in the command_buffer
+		# I think they would normally be freed when the command pool was destroyed
+
+		self.finalize_setup()
 
 	def record_draw_commands(self, command_buffer, image_index, scene):
 		begin_info = VkCommandBufferBeginInfo()
@@ -151,6 +160,16 @@ class Engine:
 
 		# TODO, remove scene parameter
 
+		# if the window is minimized, skip the renderloop
+		if not pg_display.get_active():
+			return
+
+		# if the window is a different size than before, than recreate the swapchain
+		if pg_display.get_window_size() != (self.width, self.height):
+			self.width, self.height = pg_display.get_window_size()
+			self.recreate_swapchain()
+			return
+
 		vkAcquireNextImageKHR = vkGetDeviceProcAddr(self.logical_device.device, 'vkAcquireNextImageKHR')
 		vkQueuePresentKHR = vkGetDeviceProcAddr(self.logical_device.device, 'vkQueuePresentKHR')
 
@@ -162,6 +181,7 @@ class Engine:
 			device = self.logical_device.device, swapchain = self.swapchain_bundle.swapchain, timeout = 1000000000,
 			semaphore = prev_frame.image_available.vk_id, fence = VK_NULL_HANDLE
 		)
+
 		next_frame = self.swapchain_bundle.frames[image_index]
 
 		command_buffer = next_frame.command_buffer

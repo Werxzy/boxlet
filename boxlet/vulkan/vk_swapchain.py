@@ -74,7 +74,6 @@ class SwapChainSupportDetails:
 		self.formats = vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface)
 
 		if DEBUG_MODE:
-
 			for supportedFormat in self.formats:
 				"""
 				* typedef struct VkSurfaceFormatKHR {
@@ -89,8 +88,9 @@ class SwapChainSupportDetails:
 		vkGetPhysicalDeviceSurfacePresentModesKHR = vkGetInstanceProcAddr(instance, 'vkGetPhysicalDeviceSurfacePresentModesKHR')
 		self.presentModes = vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface)
 
-		for presentMode in self.presentModes:
-			print(f"\t{vk_logging.log_present_mode(presentMode)}")
+		if DEBUG_MODE:
+			for presentMode in self.presentModes:
+				print(f"\t{vk_logging.log_present_mode(presentMode)}")
 
 def choose_swapchain_surface_format(formats):
 
@@ -128,15 +128,31 @@ def choose_swapchain_extent(width, height, capabilities):
 class SwapChainBundle:
 
 	def __init__(self, logical_device:'vk_device.LogicalDevice', queue_family:'vk_queue_families.QueueFamilyIndices', width, height):
-		support = SwapChainSupportDetails(queue_family.instance, queue_family.physical_device, queue_family.surface)
+		self.logical_device = logical_device
+		self.queue_family = queue_family
+
+		self.swapchain = None
+		self.frames:list[vk_frame.SwapChainFrame] = []
+
+		self.remake(width, height)
+
+	def remake(self, width, height):
+		vkDeviceWaitIdle(self.logical_device.device)
+
+		if self.swapchain is not None:
+			self.destroy()
+
+		support = SwapChainSupportDetails(self.queue_family.instance, self.queue_family.physical_device, self.queue_family.surface)
 		format = choose_swapchain_surface_format(support.formats)
 		presentMode = choose_swapchain_present_mode(support.presentModes)
 		self.extent = choose_swapchain_extent(width, height, support.capabilities)
 
-		imageCount = min(
+		image_count = min(
 			support.capabilities.maxImageCount,
 			support.capabilities.minImageCount + 1
 		)
+
+		# if the original still exists, we need to destroy it
 
 		"""
 			* VULKAN_HPP_CONSTEXPR SwapchainCreateInfoKHR(
@@ -161,11 +177,11 @@ class SwapChainBundle:
 			) VULKAN_HPP_NOEXCEPT
 		"""
 
-		if (queue_family.graphics_family != queue_family.present_family):
+		if (self.queue_family.graphics_family != self.queue_family.present_family):
 			imageSharingMode = VK_SHARING_MODE_CONCURRENT
 			queueFamilyIndexCount = 2
 			pQueueFamilyIndices = [
-				queue_family.graphics_family, queue_family.present_family
+				self.queue_family.graphics_family, self.queue_family.present_family
 			]
 		else:
 			imageSharingMode = VK_SHARING_MODE_EXCLUSIVE
@@ -173,7 +189,7 @@ class SwapChainBundle:
 			pQueueFamilyIndices = None
 
 		createInfo = VkSwapchainCreateInfoKHR(
-			surface = queue_family.surface, minImageCount = imageCount, imageFormat = format.format,
+			surface = self.queue_family.surface, minImageCount = image_count, imageFormat = format.format,
 			imageColorSpace = format.colorSpace, imageExtent = self.extent, imageArrayLayers = 1,
 			imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, imageSharingMode = imageSharingMode,
 			queueFamilyIndexCount = queueFamilyIndexCount, pQueueFamilyIndices = pQueueFamilyIndices,
@@ -181,13 +197,13 @@ class SwapChainBundle:
 			presentMode = presentMode, clipped = VK_TRUE
 		)
 
-		vkCreateSwapchainKHR = vkGetDeviceProcAddr(logical_device.device, 'vkCreateSwapchainKHR')
-		self.swapchain = vkCreateSwapchainKHR(logical_device.device, createInfo, None)
+		vkCreateSwapchainKHR = vkGetDeviceProcAddr(self.logical_device.device, 'vkCreateSwapchainKHR')
+		self.swapchain = vkCreateSwapchainKHR(self.logical_device.device, createInfo, None)
 
-		vkGetSwapchainImagesKHR = vkGetDeviceProcAddr(logical_device.device, 'vkGetSwapchainImagesKHR')
-		images = vkGetSwapchainImagesKHR(logical_device.device, self.swapchain)
+		vkGetSwapchainImagesKHR = vkGetDeviceProcAddr(self.logical_device.device, 'vkGetSwapchainImagesKHR')
+		images = vkGetSwapchainImagesKHR(self.logical_device.device, self.swapchain)
 
-		self.frames:list[vk_frame.SwapChainFrame] = []
+		self.frames = []
 		for image in images:
 			# TODO if allowed in the future
 			# move this stuff to swapChainFrame and make a list comprehension
@@ -211,17 +227,12 @@ class SwapChainBundle:
 				subresourceRange = subresource_range
 			)
 			
-			swapchain_frame = vk_frame.SwapChainFrame(logical_device, image, 
-				vkCreateImageView(device = logical_device.device, pCreateInfo = create_info, pAllocator = None)
+			swapchain_frame = vk_frame.SwapChainFrame(self.logical_device, image, 
+				vkCreateImageView(device = self.logical_device.device, pCreateInfo = create_info, pAllocator = None)
 				)
 			self.frames.append(swapchain_frame)
 
-
 		self.format = format.format
-		self.logical_device = logical_device
-		# TODO watch this as it may need to be removed and added to self.destroy(...)
-		# as a parameter
-		# this ultimately depends on if the device number ever changes
 
 		self.max_frames_in_flight = len(self.frames)
 		self.current_frame = 0
@@ -233,8 +244,6 @@ class SwapChainBundle:
 	def destroy(self):
 		for frame in self.frames:
 			frame.destroy()
-			
-
 
 		destruction_function = vkGetDeviceProcAddr(self.logical_device.device, 'vkDestroySwapchainKHR')
 		destruction_function(self.logical_device.device, self.swapchain, None)

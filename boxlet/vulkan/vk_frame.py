@@ -9,9 +9,9 @@ class SwapChainFrame:
 		self.frame_buffer = None
 		self.command_buffer = None
 
-		self.in_flight:'vk_sync.Fence' = None
-		self.image_available:'vk_sync.Semaphore' = None
-		self.render_finished:'vk_sync.Semaphore' = None
+		self.in_flight = vk_sync.Fence(logical_device)
+		self.image_available = vk_sync.Semaphore(logical_device)
+		self.render_finished = vk_sync.Semaphore(logical_device)
 
 		# TODO if this is created in only one way
 		# or requires all future variables
