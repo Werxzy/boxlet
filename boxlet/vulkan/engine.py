@@ -18,22 +18,10 @@ class Engine:
 		self.make_device()
 		self.make_pipeline()
 		self.finalize_setup()
-		
-	# def make_instance(self):
-	# 	self.instance = vk_instance.make_instance('ID Tech 12')
 
-	# 	if DEBUG_MODE:
-	# 		self.debug_messenger = vk_logging.DebugMessenger(self.instance)
 
-	# 	surface = ffi.new('VkSurfaceKHR*')
+		self.make_assets()
 
-	# 	if glfw.create_window_surface(self.instance, self.window, None, surface) != VK_SUCCESS:
-	# 		if DEBUG_MODE:
-	# 			print('Failed to abstract glfw\'s surface for Vulkan')
-	# 	elif DEBUG_MODE:
-	# 		print('Successfully abstracted glfw\'s surface for Vulkan')
-
-	# 	self.surface = surface[0]
 
 	def make_pygame_instance(self, wm_info):
 		self.instance = vk_instance.make_instance('ID Tech 12')
@@ -101,6 +89,16 @@ class Engine:
 			self.swapchain_bundle.frames
 		)
 
+	def make_assets(self):
+		self.triangle_mesh = vk_mesh.Mesh(self.physical_device, self.logical_device)
+
+	def prepare_scene(self, command_buffer):
+		vkCmdBindVertexBuffers(
+			commandBuffer = command_buffer, firstBinding = 0, bindingCount = 1,
+			pBuffers = [self.triangle_mesh.vertex_buffer.buffer],
+			pOffsets = (0,)
+		)
+
 	def recreate_swapchain(self):
 		if DEBUG_MODE:
 			print('recreate swapchain')
@@ -132,6 +130,8 @@ class Engine:
 		vkCmdBeginRenderPass(command_buffer, render_pass_info, VK_SUBPASS_CONTENTS_INLINE)
 
 		vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self.pipeline)
+
+		self.prepare_scene(command_buffer)
 
 		for p in scene.triangle_positions:
 			model_transform = pyrr.matrix44.create_from_translation(p, dtype = np.float32)
@@ -224,6 +224,8 @@ class Engine:
 		vkDestroyRenderPass(self.logical_device.device, self.render_pass, None)
 
 		self.swapchain_bundle.destroy()
+
+		self.triangle_mesh.destroy()
 
 		self.logical_device.destroy()
 

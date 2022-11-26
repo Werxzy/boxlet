@@ -68,13 +68,15 @@ def create_pipeline_layout(device):
 
 	return vkCreatePipelineLayout(device, pipeline_layout_info, None)
 
-
-
 def create_graphics_pipeline(input_bundle: InputBundle):
 
+	binding_desc = vk_mesh.get_pos_color_binding_description()
+	attribute_desc = vk_mesh.get_pos_color_attribute_descriptions()
+	# TODO move this differently
+
 	vertex_input_info = VkPipelineVertexInputStateCreateInfo(
-		vertexBindingDescriptionCount = 0,
-		vertexAttributeDescriptionCount = 0
+		vertexBindingDescriptionCount = 1, pVertexBindingDescriptions = [binding_desc],
+		vertexAttributeDescriptionCount = len(attribute_desc), pVertexAttributeDescriptions = attribute_desc
 	)
 
 	if DEBUG_MODE:
