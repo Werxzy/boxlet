@@ -90,12 +90,56 @@ class Engine:
 		)
 
 	def make_assets(self):
-		self.triangle_mesh = vk_mesh.Mesh(self.physical_device, self.logical_device)
+		# self.triangle_mesh = vk_mesh.Mesh(self.physical_device, self.logical_device)
+
+		# TODO remove make_assets function and have assets added/initialized outside of engine
+
+		self.meshes = vk_mesh.MultiMesh(self.physical_device, self.logical_device, [
+			np.array([ # triangle
+				0.0, -0.05, 0.0, 1.0, 0.0,
+				0.05, 0.05, 0.0, 1.0, 0.0,
+				-0.05, 0.05, 0.0, 1.0, 0.0,
+			]),
+			np.array([ # square
+				-0.05, 0.05, 1.0, 0.0, 0.0,
+				-0.05, -0.05, 1.0, 0.0, 0.0,
+				0.05, -0.05, 1.0, 0.0, 0.0,
+				0.05, -0.05, 1.0, 0.0, 0.0,
+				0.05, 0.05, 1.0, 0.0, 0.0,
+				-0.05, 0.05, 1.0, 0.0, 0.0,
+			]),
+			np.array([ # star
+				-0.05, -0.025, 0.0, 0.0, 1.0,
+				-0.02, -0.025, 0.0, 0.0, 1.0,
+				-0.03, 0.0, 0.0, 0.0, 1.0,
+				-0.02, -0.025, 0.0, 0.0, 1.0,
+				0.0, -0.05, 0.0, 0.0, 1.0,
+				0.02, -0.025, 0.0, 0.0, 1.0,
+				-0.03, 0.0, 0.0, 0.0, 1.0,
+				-0.02, -0.025, 0.0, 0.0, 1.0,
+				0.02, -0.025, 0.0, 0.0, 1.0,
+				0.02, -0.025, 0.0, 0.0, 1.0,
+				0.05, -0.025, 0.0, 0.0, 1.0,
+				0.03, 0.0, 0.0, 0.0, 1.0,
+				-0.03, 0.0, 0.0, 0.0, 1.0,
+				0.02, -0.025, 0.0, 0.0, 1.0,
+				0.03, 0.0, 0.0, 0.0, 1.0,
+				0.03, 0.0, 0.0, 0.0, 1.0,
+				0.04, 0.05, 0.0, 0.0, 1.0,
+				0.0, 0.01, 0.0, 0.0, 1.0,
+				-0.03, 0.0, 0.0, 0.0, 1.0,
+				0.03, 0.0, 0.0, 0.0, 1.0,
+				0.0, 0.01, 0.0, 0.0, 1.0,
+				-0.03, 0.0, 0.0, 0.0, 1.0,
+				0.0, 0.01, 0.0, 0.0, 1.0,
+				-0.04, 0.05, 0.0, 0.0, 1.0,
+			]),
+		])
 
 	def prepare_scene(self, command_buffer):
 		vkCmdBindVertexBuffers(
 			commandBuffer = command_buffer, firstBinding = 0, bindingCount = 1,
-			pBuffers = [self.triangle_mesh.vertex_buffer.buffer],
+			pBuffers = [self.meshes.vertex_buffer.buffer],
 			pOffsets = (0,)
 		)
 
@@ -111,6 +155,30 @@ class Engine:
 		# I think they would normally be freed when the command pool was destroyed
 
 		self.finalize_setup()
+
+	def record_draw_from_list(self, command_buffer, positions, mesh_id):
+		# TODO move this to a renderer class?
+
+		for p in positions:
+			model_transform = pyrr.matrix44.create_from_translation(p, dtype = np.float32)
+			obj_data = ffi.cast('float *', ffi.from_buffer(model_transform)) 
+			# TODO ffi.cast seems like a bad idea
+
+			vkCmdPushConstants(
+				commandBuffer = command_buffer, layout = self.pipeline_layout,
+				stageFlags = VK_SHADER_STAGE_VERTEX_BIT, offset = 0,
+				size = 4 * 4 * 4, pValues = obj_data
+			)
+
+			# vertex_count = 3
+			# vertex_offset = 0
+			vertex_count = self.meshes.sizes[mesh_id]
+			vertex_offset = self.meshes.offsets[mesh_id]
+
+			vkCmdDraw(
+				commandBuffer = command_buffer, vertexCount = vertex_count,
+				instanceCount = 1, firstVertex = vertex_offset, firstInstance = 0
+			)
 
 	def record_draw_commands(self, command_buffer, image_index, scene):
 		begin_info = VkCommandBufferBeginInfo()
@@ -132,22 +200,9 @@ class Engine:
 		vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self.pipeline)
 
 		self.prepare_scene(command_buffer)
-
-		for p in scene.triangle_positions:
-			model_transform = pyrr.matrix44.create_from_translation(p, dtype = np.float32)
-			obj_data = ffi.cast('float *', ffi.from_buffer(model_transform)) 
-			# TODO this seems bad
-
-			vkCmdPushConstants(
-				commandBuffer = command_buffer, layout = self.pipeline_layout,
-				stageFlags = VK_SHADER_STAGE_VERTEX_BIT, offset = 0,
-				size = 4 * 4 * 4, pValues = obj_data
-			)
-
-			vkCmdDraw(
-				commandBuffer = command_buffer, vertexCount = 3,
-				instanceCount = 1, firstVertex = 0, firstInstance = 0
-			)
+		self.record_draw_from_list(command_buffer, scene.triangle_positions, 0)
+		self.record_draw_from_list(command_buffer, scene.square_positions, 1)
+		self.record_draw_from_list(command_buffer, scene.star_positions, 2)
 
 		vkCmdEndRenderPass(command_buffer)
 
@@ -225,7 +280,7 @@ class Engine:
 
 		self.swapchain_bundle.destroy()
 
-		self.triangle_mesh.destroy()
+		self.meshes.destroy()
 
 		self.logical_device.destroy()
 

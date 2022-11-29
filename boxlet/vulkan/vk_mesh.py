@@ -2,7 +2,6 @@ from . import *
 
 class Mesh:
 	def __init__(self, physical_device, logical_device, vertices = None) -> None:
-		self.logical_device = logical_device
 
 		if vertices is None:
 			vertices = np.array([
@@ -22,12 +21,18 @@ class Mesh:
 	def destroy(self):
 		self.vertex_buffer.destroy()
 
-class MultiMesh:
-	def __init__(self, physical_device, logical_device, vertices = []) -> None:
-		pass
-		# TODO multimesh is used for indirect draw calls
 
-		
+class MultiMesh(Mesh):
+	def __init__(self, physical_device, logical_device, vertices:list[np.ndarray] = []) -> None:
+		# TODO edit vertices ensure the component counts are the same?
+		# TODO add indices
+		# TODO add better control over vertex layout/data
+
+		final_vertices = np.concatenate(vertices, dtype = np.float32)
+		self.sizes = np.array([v.size // 5 for v in vertices], dtype = np.int32) # the '// 5' should be replaced
+		self.offsets = np.cumsum(self.sizes, dtype = np.int32) - self.sizes # removes it's own starting size to get the starting positions
+
+		super().__init__(physical_device, logical_device, final_vertices)
 
 
 # this is very no me gusta
