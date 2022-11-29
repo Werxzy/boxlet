@@ -104,35 +104,30 @@ class Engine:
 				-0.05, 0.05, 1.0, 0.0, 0.0,
 				-0.05, -0.05, 1.0, 0.0, 0.0,
 				0.05, -0.05, 1.0, 0.0, 0.0,
-				0.05, -0.05, 1.0, 0.0, 0.0,
 				0.05, 0.05, 1.0, 0.0, 0.0,
-				-0.05, 0.05, 1.0, 0.0, 0.0,
 			]),
-			np.array([ # star
+			np.array([ # star4
 				-0.05, -0.025, 0.0, 0.0, 1.0,
 				-0.02, -0.025, 0.0, 0.0, 1.0,
 				-0.03, 0.0, 0.0, 0.0, 1.0,
-				-0.02, -0.025, 0.0, 0.0, 1.0,
 				0.0, -0.05, 0.0, 0.0, 1.0,
 				0.02, -0.025, 0.0, 0.0, 1.0,
-				-0.03, 0.0, 0.0, 0.0, 1.0,
-				-0.02, -0.025, 0.0, 0.0, 1.0,
-				0.02, -0.025, 0.0, 0.0, 1.0,
-				0.02, -0.025, 0.0, 0.0, 1.0,
-				0.05, -0.025, 0.0, 0.0, 1.0,
-				0.03, 0.0, 0.0, 0.0, 1.0,
-				-0.03, 0.0, 0.0, 0.0, 1.0,
-				0.02, -0.025, 0.0, 0.0, 1.0,
-				0.03, 0.0, 0.0, 0.0, 1.0,
-				0.03, 0.0, 0.0, 0.0, 1.0,
-				0.04, 0.05, 0.0, 0.0, 1.0,
-				0.0, 0.01, 0.0, 0.0, 1.0,
-				-0.03, 0.0, 0.0, 0.0, 1.0,
-				0.03, 0.0, 0.0, 0.0, 1.0,
-				0.0, 0.01, 0.0, 0.0, 1.0,
-				-0.03, 0.0, 0.0, 0.0, 1.0,
-				0.0, 0.01, 0.0, 0.0, 1.0,
+				0.05, -0.025, 0.0, 0.0, 1.0, 
+				0.03, 0.0, 0.0, 0.0, 1.0, 
+				0.04, 0.05, 0.0, 0.0, 1.0, 
+				0.0, 0.01, 0.0, 0.0, 1.0, 
 				-0.04, 0.05, 0.0, 0.0, 1.0,
+			]),
+		],
+		[
+			np.array([
+				0,1,2
+			]),
+			np.array([
+				0,1,2, 2,3,0
+			]),
+			np.array([
+				0,1,2, 1,3,4, 2,1,4, 4,5,6, 2,4,6, 6,7,8, 2,6,8, 2,8,9, 
 			]),
 		])
 
@@ -141,6 +136,13 @@ class Engine:
 			commandBuffer = command_buffer, firstBinding = 0, bindingCount = 1,
 			pBuffers = [self.meshes.vertex_buffer.buffer],
 			pOffsets = (0,)
+		)
+
+		vkCmdBindIndexBuffer(
+			commandBuffer = command_buffer, 
+			buffer = self.meshes.index_buffer.buffer,
+			offset = 0,
+			indexType = VK_INDEX_TYPE_UINT32 # 16 bit might be more efficient in larger loads
 		)
 
 	def recreate_swapchain(self):
@@ -170,14 +172,13 @@ class Engine:
 				size = 4 * 4 * 4, pValues = obj_data
 			)
 
-			# vertex_count = 3
-			# vertex_offset = 0
-			vertex_count = self.meshes.sizes[mesh_id]
-			vertex_offset = self.meshes.offsets[mesh_id]
-
-			vkCmdDraw(
-				commandBuffer = command_buffer, vertexCount = vertex_count,
-				instanceCount = 1, firstVertex = vertex_offset, firstInstance = 0
+			vkCmdDrawIndexed(
+				commandBuffer = command_buffer, 
+				indexCount = self.meshes.index_counts[mesh_id],
+				instanceCount = 1,
+				firstIndex = self.meshes.index_offsets[mesh_id],
+				vertexOffset = self.meshes.vertex_offsets[mesh_id],
+				firstInstance = 0
 			)
 
 	def record_draw_commands(self, command_buffer, image_index, scene):
