@@ -8,6 +8,9 @@ class Shader:
 	}
 
 	def __init__(self, shader_type:str, logical_device:vk_device.LogicalDevice, filename) -> None:
+		if DEBUG_MODE:
+			print(f'Load shader module:{filename}')
+
 		if shader_type not in Shader.TYPES:
 			raise Exception(f'Invalid Shader type {shader_type}')
 

@@ -42,6 +42,8 @@ class Mesh:
 			pOffsets = (0,)
 		)
 
+		# NOTE vertex and instance buffers can be bound in seperate calls
+
 		vkCmdBindIndexBuffer(
 			commandBuffer = command_buffer, 
 			buffer = self.index_buffer.buffer,
@@ -63,8 +65,6 @@ class MultiMesh(Mesh):
 
 		self.index_counts = np.array([ind.size for ind in indices], dtype = np.int32)
 		self.index_offsets = np.cumsum(self.index_counts, dtype = np.int32) - self.index_counts
-
-		print(self.index_offsets)
 
 		# vertex_buffer[index_buffer[i + index_offsets[m]] + vertex_offets[m]]
 		# i = range(index_counts[m])

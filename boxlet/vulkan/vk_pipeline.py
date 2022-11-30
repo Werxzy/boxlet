@@ -79,9 +79,6 @@ def create_graphics_pipeline(input_bundle: InputBundle):
 		vertexAttributeDescriptionCount = len(attribute_desc), pVertexAttributeDescriptions = attribute_desc
 	)
 
-	if DEBUG_MODE:
-		print(f'Load shader module:{input_bundle.vertex_filepath}')
-
 	vertex_shader = vk_shaders.Shader('vertex', input_bundle.logical_device, input_bundle.vertex_filepath)
 
 	input_assembly = VkPipelineInputAssemblyStateCreateInfo(
@@ -121,9 +118,6 @@ def create_graphics_pipeline(input_bundle: InputBundle):
 		sampleShadingEnable = VK_FALSE,
 		rasterizationSamples = VK_SAMPLE_COUNT_1_BIT
 	)
-
-	if DEBUG_MODE:
-		print(f'Load shader module:{input_bundle.fragment_filepath}')
 
 	fragment_shader = vk_shaders.Shader('fragment', input_bundle.logical_device, input_bundle.fragment_filepath)
 
