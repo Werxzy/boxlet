@@ -90,8 +90,6 @@ class Engine:
 		)
 
 	def make_assets(self):
-		# self.triangle_mesh = vk_mesh.Mesh(self.physical_device, self.logical_device)
-
 		# TODO remove make_assets function and have assets added/initialized outside of engine
 
 		self.meshes = vk_mesh.MultiMesh(self.physical_device, self.logical_device, [
@@ -130,20 +128,6 @@ class Engine:
 				0,1,2, 1,3,4, 2,1,4, 4,5,6, 2,4,6, 6,7,8, 2,6,8, 2,8,9, 
 			]),
 		])
-
-	def prepare_scene(self, command_buffer):
-		vkCmdBindVertexBuffers(
-			commandBuffer = command_buffer, firstBinding = 0, bindingCount = 1,
-			pBuffers = [self.meshes.vertex_buffer.buffer],
-			pOffsets = (0,)
-		)
-
-		vkCmdBindIndexBuffer(
-			commandBuffer = command_buffer, 
-			buffer = self.meshes.index_buffer.buffer,
-			offset = 0,
-			indexType = VK_INDEX_TYPE_UINT32 # 16 bit might be more efficient in larger loads
-		)
 
 	def recreate_swapchain(self):
 		if DEBUG_MODE:
@@ -200,7 +184,7 @@ class Engine:
 
 		vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self.pipeline)
 
-		self.prepare_scene(command_buffer)
+		self.meshes.bind(command_buffer)
 		self.record_draw_from_list(command_buffer, scene.triangle_positions, 0)
 		self.record_draw_from_list(command_buffer, scene.square_positions, 1)
 		self.record_draw_from_list(command_buffer, scene.star_positions, 2)

@@ -43,7 +43,7 @@ def debug_callback(*args):
 
 class DebugMessenger:
 	def __init__(self, instance) -> None:
-		self.instance = instance # TODO watch if this needs to be moved to self.destroy()
+		self.instance = instance
 
 		create_info = VkDebugReportCallbackCreateInfoEXT(
 			flags=VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT,

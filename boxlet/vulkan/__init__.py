@@ -1,8 +1,6 @@
 # a majority of this is from 
 # https://www.youtube.com/watch?v=drregGzhgCA&list=PLn3eTxaOtL2M4qgHpHuxY821C_oX0GvM7&index=3
 
-import glfw
-import glfw.GLFW as GLFW_CONSTANTS
 
 #statically load vulkan library
 from vulkan import *

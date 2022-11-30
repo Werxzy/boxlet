@@ -35,6 +35,20 @@ class Mesh:
 		self.vertex_buffer.destroy()
 		self.index_buffer.destroy()
 
+	def bind(self, command_buffer):
+		vkCmdBindVertexBuffers(
+			commandBuffer = command_buffer, firstBinding = 0, bindingCount = 1,
+			pBuffers = [self.vertex_buffer.buffer],
+			pOffsets = (0,)
+		)
+
+		vkCmdBindIndexBuffer(
+			commandBuffer = command_buffer, 
+			buffer = self.index_buffer.buffer,
+			offset = 0,
+			indexType = VK_INDEX_TYPE_UINT32 # 16 bit might be more efficient in larger loads
+		)
+
 
 class MultiMesh(Mesh):
 	def __init__(self, physical_device, logical_device, vertices:list[np.ndarray] = [], indices:list[np.ndarray] = []) -> None:
