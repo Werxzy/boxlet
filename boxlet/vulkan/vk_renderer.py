@@ -27,20 +27,35 @@ class TestRenderer(Renderer):
 			pos_data
 		)
 
+		indirect_data = np.array([(		
+			self.meshes.index_counts[model],
+			10,
+			self.meshes.index_offsets[model],
+			self.meshes.vertex_offsets[model],
+			0)], 
+			dtype = vk_memory.Buffer.indirect_dtype)
+
+		self.indirect_buffer = vk_memory.Buffer(
+			physical_device, 
+			logical_device,
+			VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+			indirect_data
+		)
+
 	def prepare(self, command_buffer):
 		self.meshes.bind(command_buffer)
 		
 		self.instance_buffer.bind_to_vertex(command_buffer)
-		
-		vkCmdDrawIndexed(
+
+		vkCmdDrawIndexedIndirect(
 			commandBuffer = command_buffer, 
-			indexCount = self.meshes.index_counts[self.model],
-			instanceCount = 10,
-			firstIndex = self.meshes.index_offsets[self.model],
-			vertexOffset = self.meshes.vertex_offsets[self.model],
-			firstInstance = 0
+			buffer = self.indirect_buffer.buffer,
+			offset = 0,
+			drawCount = 1,
+			stride = 20
 		)
 
 	def destroy(self):
 		self.instance_buffer.destroy()
+		self.indirect_buffer.destroy()
 		Renderer.all_renderers.remove(self)
