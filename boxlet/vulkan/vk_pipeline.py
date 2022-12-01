@@ -70,12 +70,44 @@ def create_pipeline_layout(device):
 
 def create_graphics_pipeline(input_bundle: InputBundle):
 
-	binding_desc = vk_mesh.get_pos_color_binding_description()
+	binding_desc = [vk_mesh.get_pos_color_binding_description()]
 	attribute_desc = vk_mesh.get_pos_color_attribute_descriptions()
 	# TODO move this differently
 
+
+	# TEMP INSTANCE DATA DESCRIPTIONS
+	binding_desc.append(
+			VkVertexInputBindingDescription(
+				binding = 1, stride = 64, inputRate = VK_VERTEX_INPUT_RATE_INSTANCE
+			)	
+		)
+
+	attribute_desc.extend([
+		VkVertexInputAttributeDescription(
+			binding = 1, location = 2,
+			format = VK_FORMAT_R32G32B32A32_SFLOAT,
+			offset = 0
+		),
+		VkVertexInputAttributeDescription(
+			binding = 1, location = 3,
+			format = VK_FORMAT_R32G32B32A32_SFLOAT,
+			offset = 16
+		),
+		VkVertexInputAttributeDescription(
+			binding = 1, location = 4,
+			format = VK_FORMAT_R32G32B32A32_SFLOAT,
+			offset = 32
+		),
+		VkVertexInputAttributeDescription(
+			binding = 1, location = 5,
+			format = VK_FORMAT_R32G32B32A32_SFLOAT,
+			offset = 48
+		),
+	])
+	
+
 	vertex_input_info = VkPipelineVertexInputStateCreateInfo(
-		vertexBindingDescriptionCount = 1, pVertexBindingDescriptions = [binding_desc],
+		vertexBindingDescriptionCount = len(binding_desc), pVertexBindingDescriptions = binding_desc,
 		vertexAttributeDescriptionCount = len(attribute_desc), pVertexAttributeDescriptions = attribute_desc
 	)
 

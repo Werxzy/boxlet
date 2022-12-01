@@ -129,6 +129,30 @@ class Engine:
 			]),
 		])
 
+		y_range = np.arange(-1.0, 1.0, 0.2)
+
+		triangle_positions = np.array([pyrr.matrix44.create_from_translation([-0.3, y, 0]) for y in y_range], dtype = np.float32)
+		square_positions = np.array([pyrr.matrix44.create_from_translation([0, y, 0]) for y in y_range], dtype = np.float32)
+		star_positions = np.array([pyrr.matrix44.create_from_translation([0.3, y, 0]) for y in y_range], dtype = np.float32)
+
+
+		self.instance_triangle_buffer = vk_memory.InstanceBuffer(
+			self.physical_device, 
+			self.logical_device, 
+			triangle_positions
+		)
+		self.instance_square_buffer = vk_memory.InstanceBuffer(
+			self.physical_device, 
+			self.logical_device, 
+			square_positions
+		)
+		self.instance_star_buffer = vk_memory.InstanceBuffer(
+			self.physical_device, 
+			self.logical_device, 
+			star_positions
+		)
+
+
 	def recreate_swapchain(self):
 		if DEBUG_MODE:
 			print('recreate swapchain')
@@ -142,24 +166,15 @@ class Engine:
 
 		self.finalize_setup()
 
-	def record_draw_from_list(self, command_buffer, positions, mesh_id):
+	def record_draw_from_list(self, command_buffer, positions:vk_memory.InstanceBuffer, mesh_id):
 		# TODO move this to a renderer class?
 
-		for p in positions:
-			model_transform = pyrr.matrix44.create_from_translation(p, dtype = np.float32)
-			obj_data = ffi.cast('float *', ffi.from_buffer(model_transform)) 
-			# TODO ffi.cast seems like a bad idea
-
-			vkCmdPushConstants(
-				commandBuffer = command_buffer, layout = self.pipeline_layout,
-				stageFlags = VK_SHADER_STAGE_VERTEX_BIT, offset = 0,
-				size = 4 * 4 * 4, pValues = obj_data
-			)
+		positions.bind_to_vertex(command_buffer)
 
 			vkCmdDrawIndexed(
 				commandBuffer = command_buffer, 
 				indexCount = self.meshes.index_counts[mesh_id],
-				instanceCount = 1,
+			instanceCount = 10,
 				firstIndex = self.meshes.index_offsets[mesh_id],
 				vertexOffset = self.meshes.vertex_offsets[mesh_id],
 				firstInstance = 0
@@ -185,9 +200,9 @@ class Engine:
 		vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self.pipeline)
 
 		self.meshes.bind(command_buffer)
-		self.record_draw_from_list(command_buffer, scene.triangle_positions, 0)
-		self.record_draw_from_list(command_buffer, scene.square_positions, 1)
-		self.record_draw_from_list(command_buffer, scene.star_positions, 2)
+		self.record_draw_from_list(command_buffer, self.instance_triangle_buffer, 0)
+		self.record_draw_from_list(command_buffer, self.instance_square_buffer, 1)
+		self.record_draw_from_list(command_buffer, self.instance_star_buffer, 2)
 
 		vkCmdEndRenderPass(command_buffer)
 
@@ -266,6 +281,9 @@ class Engine:
 		self.swapchain_bundle.destroy()
 
 		self.meshes.destroy()
+		self.instance_triangle_buffer.destroy()
+		self.instance_square_buffer.destroy()
+		self.instance_star_buffer.destroy()
 
 		self.logical_device.destroy()
 

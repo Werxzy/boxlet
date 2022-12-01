@@ -3,14 +3,14 @@ from . import *
 
 class Buffer:
 
-	def __init__(self, physical_device, logical_device, size, usage, data:np.ndarray = None) -> None:
+	def __init__(self, physical_device, logical_device, usage, data:np.ndarray = None) -> None:
 		self.physical_device = physical_device
 		self.logical_device = logical_device
 
 		self.buffer_memory = None
 
 		buffer_info = VkBufferCreateInfo(
-			size = size,
+			size = data.nbytes,
 			usage = usage,
 			sharingMode = VK_SHARING_MODE_EXCLUSIVE
 		)
@@ -90,3 +90,15 @@ class Buffer:
 		return 0
 
 
+class InstanceBuffer(Buffer):
+	def __init__(self, physical_device, logical_device, data: np.ndarray = None) -> None:
+		super().__init__(physical_device, logical_device, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, data)
+
+	#TODO add extra allocation methods
+
+	def bind_to_vertex(self, command_buffer):
+		vkCmdBindVertexBuffers(
+			commandBuffer = command_buffer, firstBinding = 1, bindingCount = 1,
+			pBuffers = [self.buffer],
+			pOffsets = (0,)
+		)

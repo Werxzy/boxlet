@@ -18,7 +18,6 @@ class Mesh:
 		self.vertex_buffer = vk_memory.Buffer(
 			physical_device, 
 			logical_device, 
-			vertices.nbytes, 
 			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 			vertices
 		)
@@ -26,7 +25,6 @@ class Mesh:
 		self.index_buffer = vk_memory.Buffer(
 			physical_device, 
 			logical_device, 
-			indices.nbytes, 
 			VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
 			indices
 		)
@@ -82,7 +80,7 @@ def get_pos_color_binding_description():
 
 def get_pos_color_attribute_descriptions():
 
-	return (
+	return [
 		VkVertexInputAttributeDescription( # 2d position
 			binding = 0, location = 0,
 			format = VK_FORMAT_R32G32_SFLOAT,
@@ -93,4 +91,4 @@ def get_pos_color_attribute_descriptions():
 			format = VK_FORMAT_R32G32B32_SFLOAT,
 			offset = 8
 		),
-	)
+	]
