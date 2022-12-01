@@ -20,9 +20,6 @@ class Engine:
 		self.finalize_setup()
 
 
-		self.make_assets()
-
-
 	def make_pygame_instance(self, wm_info):
 		self.instance = vk_instance.make_instance('ID Tech 12')
 
@@ -89,70 +86,6 @@ class Engine:
 			self.swapchain_bundle.frames
 		)
 
-	def make_assets(self):
-		# TODO remove make_assets function and have assets added/initialized outside of engine
-
-		self.meshes = vk_mesh.MultiMesh(self.physical_device, self.logical_device, [
-			np.array([ # triangle
-				0.0, -0.05, 0.0, 1.0, 0.0,
-				0.05, 0.05, 0.0, 1.0, 0.0,
-				-0.05, 0.05, 0.0, 1.0, 0.0,
-			]),
-			np.array([ # square
-				-0.05, 0.05, 1.0, 0.0, 0.0,
-				-0.05, -0.05, 1.0, 0.0, 0.0,
-				0.05, -0.05, 1.0, 0.0, 0.0,
-				0.05, 0.05, 1.0, 0.0, 0.0,
-			]),
-			np.array([ # star4
-				-0.05, -0.025, 0.0, 0.0, 1.0,
-				-0.02, -0.025, 0.0, 0.0, 1.0,
-				-0.03, 0.0, 0.0, 0.0, 1.0,
-				0.0, -0.05, 0.0, 0.0, 1.0,
-				0.02, -0.025, 0.0, 0.0, 1.0,
-				0.05, -0.025, 0.0, 0.0, 1.0, 
-				0.03, 0.0, 0.0, 0.0, 1.0, 
-				0.04, 0.05, 0.0, 0.0, 1.0, 
-				0.0, 0.01, 0.0, 0.0, 1.0, 
-				-0.04, 0.05, 0.0, 0.0, 1.0,
-			]),
-		],
-		[
-			np.array([
-				0,1,2
-			]),
-			np.array([
-				0,1,2, 2,3,0
-			]),
-			np.array([
-				0,1,2, 1,3,4, 2,1,4, 4,5,6, 2,4,6, 6,7,8, 2,6,8, 2,8,9, 
-			]),
-		])
-
-		y_range = np.arange(-1.0, 1.0, 0.2)
-
-		triangle_positions = np.array([pyrr.matrix44.create_from_translation([-0.3, y, 0]) for y in y_range], dtype = np.float32)
-		square_positions = np.array([pyrr.matrix44.create_from_translation([0, y, 0]) for y in y_range], dtype = np.float32)
-		star_positions = np.array([pyrr.matrix44.create_from_translation([0.3, y, 0]) for y in y_range], dtype = np.float32)
-
-
-		self.instance_triangle_buffer = vk_memory.InstanceBuffer(
-			self.physical_device, 
-			self.logical_device, 
-			triangle_positions
-		)
-		self.instance_square_buffer = vk_memory.InstanceBuffer(
-			self.physical_device, 
-			self.logical_device, 
-			square_positions
-		)
-		self.instance_star_buffer = vk_memory.InstanceBuffer(
-			self.physical_device, 
-			self.logical_device, 
-			star_positions
-		)
-
-
 	def recreate_swapchain(self):
 		if DEBUG_MODE:
 			print('recreate swapchain')
@@ -166,21 +99,7 @@ class Engine:
 
 		self.finalize_setup()
 
-	def record_draw_from_list(self, command_buffer, positions:vk_memory.InstanceBuffer, mesh_id):
-		# TODO move this to a renderer class?
-
-		positions.bind_to_vertex(command_buffer)
-
-			vkCmdDrawIndexed(
-				commandBuffer = command_buffer, 
-				indexCount = self.meshes.index_counts[mesh_id],
-			instanceCount = 10,
-				firstIndex = self.meshes.index_offsets[mesh_id],
-				vertexOffset = self.meshes.vertex_offsets[mesh_id],
-				firstInstance = 0
-			)
-
-	def record_draw_commands(self, command_buffer, image_index, scene):
+	def record_draw_commands(self, command_buffer, image_index):
 		begin_info = VkCommandBufferBeginInfo()
 
 		vkBeginCommandBuffer(command_buffer, begin_info)
@@ -199,16 +118,14 @@ class Engine:
 
 		vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self.pipeline)
 
-		self.meshes.bind(command_buffer)
-		self.record_draw_from_list(command_buffer, self.instance_triangle_buffer, 0)
-		self.record_draw_from_list(command_buffer, self.instance_square_buffer, 1)
-		self.record_draw_from_list(command_buffer, self.instance_star_buffer, 2)
+		for r in vk_renderer.Renderer.all_renderers:
+			r.prepare(command_buffer)
 
 		vkCmdEndRenderPass(command_buffer)
 
 		vkEndCommandBuffer(command_buffer)
 
-	def render(self, scene):
+	def render(self):
 		# TODO, double check the semphores
 		# I wasn't sure if the tutorial was correct, so I modified them
 		# it appears to work currently, but could have frame lag
@@ -241,7 +158,7 @@ class Engine:
 
 		command_buffer = next_frame.command_buffer
 		vkResetCommandBuffer(commandBuffer = command_buffer, flags = 0)
-		self.record_draw_commands(command_buffer, image_index, scene)
+		self.record_draw_commands(command_buffer, image_index)
 
 		submit_info = VkSubmitInfo(
 			waitSemaphoreCount = 1, pWaitSemaphores = [next_frame.image_available.vk_id],
@@ -280,10 +197,7 @@ class Engine:
 
 		self.swapchain_bundle.destroy()
 
-		self.meshes.destroy()
-		self.instance_triangle_buffer.destroy()
-		self.instance_square_buffer.destroy()
-		self.instance_star_buffer.destroy()
+		vk_renderer.Renderer._destroy_all()
 
 		self.logical_device.destroy()
 

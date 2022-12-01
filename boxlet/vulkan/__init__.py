@@ -44,6 +44,8 @@ from . import vk_pipeline
 from . import vk_framebuffer
 from . import vk_commands
 
+from . import vk_renderer
+
 from .engine import Engine
 
 from . import app

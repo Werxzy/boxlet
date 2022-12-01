@@ -11,7 +11,6 @@ class App:
 		wm_info = pygame.display.get_wm_info()
 
 		self.graphics_engine = Engine(width, height, wm_info)
-		self.scene = scene.Scene() # TODO, change this
 
 		self.last_time = time.time()
 		self.current_time = time.time()
@@ -37,7 +36,7 @@ class App:
 				pygame.quit()
 				return
 			
-			self.graphics_engine.render(self.scene)
+			self.graphics_engine.render()
 			self.calculate_framerate()
 			
 	def close(self):
