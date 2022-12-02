@@ -15,11 +15,10 @@ class Renderer:
 
 
 class TestRenderer(Renderer):
-	def __init__(self, physical_device, logical_device, meshes:vk_mesh.MultiMesh, pos_data:np.ndarray, model):
+	def __init__(self, physical_device, logical_device, meshes:vk_mesh.MultiMesh, pos_data:np.ndarray):
 		Renderer.all_renderers.append(self)
 
 		self.meshes = meshes
-		self.model = model
 
 		self.instance_buffer = vk_memory.InstanceBuffer(
 			physical_device, 
@@ -27,12 +26,14 @@ class TestRenderer(Renderer):
 			pos_data
 		)
 
-		indirect_data = np.array([(		
-			self.meshes.index_counts[model],
+		indirect_data = np.array([
+			(self.meshes.index_counts[i],
 			10,
-			self.meshes.index_offsets[model],
-			self.meshes.vertex_offsets[model],
-			0)], 
+			self.meshes.index_offsets[i],
+			self.meshes.vertex_offsets[i],
+			10 * i)
+			for i in range(3)
+			], 
 			dtype = vk_memory.Buffer.indirect_dtype)
 
 		self.indirect_buffer = vk_memory.Buffer(
@@ -51,7 +52,7 @@ class TestRenderer(Renderer):
 			commandBuffer = command_buffer, 
 			buffer = self.indirect_buffer.buffer,
 			offset = 0,
-			drawCount = 1,
+			drawCount = 3,
 			stride = 20
 		)
 

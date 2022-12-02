@@ -46,12 +46,10 @@ y_range = np.arange(-1.0, 1.0, 0.2)
 triangle_positions = np.array([pyrr.matrix44.create_from_translation([-0.3, y, 0]) for y in y_range], dtype = np.float32)
 square_positions = np.array([pyrr.matrix44.create_from_translation([0, y, 0]) for y in y_range], dtype = np.float32)
 star_positions = np.array([pyrr.matrix44.create_from_translation([0.3, y, 0]) for y in y_range], dtype = np.float32)
+positions = np.concatenate([triangle_positions, square_positions, star_positions])
 
 p, l = my_app.graphics_engine.physical_device, my_app.graphics_engine.logical_device
-vk_renderer.TestRenderer(p, l, meshes, triangle_positions, 0)
-vk_renderer.TestRenderer(p, l, meshes, square_positions, 1)
-vk_renderer.TestRenderer(p, l, meshes, star_positions, 2)
-
+vk_renderer.TestRenderer(p, l, meshes, positions)
 
 
 my_app.run()
