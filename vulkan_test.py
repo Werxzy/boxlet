@@ -41,16 +41,20 @@ meshes = vk_mesh.MultiMesh(my_app.graphics_engine.physical_device, my_app.graphi
 	]),
 ])
 
-y_range = np.arange(-1.0, 1.0, 0.2)
-
-triangle_positions = np.array([pyrr.matrix44.create_from_translation([-0.3, y, 0]) for y in y_range], dtype = np.float32)
-square_positions = np.array([pyrr.matrix44.create_from_translation([0, y, 0]) for y in y_range], dtype = np.float32)
-star_positions = np.array([pyrr.matrix44.create_from_translation([0.3, y, 0]) for y in y_range], dtype = np.float32)
-positions = np.concatenate([triangle_positions, square_positions, star_positions])
-
 p, l = my_app.graphics_engine.physical_device, my_app.graphics_engine.logical_device
-vk_renderer.TestRenderer(p, l, meshes, positions)
+data_type = np.dtype([('model', '(4,4)f4')])
+renderer = vk_renderer.TestRenderer(p, l, meshes, data_type)
 
+for y in np.arange(-1.0, 1.0, 0.05):
+	inst = renderer.create_instance(0)
+	inst[0] = pyrr.matrix44.create_from_translation([-0.3 + (y%0.4)/3, y, 0])
+for y in np.arange(-1.0, 1.0, 0.1):
+	inst = renderer.create_instance(1)
+	inst[0] = pyrr.matrix44.create_from_translation([(y%0.4)/3, y, 0])
+for y in np.arange(-1.0, 1.0, 0.1):
+	inst = renderer.create_instance(2)
+	inst[0] = pyrr.matrix44.create_from_translation([0.3 + (y%0.4)/3, y, 0])
+renderer.instance_buffer.needs_update = True
 
 my_app.run()
 
