@@ -64,6 +64,8 @@ class MultiMesh(Mesh):
 		self.index_counts = np.array([ind.size for ind in indices], dtype = np.int32)
 		self.index_offsets = np.cumsum(self.index_counts, dtype = np.int32) - self.index_counts
 
+		self.mesh_count = len(vertices)
+
 		# vertex_buffer[index_buffer[i + index_offsets[m]] + vertex_offets[m]]
 		# i = range(index_counts[m])
 		# m = model id

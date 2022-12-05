@@ -54,7 +54,6 @@ for y in np.arange(-1.0, 1.0, 0.1):
 for y in np.arange(-1.0, 1.0, 0.1):
 	inst = renderer.create_instance(2)
 	inst[0] = pyrr.matrix44.create_from_translation([0.3 + (y%0.4)/3, y, 0])
-renderer.instance_buffer.needs_update = True
 
 my_app.run()
 
