@@ -131,18 +131,28 @@ class Buffer:
 
 
 class InstanceData:
-	def __init__(self, owner, indirect_id, instance_id) -> None:
+	def __init__(self, owner:'InstanceBufferSet', indirect_id, instance_id) -> None:
 		self.owner = owner
 		self.indirect_id = indirect_id
 		self.instance_id = instance_id
 
+	# get and set functions are probably inefficient due to the number of getattr calls
+	def get(self, attribute):
+		return self.owner.instance_buffer.data[self.instance_id][attribute]
+
+	def set(self, attribute, value):
+		self.owner.instance_buffer.data[self.instance_id][attribute] = value
+
 	def destroy(self):
-		...
+		self.owner._destroy_instance(self.indirect_id, self.instance_id)
+		self.owner = None
 
 class InstanceBufferSet:
 	def __init__(self, physical_device, logical_device, meshes:'vk_mesh.MultiMesh', data_type: np.dtype) -> None:
 		
 		# TODO more control over the buffer size increase, indirect buffer size, etc
+
+		self._instances:list[InstanceData] = []
 		
 		self.instance_buffer = Buffer(
 			physical_device, 
@@ -169,10 +179,11 @@ class InstanceBufferSet:
 
 	def create_indirect_group(self, model_id):
 		if self._indirect_max == self.indirect_count:
-			self._indirect_max += 4
 			self.indirect_buffer.expand_memory(4)
 			self.instance_buffer.expand_memory(4 * 16)
 			self.instance_buffer.needs_update = True
+			self._indirect_max += 4
+			self._instances.extend(None for _ in range(4 * 16))
 
 		ind_id = self.indirect_count
 		self.indirect_count += 1
@@ -196,19 +207,42 @@ class InstanceBufferSet:
 			self.create_indirect_group(model_id)
 
 		ind_id = self._indirect_unfilled[model_id][0]
-		count = self.indirect_buffer.data[ind_id][1] + 1
+		count = self.indirect_buffer.data[ind_id][1]
+		id = self.indirect_buffer.data[ind_id][4] + count
+		count += 1
 		self.indirect_buffer.data[ind_id][1] = count
 
 		if count == 16: # TODO configurable max count
 			self._indirect_unfilled[model_id].pop(0)
 			# max count reached, consider filled
 
-		id = self.indirect_buffer.data[ind_id][4] + count - 1
 		self.instance_buffer.needs_update = True
 		self.indirect_buffer.needs_update = True
+		
+		self._instances[id] = new_instance = InstanceData(self, ind_id, id)
+		return new_instance
 
-		return self.instance_buffer.data[id] 
-		# TODO instead return object with proper stuff
+	def _destroy_instance(self, indirect_id, instance_id):
+		'removes an instance while moving the end of the indirect group into its place'
+		count = self.indirect_buffer.data[indirect_id][1] - 1
+		self.indirect_buffer.data[indirect_id][1] = count
+		end_id = count + self.indirect_buffer.data[indirect_id][4]
+		self.indirect_buffer.needs_update = True
+
+		if instance_id < end_id: # if the destroyed instance wasn't at the end
+			self.instance_buffer.data[instance_id] = self.instance_buffer.data[end_id]
+			moved_instance = self._instances[end_id]
+			moved_instance.instance_id = instance_id
+			self._instances[instance_id] = moved_instance
+			self.instance_buffer.needs_update = True
+
+		self._instances[end_id] = None
+
+	# def repack(self):
+	# 	moves all the instances into as few groups as possible and removes the empty groups
+	#	potentially puts all the instances with the same model into a single group
+	#	probably a time consuming task
+	#	potentially add a function for just removing empty groups
 
 	def bind_to_vertex(self, command_buffer):
 		vkCmdBindVertexBuffers(

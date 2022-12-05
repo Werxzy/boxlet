@@ -45,15 +45,36 @@ p, l = my_app.graphics_engine.physical_device, my_app.graphics_engine.logical_de
 data_type = np.dtype([('model', '(4,4)f4')])
 renderer = vk_renderer.TestRenderer(p, l, meshes, data_type)
 
+instances_to_delete = []
+test = 0
+
 for y in np.arange(-1.0, 1.0, 0.05):
 	inst = renderer.create_instance(0)
-	inst[0] = pyrr.matrix44.create_from_translation([-0.3 + (y%0.4)/3, y, 0])
+	inst.set(0, pyrr.matrix44.create_from_translation([-0.3 + (y%0.4)/3, y, 0]))
+	test = (test + 1) % 4
+	if test == 0:
+		instances_to_delete.append(inst)
+
 for y in np.arange(-1.0, 1.0, 0.1):
 	inst = renderer.create_instance(1)
-	inst[0] = pyrr.matrix44.create_from_translation([(y%0.4)/3, y, 0])
+	inst.set(0, pyrr.matrix44.create_from_translation([(y%0.4)/3, y, 0]))
+	test = (test + 1) % 8
+	if test == 0:
+		instances_to_delete.append(inst)
+
 for y in np.arange(-1.0, 1.0, 0.1):
 	inst = renderer.create_instance(2)
-	inst[0] = pyrr.matrix44.create_from_translation([0.3 + (y%0.4)/3, y, 0])
+	inst.set(0, pyrr.matrix44.create_from_translation([0.3 + (y%0.4)/3, y, 0]))
+	test = (test + 1) % 2
+	if test == 0:
+		instances_to_delete.append(inst)
+
+for i in instances_to_delete:
+	i.destroy()
+
+for y in np.arange(-1.0, 1.0, 0.1):
+	inst = renderer.create_instance(2)
+	inst.set(0, pyrr.matrix44.create_from_translation([0.4 + (y%0.4)/3, y, 0]))
 
 my_app.run()
 
