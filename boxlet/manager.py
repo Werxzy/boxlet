@@ -1,6 +1,6 @@
-import time
+import time, os
 
-from . import Entity, clamp, np, pygame, os
+from . import Entity, clamp, np, pygame
 	
 class ExitGame(Exception):
 	'Exception to quickly exit game'
@@ -195,6 +195,5 @@ class Manager:
 
 		pygame.quit()
 
-
-
+instance = Manager()
 
