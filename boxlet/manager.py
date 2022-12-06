@@ -1,4 +1,4 @@
-import time, os
+import time
 
 from . import Entity, clamp, np, pygame
 	
@@ -16,7 +16,8 @@ class Manager:
 			display_size = (960,540),
 			vsync = False,
 			target_frames_per_second = 120,
-			target_updates_per_second = 60
+			target_updates_per_second = 60,
+			**kwargs
 			):
 
 		self.fullscreen = fullscreen
@@ -33,11 +34,11 @@ class Manager:
 			else:
 				self.display = pygame.display.set_mode(self.display_size, flags = pygame.DOUBLEBUF)
 
-			self.fill_color = os.environ.get('BOXLET_FILL_COLOR', 'black')
+			self.fill_color = kwargs.get('fill_color', 'black')
 			if self.fill_color.count(',') > 0: # instead create a list
 				self.fill_color = [int(c) for c in self.fill_color.split(',')]
 
-			self.canvas_size = np.array([i for i in os.environ.get('BOXLET_CANVAS_SIZE', '0,0').split(',')], dtype=int)
+			self.canvas_size = np.array(kwargs.get('canvas_size', (0,0)), dtype=int)
 			if 0 in self.canvas_size:
 				self.canvas_size = np.array(self.display_size, dtype=int)
 			self.canvas = pygame.surface.Surface(self.canvas_size)
@@ -45,9 +46,9 @@ class Manager:
 		elif self.render_mode == 'opengl':
 			self.vsync = vsync
 
-			if os.environ.get('BOXLET_SKIP_GL_CONTEXT_SETUP', '0') == '0':
-				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MAJOR_VERSION, int(os.environ.get('BOXLET_GL_CONTEXT_MAJOR_VERSION', '3')))
-				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MINOR_VERSION, int(os.environ.get('BOXLET_GL_CONTEXT_MINOR_VERSION', '3')))
+			if kwargs.get('skip_gl_context_setup', False):
+				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MAJOR_VERSION, int(kwargs.get('gl_major_version', 3)))
+				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MINOR_VERSION, int(kwargs.get('gl_minor_version', 3)))
 				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_PROFILE_MASK, pygame.GL_CONTEXT_PROFILE_CORE)
 			if self.fullscreen:
 				self.display = pygame.display.set_mode(flags = pygame.OPENGL | pygame.FULLSCREEN | pygame.DOUBLEBUF, vsync = self.vsync)

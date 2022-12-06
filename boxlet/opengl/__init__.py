@@ -9,8 +9,6 @@ from .render_bases.render_pass import RenderPass
 from .render_bases.render_target import RenderTarget
 from .render_instance_metaclass import RenderInstance
 
-
-
 from .transform import Transform
 from .model import Model
 from .texture import Texture, MultiTexture
