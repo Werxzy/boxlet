@@ -1,5 +1,5 @@
 from . import *
-from .vk_library import *
+from .vk_module import *
 from pygame import display as pg_display
 
 

@@ -1,5 +1,5 @@
 from . import *
-from .vk_library import *
+from .vk_module import *
 
 
 class QueueFamilyIndices:

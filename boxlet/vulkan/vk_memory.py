@@ -1,5 +1,5 @@
 from . import *
-from .vk_library import *
+from .vk_module import *
 
 
 class Buffer:
@@ -17,7 +17,7 @@ class Buffer:
 		self.logical_device = logical_device
 		self.usage = usage
 		self.data = data if data is not None else np.array([], np.float32)
-		self.size = self.data.nbytes # TODO not sure if zero bytes will mess things up
+		self.size = self.data.nbytes
 
 		self.buffer = None
 		self.buffer_memory = None

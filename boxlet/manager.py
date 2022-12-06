@@ -47,8 +47,8 @@ class Manager:
 			self.vsync = vsync
 
 			if kwargs.get('skip_gl_context_setup', False):
-				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MAJOR_VERSION, int(kwargs.get('gl_major_version', 3)))
-				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MINOR_VERSION, int(kwargs.get('gl_minor_version', 3)))
+				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MAJOR_VERSION, kwargs.get('gl_major_version', 3))
+				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MINOR_VERSION, kwargs.get('gl_minor_version', 3))
 				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_PROFILE_MASK, pygame.GL_CONTEXT_PROFILE_CORE)
 			if self.fullscreen:
 				self.display = pygame.display.set_mode(flags = pygame.OPENGL | pygame.FULLSCREEN | pygame.DOUBLEBUF, vsync = self.vsync)
