@@ -46,6 +46,15 @@ class Manager:
 			else:
 				self.display = pygame.display.set_mode(self.display_size, flags = pygame.OPENGL | pygame.DOUBLEBUF, vsync = self.vsync)
 
+		elif self.render_mode == 'vulkan':
+			# TODO fullscreen
+			self.vsync = False
+
+			self.display = pygame.display.set_mode(self.display_size, flags = pygame.DOUBLEBUF | pygame.RESIZABLE)
+			wm_info = pygame.display.get_wm_info()
+			from .vulkan.engine import Engine
+			self.vulkan_graphics_engine = Engine(*self.display_size, wm_info)
+
 		else:
 			raise Exception('Unrecognized render mode.')
 		
@@ -118,7 +127,8 @@ class Manager:
 					self.clock.tick_busy_loop(self.fps)
 
 		except ExitGame:
-			...
+			if self.render_mode == 'vulkan':
+				self.vulkan_graphics_engine.close()
 
 	def render(self):
 		if self.render_mode == 'sdl2':
@@ -127,7 +137,10 @@ class Manager:
 			pygame.transform.scale(self.canvas, self.display.get_size(), self.display)
 			pygame.display.update()
 		
-		else:
+		elif self.render_mode == 'vulkan':
+			self.vulkan_graphics_engine.render()
+
+		elif self.render_mode == 'opengl':
 			BoxletGL.render()
 			pygame.display.flip()
 
@@ -156,6 +169,10 @@ class Manager:
 				self.display_size = np.array(self.display.get_size(), dtype=int)
 			else:
 				self.display = pygame.display.set_mode(self.display_size, flags = pygame.OPENGL | pygame.DOUBLEBUF, vsync = self.vsync)
+
+		elif self.render_mode == 'vulkan':
+			...
+			# TODO
 
 	def quit(self):
 		'Exits the program immediately by raising exception ExitGame.'

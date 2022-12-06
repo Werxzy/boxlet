@@ -1,7 +1,10 @@
 from . import *
 
 class Mesh:
+	all_meshes:'list[Mesh]' = []
+
 	def __init__(self, physical_device, logical_device, vertices = None, indices = None) -> None:
+		Mesh.all_meshes.append(self)
 
 		if vertices is None:
 			vertices = np.array([
@@ -30,8 +33,14 @@ class Mesh:
 		)
 
 	def destroy(self):
+		Mesh.all_meshes.remove(self)
 		self.vertex_buffer.destroy()
 		self.index_buffer.destroy()
+
+	@staticmethod
+	def destroy_all():
+		for m in list(Mesh.all_meshes):
+			m.destroy()
 
 	def bind(self, command_buffer):
 		vkCmdBindVertexBuffers(

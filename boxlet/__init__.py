@@ -4,6 +4,7 @@ import pygame
 import numpy as np
 
 USE_OPENGL = os.environ.get('BOXLET_RENDER_MODE', 'sdl2') == 'opengl'
+USE_VULKAN = os.environ.get('BOXLET_RENDER_MODE', 'sdl2') == 'vulkan'
 
 from .math_extra import *
 if USE_OPENGL:
@@ -50,7 +51,9 @@ if USE_OPENGL:
 
 	from .opengl.camera_controller import CameraController
 
+if USE_VULKAN:
+	from .vulkan import Mesh, MultiMesh
+	from .vulkan import IndirectRenderer
+
 # if build:
 from .debug import Debug
-
-del USE_OPENGL

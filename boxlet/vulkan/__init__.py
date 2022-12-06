@@ -39,12 +39,12 @@ from . import vk_frame
 from . import vk_swapchain
 from . import vk_shaders
 from . import vk_memory
-from . import vk_mesh
+from .vk_mesh import Mesh, MultiMesh
 from . import vk_pipeline
-from . import vk_framebuffer
-from . import vk_commands
+from .vk_framebuffer import FramebufferInput
+from .vk_commands import CommandPool, CommandBuffer
 
-from . import vk_renderer
+from .vk_renderer import Renderer, IndirectRenderer
 
 from .engine import Engine
 

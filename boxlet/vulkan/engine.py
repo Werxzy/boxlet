@@ -186,6 +186,8 @@ class Engine:
 
 		vkDeviceWaitIdle(self.logical_device.device)
 
+		vk_mesh.Mesh.destroy_all()
+
 		if DEBUG_MODE:
 			print("Goodbye see you!\n")
 

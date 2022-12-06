@@ -1,10 +1,19 @@
-from boxlet.vulkan import *
+# from boxlet.vulkan import *
 
-my_app = app.App(640, 480)
+# my_app = app.App(640, 480)
 
+import os
 
+os.environ['BOXLET_RENDER_MODE'] = 'vulkan'
 
-meshes = vk_mesh.MultiMesh(my_app.graphics_engine.physical_device, my_app.graphics_engine.logical_device, [
+from boxlet import *
+import pyrr
+
+p, l = manager.vulkan_graphics_engine.physical_device, manager.vulkan_graphics_engine.logical_device
+
+meshes = MultiMesh(
+	p, l, 
+	[
 	np.array([ # triangle
 		0.0, -0.05, 0.0, 1.0, 0.0,
 		0.05, 0.05, 0.0, 1.0, 0.0,
@@ -41,9 +50,8 @@ meshes = vk_mesh.MultiMesh(my_app.graphics_engine.physical_device, my_app.graphi
 	]),
 ])
 
-p, l = my_app.graphics_engine.physical_device, my_app.graphics_engine.logical_device
 data_type = np.dtype([('model', '(4,4)f4')])
-renderer = vk_renderer.TestRenderer(p, l, meshes, data_type)
+renderer = IndirectRenderer(p, l, meshes, data_type)
 
 instances_to_delete = []
 test = 0
@@ -76,8 +84,14 @@ for y in np.arange(-1.0, 1.0, 0.1):
 	inst = renderer.create_instance(2)
 	inst.set(0, pyrr.matrix44.create_from_translation([0.4 + (y%0.4)/3, y, 0]))
 
-my_app.run()
 
-meshes.destroy()
+manager.run()
 
-my_app.close()
+# my_app.run()
+# meshes.destroy()
+# my_app.close()
+
+
+
+
+

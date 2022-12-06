@@ -14,7 +14,7 @@ class Renderer:
 			r.destroy()
 
 
-class TestRenderer(Renderer):
+class IndirectRenderer(Renderer):
 	def __init__(self, physical_device, logical_device, meshes:vk_mesh.MultiMesh, data_type):
 		Renderer.all_renderers.append(self)
 
