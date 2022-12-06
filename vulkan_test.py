@@ -1,13 +1,9 @@
-# from boxlet.vulkan import *
-
-# my_app = app.App(640, 480)
-
-import os
-
-os.environ['BOXLET_RENDER_MODE'] = 'vulkan'
-
 from boxlet import *
+from boxlet.vulkan import *
 import pyrr
+
+
+manager.init(render_mode='vulkan')
 
 p, l = manager.vulkan_graphics_engine.physical_device, manager.vulkan_graphics_engine.logical_device
 
@@ -86,12 +82,4 @@ for y in np.arange(-1.0, 1.0, 0.1):
 
 
 manager.run()
-
-# my_app.run()
-# meshes.destroy()
-# my_app.close()
-
-
-
-
 

@@ -1,4 +1,5 @@
-from .. import Entity, Camera3D, np, pygame, manager, Tmath, clamp
+from . import Camera3D, np, Tmath
+from .. import Entity, pygame, manager, clamp
 
 
 class CameraController(Entity):

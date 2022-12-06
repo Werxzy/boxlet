@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 
 from OpenGL.GL import *
 
-from ... import BoxletGL, Renderer
+from .. import BoxletGL, Renderer
 
 if TYPE_CHECKING:
 	from boxlet import Model, RenderInstance, VertFragShader

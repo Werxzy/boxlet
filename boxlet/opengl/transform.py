@@ -1,4 +1,5 @@
-from .. import Tmath, np
+from . import Tmath
+from .. import np
 
 
 class Transform:

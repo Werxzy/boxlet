@@ -1,4 +1,5 @@
 from . import *
+from .vk_library import *
 
 
 def supported(extensions, layers):

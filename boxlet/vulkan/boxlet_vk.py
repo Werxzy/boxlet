@@ -1,7 +1,9 @@
 from . import *
+from .vk_library import *
 from pygame import display as pg_display
 
-class Engine:
+
+class BoxletVK:
 	def __init__(self, width, height, wm_info):
 
 		#glfw window parameters

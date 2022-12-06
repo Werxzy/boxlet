@@ -1,4 +1,6 @@
 from . import *
+from .vk_library import *
+
 
 class CommandPool:
 

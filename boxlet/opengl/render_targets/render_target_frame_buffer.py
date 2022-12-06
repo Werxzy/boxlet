@@ -1,6 +1,7 @@
 from OpenGL.GL import *
 
-from ... import BoxletGL, Model, RenderTarget, Shader, VertFragShader, manager
+from .. import BoxletGL, Model, RenderTarget, Shader, VertFragShader
+from ... import manager
 
 
 class FrameBufferStep(RenderTarget):
@@ -85,13 +86,10 @@ class ApplyShaderToFrame(RenderTarget):
 			FragColor = vec4(texture(screenTexture, uv).rgb, 1.0);
 		} 
 		"""
-	default_shader = VertFragShader(vertex_screen_shader, fragment_screen_shader)
-	
-	rect_model = Model.gen_quad_2d()
-	rect_vao = glGenVertexArrays(1)
-	glBindVertexArray(rect_vao)
-	rect_model.bind(default_shader)
-	glBindVertexArray(0)
+
+	default_shader = None
+	rect_model = None
+	rect_vao = None
 
 	def __init__(self, from_texture, to_frame = 0, shader:VertFragShader = None, queue = 1000, pass_names:list[str] = None):
 		"""
@@ -99,6 +97,15 @@ class ApplyShaderToFrame(RenderTarget):
 		"""
 
 		super().__init__(queue, pass_names)
+
+		if ApplyShaderToFrame.default_shader == None:
+			ApplyShaderToFrame.default_shader = VertFragShader(ApplyShaderToFrame.vertex_screen_shader, ApplyShaderToFrame.fragment_screen_shader)
+	
+			ApplyShaderToFrame.rect_model = Model.gen_quad_2d()
+			ApplyShaderToFrame.rect_vao = glGenVertexArrays(1)
+			glBindVertexArray(ApplyShaderToFrame.rect_vao)
+			ApplyShaderToFrame.rect_model.bind(ApplyShaderToFrame.default_shader)
+			glBindVertexArray(0)
 
 		self.from_texture = from_texture
 		self.to_frame = to_frame
@@ -136,7 +143,7 @@ class ApplyDitherToFrame(RenderTarget):
 			FragColor = vec4(col, 1.0);
 		} 
 		"""
-	shader = VertFragShader(ApplyShaderToFrame.vertex_screen_shader, dither_screen_shader)
+	shader = None
 
 	def __init__(self, from_texture, to_frame = 0, queue = 1000, pass_names:list[str] = None):
 		"""
@@ -144,6 +151,9 @@ class ApplyDitherToFrame(RenderTarget):
 		
 		Uses a dithering shader to reduce color banding.
 		"""
+
+		if ApplyDitherToFrame.shader is None:
+			ApplyDitherToFrame.shader = VertFragShader(ApplyShaderToFrame.vertex_screen_shader, ApplyDitherToFrame.dither_screen_shader)
 
 		super().__init__(queue, pass_names)
 

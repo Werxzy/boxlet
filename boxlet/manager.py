@@ -1,6 +1,6 @@
 import time
 
-from . import Entity, clamp, np, pygame, os, BoxletGL
+from . import Entity, clamp, np, pygame, os
 	
 class ExitGame(Exception):
 	'Exception to quickly exit game'
@@ -10,11 +10,20 @@ class Manager:
 	def __init__(self) -> None:
 		pygame.init()
 
-		self.fullscreen = int(os.environ.get('BOXLET_FULLSCREEN', '0'))
+	def init(self, *,
+			render_mode = 'sdl2',
+			fullscreen = False,
+			display_size = (960,540),
+			vsync = False,
+			target_frames_per_second = 120,
+			target_updates_per_second = 60
+			):
+
+		self.fullscreen = fullscreen
 		if not self.fullscreen:
-			self.display_size = np.array([i for i in os.environ.get('BOXLET_RESOLUTION', '960,540').split(',')], dtype=int)
+			self.display_size = np.array(display_size, dtype=int)
 		
-		self.render_mode = os.environ.get('BOXLET_RENDER_MODE', 'sdl2')
+		self.render_mode = render_mode
 		if self.render_mode == 'sdl2':
 			self.vsync = 0
 			self.screen_pos = np.zeros(2)
@@ -34,7 +43,7 @@ class Manager:
 			self.canvas = pygame.surface.Surface(self.canvas_size)
 		
 		elif self.render_mode == 'opengl':
-			self.vsync = int(os.environ.get('BOXLET_OPENGL_VSYNC', '1'))
+			self.vsync = vsync
 
 			if os.environ.get('BOXLET_SKIP_GL_CONTEXT_SETUP', '0') == '0':
 				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MAJOR_VERSION, int(os.environ.get('BOXLET_GL_CONTEXT_MAJOR_VERSION', '3')))
@@ -46,14 +55,17 @@ class Manager:
 			else:
 				self.display = pygame.display.set_mode(self.display_size, flags = pygame.OPENGL | pygame.DOUBLEBUF, vsync = self.vsync)
 
+			from .opengl import BoxletGL
+			self.boxlet_gl = BoxletGL
+
 		elif self.render_mode == 'vulkan':
 			# TODO fullscreen
 			self.vsync = False
 
 			self.display = pygame.display.set_mode(self.display_size, flags = pygame.DOUBLEBUF | pygame.RESIZABLE)
 			wm_info = pygame.display.get_wm_info()
-			from .vulkan.engine import Engine
-			self.vulkan_graphics_engine = Engine(*self.display_size, wm_info)
+			from .vulkan.boxlet_vk import BoxletVK
+			self.vulkan_graphics_engine = BoxletVK(*self.display_size, wm_info)
 
 		else:
 			raise Exception('Unrecognized render mode.')
@@ -63,8 +75,8 @@ class Manager:
 
 		self.clock = pygame.time.Clock()
 
-		self.fps = int(os.environ.get('BOXLET_FRAME_RATE', '120')) # frames per second, may get replaced by turning on vsync
-		self.ups = int(os.environ.get('BOXLET_UPDATE_RATE', '60')) # fixed updates per second
+		self.fps = target_frames_per_second # frames per second, may get replaced by turning on vsync
+		self.ups = target_updates_per_second # fixed updates per second
 		self.fixed_delta_time = 1 / self.ups # time passed for fixed update
 		self.delta_time = 0.0 # time passed for vary update
 		self.max_delta_time = self.fixed_delta_time * 3 # prevents large jumps in time, either from lag or changing the clock
@@ -121,16 +133,15 @@ class Manager:
 				Entity.__add_new_entities__()
 				Entity.__destroy_entities__()
 				
-				self.render()	
+				self.__render()	
 
 				if not self.vsync:
 					self.clock.tick_busy_loop(self.fps)
 
 		except ExitGame:
-			if self.render_mode == 'vulkan':
-				self.vulkan_graphics_engine.close()
+			self.__close()
 
-	def render(self):
+	def __render(self):
 		if self.render_mode == 'sdl2':
 			self.canvas.fill(self.fill_color)
 			Entity.__call_function__('render')
@@ -141,7 +152,7 @@ class Manager:
 			self.vulkan_graphics_engine.render()
 
 		elif self.render_mode == 'opengl':
-			BoxletGL.render()
+			self.boxlet_gl.render()
 			pygame.display.flip()
 
 	def set_display(self, display_size = None, canvas_size = None, fullscreen = None, vsync = None):
@@ -176,9 +187,14 @@ class Manager:
 
 	def quit(self):
 		'Exits the program immediately by raising exception ExitGame.'
-		pygame.quit()
 		raise ExitGame()
 
+	def __close(self):
+		if self.render_mode == 'vulkan':
+			self.vulkan_graphics_engine.close()
 
-instance = Manager()
+		pygame.quit()
+
+
+
 

@@ -2,7 +2,8 @@ import math
 
 import numpy as np
 
-from ... import FrameBufferStep, Shader, Tmath, Transform, manager
+from .. import FrameBufferStep, Shader, Tmath, Transform
+from ... import manager
 
 
 class Camera3D(Transform, FrameBufferStep):

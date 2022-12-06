@@ -2,8 +2,6 @@
 # https://www.youtube.com/watch?v=drregGzhgCA&list=PLn3eTxaOtL2M4qgHpHuxY821C_oX0GvM7&index=3
 
 
-#statically load vulkan library
-from vulkan import *
 import numpy as np
 import pyrr
 
@@ -46,6 +44,4 @@ from .vk_commands import CommandPool, CommandBuffer
 
 from .vk_renderer import Renderer, IndirectRenderer
 
-from .engine import Engine
-
-from . import app
+from .boxlet_vk import BoxletVK

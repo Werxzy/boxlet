@@ -1,13 +1,10 @@
-import os
-
-os.environ['BOXLET_RENDER_MODE'] = 'opengl'
-os.environ['BOXLET_OPENGL_VSYNC'] = '1'
-
-
 from boxlet import *
+from boxlet.opengl import *
 from boxlet.opengl.renderers.instanced_renderer import InstancedRenderer
 from math import floor
 import random
+
+manager.init(render_mode='opengl', vsync=True)
 
 # render assets
 sprite = pygame.image.load('examples/opengl_sprite_example/sprites_with_alpha.png')

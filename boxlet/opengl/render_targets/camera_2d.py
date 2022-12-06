@@ -1,6 +1,6 @@
 import numpy as np
 
-from ... import FrameBufferStep, Shader
+from .. import FrameBufferStep, Shader
 
 
 class Camera2D(FrameBufferStep):
