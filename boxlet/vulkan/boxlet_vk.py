@@ -52,7 +52,7 @@ class BoxletVK:
 		self.swapchain_bundle = vk_swapchain.SwapChainBundle(self.logical_device, self.queue_families, self.width, self.height)
 
 	def make_pipeline(self):
-		input_bundle = vk_pipeline.InputBundle(
+		self.graphics_pipeline = vk_pipeline.GraphicsPipeline(
 			self.logical_device,
 			self.swapchain_bundle.format,
 			self.swapchain_bundle.extent,
@@ -60,16 +60,10 @@ class BoxletVK:
 			'shaders/frag.spv'
 		)
 
-		output_bundle = vk_pipeline.create_graphics_pipeline(input_bundle)
-
-		self.pipeline_layout = output_bundle.pipeline_layout
-		self.render_pass = output_bundle.render_pass
-		self.pipeline = output_bundle.pipeline
-
 	def finalize_setup(self):
 		self.frame_buffer_input = vk_framebuffer.FramebufferInput(
 			self.logical_device,
-			self.render_pass,
+			self.graphics_pipeline.render_pass,
 			self.swapchain_bundle.extent,
 			self.swapchain_bundle.frames
 		)
@@ -107,7 +101,7 @@ class BoxletVK:
 		vkBeginCommandBuffer(command_buffer, begin_info)
 
 		render_pass_info = VkRenderPassBeginInfo(
-			renderPass = self.render_pass,
+			renderPass = self.graphics_pipeline.render_pass,
 			framebuffer = self.swapchain_bundle.frames[image_index].frame_buffer,
 			renderArea = [[0,0], self.swapchain_bundle.extent]
 		)
@@ -118,7 +112,7 @@ class BoxletVK:
 
 		vkCmdBeginRenderPass(command_buffer, render_pass_info, VK_SUBPASS_CONTENTS_INLINE)
 
-		vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self.pipeline)
+		vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self.graphics_pipeline.pipeline)
 
 		for r in vk_renderer.Renderer.all_renderers:
 			r.prepare(command_buffer)
@@ -195,9 +189,7 @@ class BoxletVK:
 
 		self.command_pool.destroy()
 
-		vkDestroyPipeline(self.logical_device.device, self.pipeline, None)
-		vkDestroyPipelineLayout(self.logical_device.device, self.pipeline_layout, None)
-		vkDestroyRenderPass(self.logical_device.device, self.render_pass, None)
+		self.graphics_pipeline.destroy()
 
 		self.swapchain_bundle.destroy()
 

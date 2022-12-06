@@ -2,23 +2,6 @@ from . import *
 from .vk_module import *
 
 
-class InputBundle:
-
-	def __init__(self, logical_device:vk_device.LogicalDevice, swapchain_image_format, swapchain_extent, vertex_filepath, fragment_filepath):
-		self.logical_device = logical_device
-		self.swapchain_image_format = swapchain_image_format
-		self.swapchain_extent = swapchain_extent
-		self.vertex_filepath = vertex_filepath
-		self.fragment_filepath = fragment_filepath
-
-class OutputBundle:
-	
-	def __init__(self, pipeline_layout, render_pass, pipeline) -> None:
-		self.pipeline_layout = pipeline_layout
-		self.render_pass = render_pass
-		self.pipeline = pipeline
-
-
 def create_render_pass(device, swapchain_image_format):
 
 	color_attachment = VkAttachmentDescription(
@@ -69,131 +52,133 @@ def create_pipeline_layout(device):
 
 	return vkCreatePipelineLayout(device, pipeline_layout_info, None)
 
-def create_graphics_pipeline(input_bundle: InputBundle):
+class GraphicsPipeline:
+	
+	def __init__(self, logical_device:vk_device.LogicalDevice, image_format, extent, vertex_filepath, fragment_filepath):
+		
+		self.logical_device = logical_device
 
-	binding_desc = [vk_mesh.get_pos_color_binding_description()]
-	attribute_desc = vk_mesh.get_pos_color_attribute_descriptions()
-	# TODO move this differently
+		binding_desc = [vk_mesh.get_pos_color_binding_description()]
+		attribute_desc = vk_mesh.get_pos_color_attribute_descriptions()
+		# TODO move this differently
 
 
-	# TEMP INSTANCE DATA DESCRIPTIONS
-	binding_desc.append(
-			VkVertexInputBindingDescription(
-				binding = 1, stride = 64, inputRate = VK_VERTEX_INPUT_RATE_INSTANCE
-			)	
+		# TEMP INSTANCE DATA DESCRIPTIONS
+		binding_desc.append(
+				VkVertexInputBindingDescription(
+					binding = 1, stride = 64, inputRate = VK_VERTEX_INPUT_RATE_INSTANCE
+				)	
+			)
+
+		attribute_desc.extend([
+			VkVertexInputAttributeDescription(
+				binding = 1, location = 2,
+				format = VK_FORMAT_R32G32B32A32_SFLOAT,
+				offset = 0
+			),
+			VkVertexInputAttributeDescription(
+				binding = 1, location = 3,
+				format = VK_FORMAT_R32G32B32A32_SFLOAT,
+				offset = 16
+			),
+			VkVertexInputAttributeDescription(
+				binding = 1, location = 4,
+				format = VK_FORMAT_R32G32B32A32_SFLOAT,
+				offset = 32
+			),
+			VkVertexInputAttributeDescription(
+				binding = 1, location = 5,
+				format = VK_FORMAT_R32G32B32A32_SFLOAT,
+				offset = 48
+			),
+		])
+		
+
+		vertex_input_info = VkPipelineVertexInputStateCreateInfo(
+			vertexBindingDescriptionCount = len(binding_desc), pVertexBindingDescriptions = binding_desc,
+			vertexAttributeDescriptionCount = len(attribute_desc), pVertexAttributeDescriptions = attribute_desc
 		)
 
-	attribute_desc.extend([
-		VkVertexInputAttributeDescription(
-			binding = 1, location = 2,
-			format = VK_FORMAT_R32G32B32A32_SFLOAT,
-			offset = 0
-		),
-		VkVertexInputAttributeDescription(
-			binding = 1, location = 3,
-			format = VK_FORMAT_R32G32B32A32_SFLOAT,
-			offset = 16
-		),
-		VkVertexInputAttributeDescription(
-			binding = 1, location = 4,
-			format = VK_FORMAT_R32G32B32A32_SFLOAT,
-			offset = 32
-		),
-		VkVertexInputAttributeDescription(
-			binding = 1, location = 5,
-			format = VK_FORMAT_R32G32B32A32_SFLOAT,
-			offset = 48
-		),
-	])
-	
+		vertex_shader = vk_shaders.Shader('vertex', logical_device, vertex_filepath)
 
-	vertex_input_info = VkPipelineVertexInputStateCreateInfo(
-		vertexBindingDescriptionCount = len(binding_desc), pVertexBindingDescriptions = binding_desc,
-		vertexAttributeDescriptionCount = len(attribute_desc), pVertexAttributeDescriptions = attribute_desc
-	)
+		input_assembly = VkPipelineInputAssemblyStateCreateInfo(
+			topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+		)
 
-	vertex_shader = vk_shaders.Shader('vertex', input_bundle.logical_device, input_bundle.vertex_filepath)
+		viewport = VkViewport(
+			x = 0, y = 0,
+			width = extent.width,
+			height = extent.height,
+			minDepth = 0.0, maxDepth = 1.0
+		)
 
-	input_assembly = VkPipelineInputAssemblyStateCreateInfo(
-		topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
-	)
+		scissor = VkRect2D(
+			offset = [0,0],
+			extent = extent
+		)
 
-	viewport = VkViewport(
-		x = 0, y = 0,
-		width = input_bundle.swapchain_extent.width,
-		height = input_bundle.swapchain_extent.height,
-		minDepth = 0.0, maxDepth = 1.0
-	)
+		viewport_state = VkPipelineViewportStateCreateInfo(
+			viewportCount = 1,
+			pViewports = viewport,
+			scissorCount = 1,
+			pScissors = scissor
+		)
 
-	scissor = VkRect2D(
-		offset = [0,0],
-		extent = input_bundle.swapchain_extent
-	)
+		rasterizer = VkPipelineRasterizationStateCreateInfo(
+			depthClampEnable = VK_FALSE,
+			rasterizerDiscardEnable = VK_FALSE,
+			polygonMode = VK_POLYGON_MODE_FILL,
+			lineWidth = 1.0,
+			cullMode = VK_CULL_MODE_BACK_BIT,
+			frontFace = VK_FRONT_FACE_CLOCKWISE,
+			depthBiasEnable = VK_FALSE
+		)
 
-	viewport_state = VkPipelineViewportStateCreateInfo(
-		viewportCount = 1,
-		pViewports = viewport,
-		scissorCount = 1,
-		pScissors = scissor
-	)
+		multisampling = VkPipelineMultisampleStateCreateInfo(
+			sampleShadingEnable = VK_FALSE,
+			rasterizationSamples = VK_SAMPLE_COUNT_1_BIT
+		)
 
-	rasterizer = VkPipelineRasterizationStateCreateInfo(
-		depthClampEnable = VK_FALSE,
-		rasterizerDiscardEnable = VK_FALSE,
-		polygonMode = VK_POLYGON_MODE_FILL,
-		lineWidth = 1.0,
-		cullMode = VK_CULL_MODE_BACK_BIT,
-		frontFace = VK_FRONT_FACE_CLOCKWISE,
-		depthBiasEnable = VK_FALSE
-	)
+		fragment_shader = vk_shaders.Shader('fragment', logical_device, fragment_filepath)
 
-	multisampling = VkPipelineMultisampleStateCreateInfo(
-		sampleShadingEnable = VK_FALSE,
-		rasterizationSamples = VK_SAMPLE_COUNT_1_BIT
-	)
+		shader_stages = [vertex_shader.stage_create_info(), fragment_shader.stage_create_info()]
 
-	fragment_shader = vk_shaders.Shader('fragment', input_bundle.logical_device, input_bundle.fragment_filepath)
+		color_blend_attachment = VkPipelineColorBlendAttachmentState(
+			colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+			blendEnable = VK_FALSE
+		)
 
-	shader_stages = [vertex_shader.stage_create_info(), fragment_shader.stage_create_info()]
+		color_blending = VkPipelineColorBlendStateCreateInfo(
+			logicOpEnable = VK_FALSE,
+			attachmentCount = 1,
+			pAttachments = color_blend_attachment,
+			blendConstants = [0.0, 0.0, 0.0, 0.0]
+		)
 
-	color_blend_attachment = VkPipelineColorBlendAttachmentState(
-		colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-		blendEnable = VK_FALSE
-	)
+		self.layout = create_pipeline_layout(logical_device.device)
 
-	color_blending = VkPipelineColorBlendStateCreateInfo(
-		logicOpEnable = VK_FALSE,
-		attachmentCount = 1,
-		pAttachments = color_blend_attachment,
-		blendConstants = [0.0, 0.0, 0.0, 0.0]
-	)
+		self.render_pass = create_render_pass(logical_device.device, image_format)
 
-	pipeline_layout = create_pipeline_layout(input_bundle.logical_device.device)
+		pipeline_info = VkGraphicsPipelineCreateInfo(
+			stageCount = len(shader_stages),
+			pStages = shader_stages,
+			pVertexInputState = vertex_input_info, 
+			pInputAssemblyState = input_assembly,
+			pViewportState = viewport_state,
+			pRasterizationState = rasterizer,
+			pMultisampleState = multisampling,
+			pColorBlendState = color_blending, 
+			layout = self.layout,
+			renderPass = self.render_pass,
+			subpass = 0
+		)
 
-	render_pass = create_render_pass(input_bundle.logical_device.device, input_bundle.swapchain_image_format)
+		self.pipeline = vkCreateGraphicsPipelines(logical_device.device, VK_NULL_HANDLE, 1, pipeline_info, None)[0]
 
-	pipeline_info = VkGraphicsPipelineCreateInfo(
-		stageCount = len(shader_stages),
-		pStages = shader_stages,
-		pVertexInputState = vertex_input_info, 
-		pInputAssemblyState = input_assembly,
-		pViewportState = viewport_state,
-		pRasterizationState = rasterizer,
-		pMultisampleState = multisampling,
-		pColorBlendState = color_blending, 
-		layout = pipeline_layout,
-		renderPass = render_pass,
-		subpass = 0
-	)
+		vertex_shader.destroy()
+		fragment_shader.destroy()
 
-	graphics_pipeline = vkCreateGraphicsPipelines(input_bundle.logical_device.device, VK_NULL_HANDLE, 1, pipeline_info, None)[0]
-
-	vertex_shader.destroy()
-	fragment_shader.destroy()
-
-	return OutputBundle(
-		pipeline_layout,
-		render_pass,
-		graphics_pipeline
-	)
-
+	def destroy(self):
+		vkDestroyPipeline(self.logical_device.device, self.pipeline, None)
+		vkDestroyPipelineLayout(self.logical_device.device, self.layout, None)
+		vkDestroyRenderPass(self.logical_device.device, self.render_pass, None)
