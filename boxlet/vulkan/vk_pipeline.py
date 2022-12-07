@@ -61,19 +61,25 @@ class RenderPass:
 	def destroy(self):
 		vkDestroyRenderPass(self.logical_device.device, self.vk_addr, None)
 
-def create_pipeline_layout(device):
-	
-	push_constant_info = VkPushConstantRange(
-		stageFlags = VK_SHADER_STAGE_VERTEX_BIT, offset = 0,
-		size = 4 * 4 * 4
-	)
+class PipelineLayout:
+	def __init__(self, logical_device:vk_device.LogicalDevice):
 
-	pipeline_layout_info = VkPipelineLayoutCreateInfo(
-		pushConstantRangeCount = 1, pPushConstantRanges = [push_constant_info],
-		setLayoutCount = 0
-	)
+		self.logical_device = logical_device
+		
+		push_constant_info = VkPushConstantRange(
+			stageFlags = VK_SHADER_STAGE_VERTEX_BIT, offset = 0,
+			size = 4 * 4 * 4
+		)
 
-	return vkCreatePipelineLayout(device, pipeline_layout_info, None)
+		pipeline_layout_info = VkPipelineLayoutCreateInfo(
+			pushConstantRangeCount = 1, pPushConstantRanges = [push_constant_info],
+			setLayoutCount = 0
+		)
+
+		self.layout = vkCreatePipelineLayout(logical_device.device, pipeline_layout_info, None)
+
+	def destroy(self):
+		vkDestroyPipelineLayout(self.logical_device.device, self.layout, None)
 
 class GraphicsPipeline:
 	
@@ -178,8 +184,7 @@ class GraphicsPipeline:
 			blendConstants = [0.0, 0.0, 0.0, 0.0]
 		)
 
-		self.layout = create_pipeline_layout(logical_device.device)
-
+		self.pipeline_layout = PipelineLayout(logical_device)
 		self.render_pass = RenderPass(logical_device, image_format)
 
 		pipeline_info = VkGraphicsPipelineCreateInfo(
@@ -191,7 +196,7 @@ class GraphicsPipeline:
 			pRasterizationState = rasterizer,
 			pMultisampleState = multisampling,
 			pColorBlendState = color_blending, 
-			layout = self.layout,
+			layout = self.pipeline_layout.layout,
 			renderPass = self.render_pass.vk_addr,
 			subpass = 0
 		)
@@ -203,5 +208,5 @@ class GraphicsPipeline:
 
 	def destroy(self):
 		vkDestroyPipeline(self.logical_device.device, self.pipeline, None)
-		vkDestroyPipelineLayout(self.logical_device.device, self.layout, None)
+		self.pipeline_layout.destroy()
 		self.render_pass.destroy()
