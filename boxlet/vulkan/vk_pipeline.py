@@ -2,41 +2,64 @@ from . import *
 from .vk_module import *
 
 
-def create_render_pass(device, swapchain_image_format):
+class RenderPass:
 
-	color_attachment = VkAttachmentDescription(
-		format = swapchain_image_format,
-		samples = VK_SAMPLE_COUNT_1_BIT,
-
-		loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-		storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+	def __init__(self, logical_device:vk_device.LogicalDevice, swapchain_image_format):
 		
-		stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-		stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+		self.logical_device = logical_device
 
-		initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-		finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR 
-	)
+		color_attachment = VkAttachmentDescription(
+			format = swapchain_image_format,
+			samples = VK_SAMPLE_COUNT_1_BIT,
 
-	color_attachment_ref = VkAttachmentReference(
-		attachment = 0,
-		layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-	)
+			loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+			storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+			
+			stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+			stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
 
-	subpass = VkSubpassDescription(
-		pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-		colorAttachmentCount = 1,
-		pColorAttachments = color_attachment_ref
-	)
+			initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+			finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR 
+		)
 
-	render_pass_info = VkRenderPassCreateInfo(
-		attachmentCount = 1,
-		pAttachments = color_attachment,
-		subpassCount = 1,
-		pSubpasses = subpass
-	)
+		color_attachment_ref = VkAttachmentReference(
+			attachment = 0,
+			layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+		)
 
-	return vkCreateRenderPass(device, render_pass_info, None)
+		subpass = VkSubpassDescription(
+			pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+			colorAttachmentCount = 1,
+			pColorAttachments = color_attachment_ref
+		)
+
+		render_pass_info = VkRenderPassCreateInfo(
+			attachmentCount = 1,
+			pAttachments = color_attachment,
+			subpassCount = 1,
+			pSubpasses = subpass
+		)
+
+		self.vk_addr = vkCreateRenderPass(logical_device.device, render_pass_info, None)
+
+	def begin(self, command_buffer, frame_buffer, area):
+		render_pass_info = VkRenderPassBeginInfo(
+			renderPass = self.vk_addr,
+			framebuffer = frame_buffer,
+			renderArea = area
+		)
+
+		clear_color = VkClearValue([[1.0, 0.5, 0.25, 1.0]])
+		render_pass_info.clearValueCount = 1
+		render_pass_info.pClearValues = ffi.addressof(clear_color)
+
+		vkCmdBeginRenderPass(command_buffer, render_pass_info, VK_SUBPASS_CONTENTS_INLINE)
+
+	def end(self, command_buffer):
+		vkCmdEndRenderPass(command_buffer)
+
+	def destroy(self):
+		vkDestroyRenderPass(self.logical_device.device, self.vk_addr, None)
 
 def create_pipeline_layout(device):
 	
@@ -157,7 +180,7 @@ class GraphicsPipeline:
 
 		self.layout = create_pipeline_layout(logical_device.device)
 
-		self.render_pass = create_render_pass(logical_device.device, image_format)
+		self.render_pass = RenderPass(logical_device, image_format)
 
 		pipeline_info = VkGraphicsPipelineCreateInfo(
 			stageCount = len(shader_stages),
@@ -169,7 +192,7 @@ class GraphicsPipeline:
 			pMultisampleState = multisampling,
 			pColorBlendState = color_blending, 
 			layout = self.layout,
-			renderPass = self.render_pass,
+			renderPass = self.render_pass.vk_addr,
 			subpass = 0
 		)
 
@@ -181,4 +204,4 @@ class GraphicsPipeline:
 	def destroy(self):
 		vkDestroyPipeline(self.logical_device.device, self.pipeline, None)
 		vkDestroyPipelineLayout(self.logical_device.device, self.layout, None)
-		vkDestroyRenderPass(self.logical_device.device, self.render_pass, None)
+		self.render_pass.destroy()

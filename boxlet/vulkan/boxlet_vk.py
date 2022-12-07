@@ -100,24 +100,18 @@ class BoxletVK:
 
 		vkBeginCommandBuffer(command_buffer, begin_info)
 
-		render_pass_info = VkRenderPassBeginInfo(
-			renderPass = self.graphics_pipeline.render_pass,
-			framebuffer = self.swapchain_bundle.frames[image_index].frame_buffer,
-			renderArea = [[0,0], self.swapchain_bundle.extent]
+		self.graphics_pipeline.render_pass.begin(
+			command_buffer, 
+			self.swapchain_bundle.frames[image_index].frame_buffer,
+			[[0,0], self.swapchain_bundle.extent]
 		)
-
-		clear_color = VkClearValue([[1.0, 0.5, 0.25, 1.0]])
-		render_pass_info.clearValueCount = 1
-		render_pass_info.pClearValues = ffi.addressof(clear_color)
-
-		vkCmdBeginRenderPass(command_buffer, render_pass_info, VK_SUBPASS_CONTENTS_INLINE)
 
 		vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self.graphics_pipeline.pipeline)
 
 		for r in vk_renderer.Renderer.all_renderers:
 			r.prepare(command_buffer)
 
-		vkCmdEndRenderPass(command_buffer)
+		self.graphics_pipeline.render_pass.end(command_buffer)
 
 		vkEndCommandBuffer(command_buffer)
 
