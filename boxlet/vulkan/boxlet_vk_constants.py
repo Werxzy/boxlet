@@ -15,3 +15,5 @@ class BVKC:
 	# one logical device 
 	# one physical device
 
+	# potentially move instance and surface here
+

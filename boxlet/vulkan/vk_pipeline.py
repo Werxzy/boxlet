@@ -1,13 +1,16 @@
+from typing import Callable
 from .vk_module import *
 from . import *
 
 
 class RenderPass(TrackedInstances):
 
-	def __init__(self, swapchain_image_format):
+	def __init__(self, image_format):
+
+		self.image_format = image_format
 
 		color_attachment = VkAttachmentDescription(
-			format = swapchain_image_format,
+			format = image_format,
 			samples = VK_SAMPLE_COUNT_1_BIT,
 
 			loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -40,6 +43,8 @@ class RenderPass(TrackedInstances):
 
 		self.vk_addr = vkCreateRenderPass(BVKC.logical_device.device, render_pass_info, None)
 
+		self.attached_piplelines:'list[VulkanPipeline]' = []
+
 	def begin(self, command_buffer, frame_buffer, area):
 		render_pass_info = VkRenderPassBeginInfo(
 			renderPass = self.vk_addr,
@@ -55,6 +60,10 @@ class RenderPass(TrackedInstances):
 
 	def end(self, command_buffer):
 		vkCmdEndRenderPass(command_buffer)
+
+	def attach(self, pipeline):
+		# TODO assert that pipeline is the correct type (graphics vs compute vs ...)
+		self.attached_piplelines.append(pipeline)
 
 	def on_destroy(self):
 		vkDestroyRenderPass(BVKC.logical_device.device, self.vk_addr, None)
@@ -79,12 +88,27 @@ class PipelineLayout(TrackedInstances):
 		vkDestroyPipelineLayout(BVKC.logical_device.device, self.layout, None)
 
 
-class GraphicsPipeline(TrackedInstances):
+class VulkanPipeline(TrackedInstances):
+	def __init__(self) :
+		self.pipeline = None
+		self.attached_render_calls:list[Callable] = []
+
+	def bind(self, command_buffer): ...
+
+	def attach(self, render_call:Callable):
+		self.attached_render_calls.append(render_call)
+
+class ComputePipeline(VulkanPipeline):
+
+	def bind(self, command_buffer):
+		vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, self.pipeline)
+
+class GraphicsPipeline(VulkanPipeline):
 	
 	# NOTE a compute pipeline would need it's own object
 	# at that point, create a PipelineBase class that have functions meant to be overridden
 
-	def __init__(self, image_format, extent, vertex_filepath, fragment_filepath):
+	def __init__(self, render_pass:RenderPass, pipeline_layout:PipelineLayout, extent, vertex_filepath, fragment_filepath):
 
 		binding_desc = [vk_mesh.get_pos_color_binding_description()]
 		attribute_desc = vk_mesh.get_pos_color_attribute_descriptions()
@@ -181,9 +205,6 @@ class GraphicsPipeline(TrackedInstances):
 			pAttachments = color_blend_attachment,
 			blendConstants = [0.0, 0.0, 0.0, 0.0]
 		)
-
-		self.pipeline_layout = PipelineLayout()
-		self.render_pass = RenderPass(image_format)
 		
 		pipeline_info = VkGraphicsPipelineCreateInfo(
 			stageCount = len(shader_stages),
@@ -194,8 +215,8 @@ class GraphicsPipeline(TrackedInstances):
 			pRasterizationState = rasterizer,
 			pMultisampleState = multisampling,
 			pColorBlendState = color_blending, 
-			layout = self.pipeline_layout.layout,
-			renderPass = self.render_pass.vk_addr,
+			layout = pipeline_layout.layout,
+			renderPass = render_pass.vk_addr,
 			subpass = 0
 		)
 
@@ -203,6 +224,9 @@ class GraphicsPipeline(TrackedInstances):
 
 		vertex_shader.destroy()
 		fragment_shader.destroy()
+
+		self.attached_render_calls:list[Callable] = []
+		render_pass.attach(self)
 
 	def bind(self, command_buffer):
 		vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self.pipeline)

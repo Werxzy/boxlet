@@ -18,8 +18,6 @@ class BoxletVK:
 		self.make_pygame_instance(wm_info)
 
 		self.make_device()
-		self.make_pipeline()
-		self.finalize_setup()
 
 
 	def make_pygame_instance(self, wm_info):
@@ -50,17 +48,12 @@ class BoxletVK:
 		
 		self.swapchain_bundle = vk_swapchain.SwapChainBundle(self.queue_families, self.width, self.height)
 
-	def make_pipeline(self):
-		self.graphics_pipeline = vk_pipeline.GraphicsPipeline(
-			self.swapchain_bundle.format,
-			self.swapchain_bundle.extent,
-			'shaders/vert.spv',
-			'shaders/frag.spv'
-		)
-
 	def finalize_setup(self):
+
+		# TODO instead be based on the renderpass associated with the swapchain
+
 		self.frame_buffer_input = vk_framebuffer.FramebufferInput(
-			self.graphics_pipeline.render_pass,
+			RenderPass.get_all_instances()[0],
 			self.swapchain_bundle.extent,
 			self.swapchain_bundle.frames
 		)
@@ -94,18 +87,25 @@ class BoxletVK:
 
 		vkBeginCommandBuffer(command_buffer, begin_info)
 
-		self.graphics_pipeline.render_pass.begin(
-			command_buffer, 
-			self.swapchain_bundle.frames[image_index].frame_buffer,
-			[[0,0], self.swapchain_bundle.extent]
-		)
+		for render_pass in RenderPass.get_all_instances():
+			
+			# TODO alter how this framebuffer is selected
+			# configure some sort of frame chain
+			# only the renderpass that outputs to the screen needs the swapchain (probably)
 
-		self.graphics_pipeline.bind(command_buffer)
+			render_pass.begin(
+				command_buffer, 
+				self.swapchain_bundle.frames[image_index].frame_buffer,
+				[[0,0], self.swapchain_bundle.extent]
+			)
 
-		for r in vk_renderer.Renderer.get_all_instances():
-			r.prepare(command_buffer)
+			for pipeline in render_pass.attached_piplelines:
+				pipeline.bind(command_buffer)
+				
+				for render in pipeline.attached_render_calls:
+					render(command_buffer)
 
-		self.graphics_pipeline.render_pass.end(command_buffer)
+			render_pass.end(command_buffer)
 
 		vkEndCommandBuffer(command_buffer)
 
@@ -113,8 +113,6 @@ class BoxletVK:
 		# TODO, double check the semphores
 		# I wasn't sure if the tutorial was correct, so I modified them
 		# it appears to work currently, but could have frame lag
-
-		# TODO, remove scene parameter
 
 		# if the window is minimized, skip the renderloop
 		if not pg_display.get_active():
@@ -195,5 +193,3 @@ class BoxletVK:
 
 		vkDestroyInstance(self.instance, None)
 
-		#terminate glfw
-		# glfw.terminate()

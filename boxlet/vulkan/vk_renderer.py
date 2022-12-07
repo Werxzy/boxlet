@@ -9,13 +9,16 @@ class Renderer(TrackedInstances):
 
 
 class IndirectRenderer(Renderer):
-	def __init__(self, meshes:vk_mesh.MultiMesh, data_type):
+	def __init__(self, pipeline:GraphicsPipeline, meshes:vk_mesh.MultiMesh, data_type):
+
 		self.meshes = meshes
 
 		self.buffer_set = vk_memory.InstanceBufferSet(
 			meshes,
 			data_type
 		)
+		
+		pipeline.attach(self.prepare)
 
 	def create_instance(self, model_id):
 		return self.buffer_set.create_instance(model_id)

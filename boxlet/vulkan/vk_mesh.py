@@ -38,13 +38,11 @@ class Mesh(TrackedInstances):
 			pOffsets = (0,)
 		)
 
-		# NOTE vertex and instance buffers can be bound in seperate calls
-
 		vkCmdBindIndexBuffer(
 			commandBuffer = command_buffer, 
 			buffer = self.index_buffer.buffer,
 			offset = 0,
-			indexType = VK_INDEX_TYPE_UINT32 # 16 bit might be more efficient in larger loads
+			indexType = VK_INDEX_TYPE_UINT32
 		)
 
 

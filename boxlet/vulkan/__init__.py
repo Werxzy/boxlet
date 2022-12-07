@@ -20,7 +20,7 @@ from . import vk_swapchain
 from . import vk_shaders
 from . import vk_memory
 from .vk_mesh import Mesh, MultiMesh
-from . import vk_pipeline
+from .vk_pipeline import RenderPass, PipelineLayout, GraphicsPipeline
 from .vk_framebuffer import FramebufferInput
 from .vk_commands import CommandPool, CommandBuffer
 

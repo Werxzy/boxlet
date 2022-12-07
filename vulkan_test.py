@@ -43,8 +43,26 @@ meshes = MultiMesh(
 	]),
 ])
 
+# - - - - - - - - - - - - - - - - - - - - - - -
+#	render pipeline creation
+# - - - - - - - - - - - - - - - - - - - - - - -
+
+#TODO figure out format and extent
+
+render_pass = RenderPass(manager.vulkan_graphics_engine.swapchain_bundle.format)
+pipeline_layout = PipelineLayout()
+graphics_pipeline = GraphicsPipeline(
+	render_pass,
+	pipeline_layout, 
+	manager.vulkan_graphics_engine.swapchain_bundle.extent,
+	'shaders/vert.spv',
+	'shaders/frag.spv'
+)
+
 data_type = np.dtype([('model', '(4,4)f4')])
-renderer = IndirectRenderer(meshes, data_type)
+renderer = IndirectRenderer(graphics_pipeline, meshes, data_type)
+
+# - - - - - - - - - - - - - - - - - - - - - - -
 
 instances_to_delete = []
 test = 0

@@ -95,6 +95,10 @@ class Manager:
 		pygame.event.set_allowed(Entity.watched_events)
 		pygame.event.set_allowed([pygame.WINDOWEXPOSED, pygame.JOYDEVICEADDED, pygame.JOYDEVICEREMOVED, pygame.QUIT])
 
+		if self.render_mode == 'vulkan':
+			self.vulkan_graphics_engine.finalize_setup()
+			# TODO would prefer this not be needed
+
 		self.system_time = time.time()
 		try:
 			while True:
