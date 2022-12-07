@@ -83,6 +83,9 @@ class PipelineLayout:
 
 class GraphicsPipeline:
 	
+	# NOTE a compute pipeline would need it's own object
+	# at that point, create a PipelineBase class that have functions meant to be overridden
+
 	def __init__(self, logical_device:vk_device.LogicalDevice, image_format, extent, vertex_filepath, fragment_filepath):
 		
 		self.logical_device = logical_device
@@ -186,7 +189,7 @@ class GraphicsPipeline:
 
 		self.pipeline_layout = PipelineLayout(logical_device)
 		self.render_pass = RenderPass(logical_device, image_format)
-
+		
 		pipeline_info = VkGraphicsPipelineCreateInfo(
 			stageCount = len(shader_stages),
 			pStages = shader_stages,
@@ -205,6 +208,9 @@ class GraphicsPipeline:
 
 		vertex_shader.destroy()
 		fragment_shader.destroy()
+
+	def bind(self, command_buffer):
+		vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self.pipeline)
 
 	def destroy(self):
 		vkDestroyPipeline(self.logical_device.device, self.pipeline, None)

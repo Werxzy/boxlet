@@ -106,7 +106,7 @@ class BoxletVK:
 			[[0,0], self.swapchain_bundle.extent]
 		)
 
-		vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self.graphics_pipeline.pipeline)
+		self.graphics_pipeline.bind(command_buffer)
 
 		for r in vk_renderer.Renderer.all_renderers:
 			r.prepare(command_buffer)
