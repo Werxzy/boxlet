@@ -1,4 +1,3 @@
-from typing import final
 from . import *
 from .vk_module import *
 

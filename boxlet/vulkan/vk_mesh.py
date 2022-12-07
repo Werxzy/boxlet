@@ -2,12 +2,9 @@ from . import *
 from .vk_module import *
 
 
-class Mesh:
-	all_meshes:'list[Mesh]' = []
+class Mesh(TrackedInstances):
 
 	def __init__(self, physical_device, logical_device, vertices = None, indices = None) -> None:
-		Mesh.all_meshes.append(self)
-
 		if vertices is None:
 			vertices = np.array([
 				0.0, -0.05, 0.0, 1.0, 0.0,
@@ -34,15 +31,9 @@ class Mesh:
 			indices
 		)
 
-	def destroy(self):
-		Mesh.all_meshes.remove(self)
+	def on_destroy(self):
 		self.vertex_buffer.destroy()
 		self.index_buffer.destroy()
-
-	@staticmethod
-	def destroy_all():
-		for m in list(Mesh.all_meshes):
-			m.destroy()
 
 	def bind(self, command_buffer):
 		vkCmdBindVertexBuffers(

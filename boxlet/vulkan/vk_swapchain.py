@@ -140,6 +140,7 @@ class SwapChainBundle:
 	def remake(self, width, height):
 		vkDeviceWaitIdle(self.logical_device.device)
 
+		# if the original still exists, we need to destroy it
 		if self.swapchain is not None:
 			self.destroy()
 
@@ -152,8 +153,6 @@ class SwapChainBundle:
 			support.capabilities.maxImageCount,
 			support.capabilities.minImageCount + 1
 		)
-
-		# if the original still exists, we need to destroy it
 
 		"""
 			* VULKAN_HPP_CONSTEXPR SwapchainCreateInfoKHR(
@@ -178,7 +177,7 @@ class SwapChainBundle:
 			) VULKAN_HPP_NOEXCEPT
 		"""
 
-		if (self.queue_family.graphics_family != self.queue_family.present_family):
+		if self.queue_family.graphics_family != self.queue_family.present_family:
 			imageSharingMode = VK_SHARING_MODE_CONCURRENT
 			queueFamilyIndexCount = 2
 			pQueueFamilyIndices = [
@@ -204,23 +203,23 @@ class SwapChainBundle:
 		vkGetSwapchainImagesKHR = vkGetDeviceProcAddr(self.logical_device.device, 'vkGetSwapchainImagesKHR')
 		images = vkGetSwapchainImagesKHR(self.logical_device.device, self.swapchain)
 
+		components = VkComponentMapping(
+			VK_COMPONENT_SWIZZLE_IDENTITY,
+			VK_COMPONENT_SWIZZLE_IDENTITY,
+			VK_COMPONENT_SWIZZLE_IDENTITY,
+			VK_COMPONENT_SWIZZLE_IDENTITY,
+		)
+
+		subresource_range = VkImageSubresourceRange(
+			aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+			baseMipLevel = 0, levelCount = 1,
+			baseArrayLayer = 0, layerCount = 1
+		)
+
 		self.frames = []
 		for image in images:
 			# TODO if allowed in the future
 			# move this stuff to swapChainFrame and make a list comprehension
-
-			components = VkComponentMapping(
-				VK_COMPONENT_SWIZZLE_IDENTITY,
-				VK_COMPONENT_SWIZZLE_IDENTITY,
-				VK_COMPONENT_SWIZZLE_IDENTITY,
-				VK_COMPONENT_SWIZZLE_IDENTITY,
-			)
-
-			subresource_range = VkImageSubresourceRange(
-				aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-				baseMipLevel = 0, levelCount = 1,
-				baseArrayLayer = 0, layerCount = 1
-			)
 
 			create_info = VkImageViewCreateInfo(
 				image = image, viewType = VK_IMAGE_VIEW_TYPE_2D,

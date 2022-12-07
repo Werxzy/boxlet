@@ -176,7 +176,7 @@ class BoxletVK:
 
 		vkDeviceWaitIdle(self.logical_device.device)
 
-		vk_mesh.Mesh.destroy_all()
+		vk_mesh.Mesh._destroy_all()
 
 		if DEBUG_MODE:
 			print("Goodbye see you!\n")
