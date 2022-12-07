@@ -108,7 +108,7 @@ class BoxletVK:
 
 		self.graphics_pipeline.bind(command_buffer)
 
-		for r in vk_renderer.Renderer.all_renderers:
+		for r in vk_renderer.Renderer.get_all_instances():
 			r.prepare(command_buffer)
 
 		self.graphics_pipeline.render_pass.end(command_buffer)
@@ -183,7 +183,9 @@ class BoxletVK:
 
 		self.command_pool.destroy()
 
-		self.graphics_pipeline.destroy()
+		vk_pipeline.GraphicsPipeline._destroy_all()
+		vk_pipeline.PipelineLayout._destroy_all()
+		vk_pipeline.RenderPass._destroy_all()
 
 		self.swapchain_bundle.destroy()
 

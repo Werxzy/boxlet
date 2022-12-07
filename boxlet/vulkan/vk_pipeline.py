@@ -2,10 +2,9 @@ from . import *
 from .vk_module import *
 
 
-class RenderPass:
+class RenderPass(TrackedInstances):
 
 	def __init__(self, logical_device:vk_device.LogicalDevice, swapchain_image_format):
-		
 		self.logical_device = logical_device
 
 		color_attachment = VkAttachmentDescription(
@@ -58,12 +57,13 @@ class RenderPass:
 	def end(self, command_buffer):
 		vkCmdEndRenderPass(command_buffer)
 
-	def destroy(self):
+	def on_destroy(self):
 		vkDestroyRenderPass(self.logical_device.device, self.vk_addr, None)
 
-class PipelineLayout:
-	def __init__(self, logical_device:vk_device.LogicalDevice):
 
+class PipelineLayout(TrackedInstances):
+
+	def __init__(self, logical_device:vk_device.LogicalDevice):
 		self.logical_device = logical_device
 		
 		push_constant_info = VkPushConstantRange(
@@ -78,16 +78,16 @@ class PipelineLayout:
 
 		self.layout = vkCreatePipelineLayout(logical_device.device, pipeline_layout_info, None)
 
-	def destroy(self):
+	def on_destroy(self):
 		vkDestroyPipelineLayout(self.logical_device.device, self.layout, None)
 
-class GraphicsPipeline:
+
+class GraphicsPipeline(TrackedInstances):
 	
 	# NOTE a compute pipeline would need it's own object
 	# at that point, create a PipelineBase class that have functions meant to be overridden
 
 	def __init__(self, logical_device:vk_device.LogicalDevice, image_format, extent, vertex_filepath, fragment_filepath):
-		
 		self.logical_device = logical_device
 
 		binding_desc = [vk_mesh.get_pos_color_binding_description()]
@@ -212,7 +212,6 @@ class GraphicsPipeline:
 	def bind(self, command_buffer):
 		vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self.pipeline)
 
-	def destroy(self):
+	def on_destroy(self):
 		vkDestroyPipeline(self.logical_device.device, self.pipeline, None)
-		self.pipeline_layout.destroy()
-		self.render_pass.destroy()
+

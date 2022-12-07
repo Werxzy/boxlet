@@ -1,24 +1,16 @@
+from typing import final
 from . import *
 from .vk_module import *
 
 
-class Renderer:
-
-	all_renderers:list['Renderer'] = [] # TODO move this to pipeline object
+class Renderer(TrackedInstances):
 
 	def prepare(self, command_buffer):
 		...
 
-	@staticmethod
-	def _destroy_all():
-		for r in list(Renderer.all_renderers):
-			r.destroy()
-
 
 class IndirectRenderer(Renderer):
 	def __init__(self, physical_device, logical_device, meshes:vk_mesh.MultiMesh, data_type):
-		Renderer.all_renderers.append(self)
-
 		self.meshes = meshes
 
 		self.buffer_set = vk_memory.InstanceBufferSet(
@@ -48,6 +40,6 @@ class IndirectRenderer(Renderer):
 			stride = 20
 		)
 
-	def destroy(self):
+	def on_destroy(self):
 		self.buffer_set.destroy()
-		Renderer.all_renderers.remove(self)
+
