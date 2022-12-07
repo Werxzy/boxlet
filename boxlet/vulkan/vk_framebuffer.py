@@ -1,10 +1,10 @@
-from . import *
 from .vk_module import *
+from . import *
 
 
 class FramebufferInput:
 
-	def __init__(self, logical_device:vk_device.LogicalDevice, render_pass:vk_pipeline.RenderPass, swapchain_extent, frames:list[vk_frame.SwapChainFrame]) -> None:
+	def __init__(self, render_pass:vk_pipeline.RenderPass, swapchain_extent, frames:list[vk_frame.SwapChainFrame]) -> None:
 		for i,frame in enumerate(frames): # TODO individualize frame buffers and assign them to this class
 			attachments = [frame.image_view]
 
@@ -18,7 +18,7 @@ class FramebufferInput:
 			)
 
 			try:
-				frame.frame_buffer = vkCreateFramebuffer(logical_device.device, frame_buffer_info, None)
+				frame.frame_buffer = vkCreateFramebuffer(BVKC.logical_device.device, frame_buffer_info, None)
 				if DEBUG_MODE:
 					print(f'Made framebuffer for frame {i}')
 			except:

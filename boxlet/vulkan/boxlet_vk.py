@@ -1,5 +1,5 @@
-from . import *
 from .vk_module import *
+from . import *
 from pygame import display as pg_display
 
 
@@ -43,17 +43,15 @@ class BoxletVK:
 		)[0]
 
 	def make_device(self):
-		self.physical_device = vk_device.choose_physical_device(self.instance)
-		self.queue_families = vk_queue_families.QueueFamilyIndices(self.physical_device, self.instance, self.surface)
-		self.logical_device = vk_device.LogicalDevice(self.physical_device, self.queue_families)
-		[self.graphics_queue, self.present_queue] = self.queue_families.get_queue(self.logical_device)
-		# vk_device.query_swapchain_support(self.instance, self.physical_device, self.surface, True)
+		BVKC.physical_device = vk_device.choose_physical_device(self.instance)
+		self.queue_families = vk_queue_families.QueueFamilyIndices(self.instance, self.surface)
+		BVKC.logical_device = vk_device.LogicalDevice(self.queue_families)
+		[self.graphics_queue, self.present_queue] = self.queue_families.get_queue()
 		
-		self.swapchain_bundle = vk_swapchain.SwapChainBundle(self.logical_device, self.queue_families, self.width, self.height)
+		self.swapchain_bundle = vk_swapchain.SwapChainBundle(self.queue_families, self.width, self.height)
 
 	def make_pipeline(self):
 		self.graphics_pipeline = vk_pipeline.GraphicsPipeline(
-			self.logical_device,
 			self.swapchain_bundle.format,
 			self.swapchain_bundle.extent,
 			'shaders/vert.spv',
@@ -62,22 +60,18 @@ class BoxletVK:
 
 	def finalize_setup(self):
 		self.frame_buffer_input = vk_framebuffer.FramebufferInput(
-			self.logical_device,
 			self.graphics_pipeline.render_pass,
 			self.swapchain_bundle.extent,
 			self.swapchain_bundle.frames
 		)
 
 		self.command_pool = vk_commands.CommandPool(
-			self.physical_device,
-			self.logical_device,
 			self.queue_families,
 			self.surface,
 			self.instance
 		)
 
 		self.command_buffer = vk_commands.CommandBuffer(
-			self.logical_device,
 			self.command_pool,
 			self.swapchain_bundle.frames
 		)
@@ -132,15 +126,15 @@ class BoxletVK:
 			self.recreate_swapchain()
 			return
 
-		vkAcquireNextImageKHR = vkGetDeviceProcAddr(self.logical_device.device, 'vkAcquireNextImageKHR')
-		vkQueuePresentKHR = vkGetDeviceProcAddr(self.logical_device.device, 'vkQueuePresentKHR')
+		vkAcquireNextImageKHR = vkGetDeviceProcAddr(BVKC.logical_device.device, 'vkAcquireNextImageKHR')
+		vkQueuePresentKHR = vkGetDeviceProcAddr(BVKC.logical_device.device, 'vkQueuePresentKHR')
 
 		prev_frame = self.swapchain_bundle.frames[self.swapchain_bundle.current_frame]
 		prev_frame.in_flight.wait_for()
 		prev_frame.in_flight.reset()
 
 		image_index = vkAcquireNextImageKHR(
-			device = self.logical_device.device, swapchain = self.swapchain_bundle.swapchain, timeout = 1000000000,
+			device = BVKC.logical_device.device, swapchain = self.swapchain_bundle.swapchain, timeout = 1000000000,
 			semaphore = prev_frame.image_available.vk_id, fence = VK_NULL_HANDLE
 		)
 
@@ -174,7 +168,7 @@ class BoxletVK:
 
 	def close(self):
 
-		vkDeviceWaitIdle(self.logical_device.device)
+		vkDeviceWaitIdle(BVKC.logical_device.device)
 
 		vk_mesh.Mesh._destroy_all()
 
@@ -191,7 +185,7 @@ class BoxletVK:
 
 		vk_renderer.Renderer._destroy_all()
 
-		self.logical_device.destroy()
+		BVKC.logical_device.destroy()
 
 		destruction_function = vkGetInstanceProcAddr(self.instance, 'vkDestroySurfaceKHR')
 		destruction_function(self.instance, self.surface, None)

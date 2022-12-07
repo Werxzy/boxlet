@@ -5,10 +5,7 @@ import pyrr
 
 manager.init(render_mode='vulkan')
 
-p, l = manager.vulkan_graphics_engine.physical_device, manager.vulkan_graphics_engine.logical_device
-
 meshes = MultiMesh(
-	p, l, 
 	[
 	np.array([ # triangle
 		0.0, -0.05, 0.0, 1.0, 0.0,
@@ -47,7 +44,7 @@ meshes = MultiMesh(
 ])
 
 data_type = np.dtype([('model', '(4,4)f4')])
-renderer = IndirectRenderer(p, l, meshes, data_type)
+renderer = IndirectRenderer(meshes, data_type)
 
 instances_to_delete = []
 test = 0

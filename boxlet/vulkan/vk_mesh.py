@@ -1,10 +1,10 @@
-from . import *
 from .vk_module import *
+from . import *
 
 
 class Mesh(TrackedInstances):
 
-	def __init__(self, physical_device, logical_device, vertices = None, indices = None) -> None:
+	def __init__(self, vertices = None, indices = None) -> None:
 		if vertices is None:
 			vertices = np.array([
 				0.0, -0.05, 0.0, 1.0, 0.0,
@@ -18,15 +18,11 @@ class Mesh(TrackedInstances):
 			], dtype = np.int32)
 
 		self.vertex_buffer = vk_memory.Buffer(
-			physical_device, 
-			logical_device, 
 			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 			vertices
 		)
 
 		self.index_buffer = vk_memory.Buffer(
-			physical_device, 
-			logical_device, 
 			VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
 			indices
 		)
@@ -53,7 +49,7 @@ class Mesh(TrackedInstances):
 
 
 class MultiMesh(Mesh):
-	def __init__(self, physical_device, logical_device, vertices:list[np.ndarray] = [], indices:list[np.ndarray] = []) -> None:
+	def __init__(self, vertices:list[np.ndarray] = [], indices:list[np.ndarray] = []) -> None:
 		# TODO edit vertices ensure the component counts are the same?
 		# TODO add better control over vertex layout/data
 
@@ -72,7 +68,7 @@ class MultiMesh(Mesh):
 		# i = range(index_counts[m])
 		# m = model id
 
-		super().__init__(physical_device, logical_device, final_vertices, final_indices)
+		super().__init__(final_vertices, final_indices)
 
 
 # this is very no me gusta

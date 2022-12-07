@@ -1,5 +1,5 @@
-from . import *
 from .vk_module import *
+from . import *
 
 
 class Renderer(TrackedInstances):
@@ -9,12 +9,10 @@ class Renderer(TrackedInstances):
 
 
 class IndirectRenderer(Renderer):
-	def __init__(self, physical_device, logical_device, meshes:vk_mesh.MultiMesh, data_type):
+	def __init__(self, meshes:vk_mesh.MultiMesh, data_type):
 		self.meshes = meshes
 
 		self.buffer_set = vk_memory.InstanceBufferSet(
-			physical_device,
-			logical_device,
 			meshes,
 			data_type
 		)

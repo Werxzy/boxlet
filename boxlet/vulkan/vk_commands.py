@@ -1,13 +1,10 @@
-from . import *
 from .vk_module import *
+from . import *
 
 
 class CommandPool:
 
-	def __init__(self, physical_device, logical_device:vk_device.LogicalDevice,
-			queue_family:vk_queue_families.QueueFamilyIndices, surface, instance) -> None:
-		self.physical_device = physical_device
-		self.logical_device = logical_device
+	def __init__(self, queue_family:vk_queue_families.QueueFamilyIndices, surface, instance) -> None:
 		self.surface = surface
 		self.instance = instance
 
@@ -17,7 +14,7 @@ class CommandPool:
 		)
 
 		try:
-			self.pool = vkCreateCommandPool(logical_device.device, pool_info, None)
+			self.pool = vkCreateCommandPool(BVKC.logical_device.device, pool_info, None)
 			if DEBUG_MODE:
 				print('Created command pool')
 
@@ -28,12 +25,11 @@ class CommandPool:
 			# don't entirely like this error checking method
 
 	def destroy(self):
-		vkDestroyCommandPool(self.logical_device.device, self.pool, None)
+		vkDestroyCommandPool(BVKC.logical_device.device, self.pool, None)
 
 class CommandBuffer:
-	def __init__(self, logical_device:vk_device.LogicalDevice, command_pool:CommandPool, frames:list[vk_frame.SwapChainFrame]) -> None:
+	def __init__(self, command_pool:CommandPool, frames:list[vk_frame.SwapChainFrame]) -> None:
 			
-		self.logical_device = logical_device
 		self.frames = frames
 
 		alloc_info = VkCommandBufferAllocateInfo(
@@ -44,7 +40,7 @@ class CommandBuffer:
 
 		for i, frame in enumerate(frames):
 			try:
-				frame.command_buffer = vkAllocateCommandBuffers(logical_device.device, alloc_info)[0]
+				frame.command_buffer = vkAllocateCommandBuffers(BVKC.logical_device.device, alloc_info)[0]
 				if DEBUG_MODE:
 					print(f'Allocated command buffer for frame {i}')
 
@@ -53,7 +49,7 @@ class CommandBuffer:
 					print(f'Failed to allocate command buffer for frame {i}')
 
 		try:
-			self.command_buffer = vkAllocateCommandBuffers(logical_device.device, alloc_info)[0]
+			self.command_buffer = vkAllocateCommandBuffers(BVKC.logical_device.device, alloc_info)[0]
 			if DEBUG_MODE:
 				print(f'Allocated main command buffer')
 

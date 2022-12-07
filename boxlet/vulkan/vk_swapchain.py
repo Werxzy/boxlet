@@ -1,5 +1,5 @@
-from . import *
 from .vk_module import *
+from . import *
 
 
 class SwapChainSupportDetails:
@@ -128,8 +128,7 @@ def choose_swapchain_extent(width, height, capabilities):
 
 class SwapChainBundle:
 
-	def __init__(self, logical_device:'vk_device.LogicalDevice', queue_family:'vk_queue_families.QueueFamilyIndices', width, height):
-		self.logical_device = logical_device
+	def __init__(self, queue_family:'vk_queue_families.QueueFamilyIndices', width, height):
 		self.queue_family = queue_family
 
 		self.swapchain = None
@@ -138,13 +137,13 @@ class SwapChainBundle:
 		self.remake(width, height)
 
 	def remake(self, width, height):
-		vkDeviceWaitIdle(self.logical_device.device)
+		vkDeviceWaitIdle(BVKC.logical_device.device)
 
 		# if the original still exists, we need to destroy it
 		if self.swapchain is not None:
 			self.destroy()
 
-		support = SwapChainSupportDetails(self.queue_family.instance, self.queue_family.physical_device, self.queue_family.surface)
+		support = SwapChainSupportDetails(self.queue_family.instance, BVKC.physical_device, self.queue_family.surface)
 		format = choose_swapchain_surface_format(support.formats)
 		presentMode = choose_swapchain_present_mode(support.presentModes)
 		self.extent = choose_swapchain_extent(width, height, support.capabilities)
@@ -197,11 +196,11 @@ class SwapChainBundle:
 			presentMode = presentMode, clipped = VK_TRUE
 		)
 
-		vkCreateSwapchainKHR = vkGetDeviceProcAddr(self.logical_device.device, 'vkCreateSwapchainKHR')
-		self.swapchain = vkCreateSwapchainKHR(self.logical_device.device, createInfo, None)
+		vkCreateSwapchainKHR = vkGetDeviceProcAddr(BVKC.logical_device.device, 'vkCreateSwapchainKHR')
+		self.swapchain = vkCreateSwapchainKHR(BVKC.logical_device.device, createInfo, None)
 
-		vkGetSwapchainImagesKHR = vkGetDeviceProcAddr(self.logical_device.device, 'vkGetSwapchainImagesKHR')
-		images = vkGetSwapchainImagesKHR(self.logical_device.device, self.swapchain)
+		vkGetSwapchainImagesKHR = vkGetDeviceProcAddr(BVKC.logical_device.device, 'vkGetSwapchainImagesKHR')
+		images = vkGetSwapchainImagesKHR(BVKC.logical_device.device, self.swapchain)
 
 		components = VkComponentMapping(
 			VK_COMPONENT_SWIZZLE_IDENTITY,
@@ -227,8 +226,9 @@ class SwapChainBundle:
 				subresourceRange = subresource_range
 			)
 			
-			swapchain_frame = vk_frame.SwapChainFrame(self.logical_device, image, 
-				vkCreateImageView(device = self.logical_device.device, pCreateInfo = create_info, pAllocator = None)
+			swapchain_frame = vk_frame.SwapChainFrame(
+				image, 
+				vkCreateImageView(device = BVKC.logical_device.device, pCreateInfo = create_info, pAllocator = None)
 				)
 			self.frames.append(swapchain_frame)
 
@@ -245,5 +245,5 @@ class SwapChainBundle:
 		for frame in self.frames:
 			frame.destroy()
 
-		destruction_function = vkGetDeviceProcAddr(self.logical_device.device, 'vkDestroySwapchainKHR')
-		destruction_function(self.logical_device.device, self.swapchain, None)
+		destruction_function = vkGetDeviceProcAddr(BVKC.logical_device.device, 'vkDestroySwapchainKHR')
+		destruction_function(BVKC.logical_device.device, self.swapchain, None)

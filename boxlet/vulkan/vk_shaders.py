@@ -1,5 +1,5 @@
-from . import *
 from .vk_module import *
+from . import *
 
 
 class Shader:
@@ -8,7 +8,7 @@ class Shader:
 		'fragment': VK_SHADER_STAGE_FRAGMENT_BIT
 	}
 
-	def __init__(self, shader_type:str, logical_device:vk_device.LogicalDevice, filename) -> None:
+	def __init__(self, shader_type:str, filename) -> None:
 		if DEBUG_MODE:
 			print(f'Load shader module:{filename}')
 
@@ -16,7 +16,6 @@ class Shader:
 			raise Exception(f'Invalid Shader type {shader_type}')
 
 		self.shader_type = shader_type
-		self.logical_device = logical_device
 
 		with open(get_path(filename), 'rb') as file:
 			code = file.read()
@@ -27,7 +26,7 @@ class Shader:
 		)
 
 		self.module = vkCreateShaderModule(
-			device = logical_device.device, pCreateInfo = create_info, pAllocator = None
+			device = BVKC.logical_device.device, pCreateInfo = create_info, pAllocator = None
 		)
 
 	def stage_create_info(self):
@@ -38,5 +37,5 @@ class Shader:
 		)
 
 	def destroy(self):
-		vkDestroyShaderModule(self.logical_device.device, self.module, None)
+		vkDestroyShaderModule(BVKC.logical_device.device, self.module, None)
 

@@ -1,14 +1,13 @@
-from . import *
 from .vk_module import *
+from . import *
 
 
 class QueueFamilyIndices:
-	def __init__(self, physical_device, instance, surface) -> None:
-		self.physical_device = physical_device
+	def __init__(self, instance, surface) -> None:
 		self.instance = instance
 		self.surface = surface
 
-		queue_families = vkGetPhysicalDeviceQueueFamilyProperties(physical_device)
+		queue_families = vkGetPhysicalDeviceQueueFamilyProperties(BVKC.physical_device)
 
 		surface_support = vkGetInstanceProcAddr(instance, 'vkGetPhysicalDeviceSurfaceSupportKHR')
 
@@ -45,7 +44,7 @@ class QueueFamilyIndices:
 			if fam.queueFlags & VK_QUEUE_GRAPHICS_BIT:
 				self.graphics_family = i
 
-			if surface_support(physical_device, i, surface):
+			if surface_support(BVKC.physical_device, i, surface):
 				self.present_family = i
 
 			if self.is_complete():
@@ -58,9 +57,9 @@ class QueueFamilyIndices:
 	def is_complete(self):
 		return self.graphics_family is not None and self.present_family is not None
 
-	def get_queue(self, logical_device:'vk_device.LogicalDevice'):
+	def get_queue(self):
 		return [
-			vkGetDeviceQueue(logical_device.device, self.graphics_family, 0),
-			vkGetDeviceQueue(logical_device.device, self.present_family, 0)
+			vkGetDeviceQueue(BVKC.logical_device.device, self.graphics_family, 0),
+			vkGetDeviceQueue(BVKC.logical_device.device, self.present_family, 0)
 		]
 

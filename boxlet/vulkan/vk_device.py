@@ -1,5 +1,5 @@
-from . import * 
 from .vk_module import *
+from . import * 
 
 
 """
@@ -135,7 +135,7 @@ def choose_physical_device(instance):
 	return None
 
 class LogicalDevice:
-	def __init__(self, physical_device, queue_family:'vk_queue_families.QueueFamilyIndices'):
+	def __init__(self, queue_family:'vk_queue_families.QueueFamilyIndices'):
 		unique_indices = list(set([queue_family.graphics_family, queue_family.present_family]))
 
 		queue_create_info = [
@@ -163,7 +163,7 @@ class LogicalDevice:
 			enabledLayerCount = len(enabled_layers), ppEnabledLayerNames = enabled_layers
 		)
 
-		self.device = vkCreateDevice(physicalDevice = physical_device, pCreateInfo = [create_info], pAllocator = None)
+		self.device = vkCreateDevice(physicalDevice = BVKC.physical_device, pCreateInfo = [create_info], pAllocator = None)
 
 	def destroy(self):
 		'Everything created using this device needs to be destroyed beforehand.'

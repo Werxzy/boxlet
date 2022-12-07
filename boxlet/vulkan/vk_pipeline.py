@@ -1,11 +1,10 @@
-from . import *
 from .vk_module import *
+from . import *
 
 
 class RenderPass(TrackedInstances):
 
-	def __init__(self, logical_device:vk_device.LogicalDevice, swapchain_image_format):
-		self.logical_device = logical_device
+	def __init__(self, swapchain_image_format):
 
 		color_attachment = VkAttachmentDescription(
 			format = swapchain_image_format,
@@ -39,7 +38,7 @@ class RenderPass(TrackedInstances):
 			pSubpasses = subpass
 		)
 
-		self.vk_addr = vkCreateRenderPass(logical_device.device, render_pass_info, None)
+		self.vk_addr = vkCreateRenderPass(BVKC.logical_device.device, render_pass_info, None)
 
 	def begin(self, command_buffer, frame_buffer, area):
 		render_pass_info = VkRenderPassBeginInfo(
@@ -58,14 +57,12 @@ class RenderPass(TrackedInstances):
 		vkCmdEndRenderPass(command_buffer)
 
 	def on_destroy(self):
-		vkDestroyRenderPass(self.logical_device.device, self.vk_addr, None)
+		vkDestroyRenderPass(BVKC.logical_device.device, self.vk_addr, None)
 
 
 class PipelineLayout(TrackedInstances):
 
-	def __init__(self, logical_device:vk_device.LogicalDevice):
-		self.logical_device = logical_device
-		
+	def __init__(self):
 		push_constant_info = VkPushConstantRange(
 			stageFlags = VK_SHADER_STAGE_VERTEX_BIT, offset = 0,
 			size = 4 * 4 * 4
@@ -76,10 +73,10 @@ class PipelineLayout(TrackedInstances):
 			setLayoutCount = 0
 		)
 
-		self.layout = vkCreatePipelineLayout(logical_device.device, pipeline_layout_info, None)
+		self.layout = vkCreatePipelineLayout(BVKC.logical_device.device, pipeline_layout_info, None)
 
 	def on_destroy(self):
-		vkDestroyPipelineLayout(self.logical_device.device, self.layout, None)
+		vkDestroyPipelineLayout(BVKC.logical_device.device, self.layout, None)
 
 
 class GraphicsPipeline(TrackedInstances):
@@ -87,8 +84,7 @@ class GraphicsPipeline(TrackedInstances):
 	# NOTE a compute pipeline would need it's own object
 	# at that point, create a PipelineBase class that have functions meant to be overridden
 
-	def __init__(self, logical_device:vk_device.LogicalDevice, image_format, extent, vertex_filepath, fragment_filepath):
-		self.logical_device = logical_device
+	def __init__(self, image_format, extent, vertex_filepath, fragment_filepath):
 
 		binding_desc = [vk_mesh.get_pos_color_binding_description()]
 		attribute_desc = vk_mesh.get_pos_color_attribute_descriptions()
@@ -124,14 +120,13 @@ class GraphicsPipeline(TrackedInstances):
 				offset = 48
 			),
 		])
-		
 
 		vertex_input_info = VkPipelineVertexInputStateCreateInfo(
 			vertexBindingDescriptionCount = len(binding_desc), pVertexBindingDescriptions = binding_desc,
 			vertexAttributeDescriptionCount = len(attribute_desc), pVertexAttributeDescriptions = attribute_desc
 		)
 
-		vertex_shader = vk_shaders.Shader('vertex', logical_device, vertex_filepath)
+		vertex_shader = vk_shaders.Shader('vertex', vertex_filepath)
 
 		input_assembly = VkPipelineInputAssemblyStateCreateInfo(
 			topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
@@ -171,7 +166,7 @@ class GraphicsPipeline(TrackedInstances):
 			rasterizationSamples = VK_SAMPLE_COUNT_1_BIT
 		)
 
-		fragment_shader = vk_shaders.Shader('fragment', logical_device, fragment_filepath)
+		fragment_shader = vk_shaders.Shader('fragment', fragment_filepath)
 
 		shader_stages = [vertex_shader.stage_create_info(), fragment_shader.stage_create_info()]
 
@@ -187,8 +182,8 @@ class GraphicsPipeline(TrackedInstances):
 			blendConstants = [0.0, 0.0, 0.0, 0.0]
 		)
 
-		self.pipeline_layout = PipelineLayout(logical_device)
-		self.render_pass = RenderPass(logical_device, image_format)
+		self.pipeline_layout = PipelineLayout()
+		self.render_pass = RenderPass(image_format)
 		
 		pipeline_info = VkGraphicsPipelineCreateInfo(
 			stageCount = len(shader_stages),
@@ -204,7 +199,7 @@ class GraphicsPipeline(TrackedInstances):
 			subpass = 0
 		)
 
-		self.pipeline = vkCreateGraphicsPipelines(logical_device.device, VK_NULL_HANDLE, 1, pipeline_info, None)[0]
+		self.pipeline = vkCreateGraphicsPipelines(BVKC.logical_device.device, VK_NULL_HANDLE, 1, pipeline_info, None)[0]
 
 		vertex_shader.destroy()
 		fragment_shader.destroy()
@@ -213,5 +208,5 @@ class GraphicsPipeline(TrackedInstances):
 		vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self.pipeline)
 
 	def on_destroy(self):
-		vkDestroyPipeline(self.logical_device.device, self.pipeline, None)
+		vkDestroyPipeline(BVKC.logical_device.device, self.pipeline, None)
 
