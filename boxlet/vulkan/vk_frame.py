@@ -51,16 +51,15 @@ class SwapChainFrame:
 		self.render_finished = vk_sync.Semaphore()
 
 	def init_buffers(self, render_pass, command_pool:'CommandPool'):
+		'''
+		Initializes some buffers seperate from __init__.
+		
+		These buffers are seperate because they may be initialized/destroyed multiple times during the application's lifetime.
+		'''
+
 		self.frame_buffer = self.image_view.init_frame_buffer(render_pass)
-
-		alloc_info = VkCommandBufferAllocateInfo(
-			commandPool = command_pool.pool,
-			level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-			commandBufferCount = 1
-		)
-
-		self.command_buffer = vkAllocateCommandBuffers(BVKC.logical_device.device, alloc_info)[0]
-
+		self.command_buffer = CommandBuffer(command_pool)
+		
 	def destroy(self):
 		self.in_flight.destroy()
 		self.image_available.destroy()

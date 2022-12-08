@@ -129,7 +129,7 @@ class BoxletVK:
 
 		next_frame = self.swapchain_bundle.frames[image_index]
 
-		command_buffer = next_frame.command_buffer
+		command_buffer = next_frame.command_buffer.vk_addr
 		vkResetCommandBuffer(commandBuffer = command_buffer, flags = 0)
 		self.record_draw_commands(command_buffer, image_index)
 

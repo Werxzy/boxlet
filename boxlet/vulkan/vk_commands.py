@@ -28,34 +28,21 @@ class CommandPool:
 		vkDestroyCommandPool(BVKC.logical_device.device, self.pool, None)
 
 class CommandBuffer:
-	def __init__(self, command_pool:CommandPool, frames:list[vk_frame.SwapChainFrame]) -> None:
+	def __init__(self, command_pool:CommandPool) -> None:
 			
-		self.frames = frames
-
 		alloc_info = VkCommandBufferAllocateInfo(
 			commandPool = command_pool.pool,
 			level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
 			commandBufferCount = 1
 		)
 
-		for i, frame in enumerate(frames):
-			try:
-				frame.command_buffer = vkAllocateCommandBuffers(BVKC.logical_device.device, alloc_info)[0]
-				if DEBUG_MODE:
-					print(f'Allocated command buffer for frame {i}')
-
-			except:
-				if DEBUG_MODE:
-					print(f'Failed to allocate command buffer for frame {i}')
-
 		try:
-			self.command_buffer = vkAllocateCommandBuffers(BVKC.logical_device.device, alloc_info)[0]
+			self.vk_addr = vkAllocateCommandBuffers(BVKC.logical_device.device, alloc_info)[0]
 			if DEBUG_MODE:
-				print(f'Allocated main command buffer')
+				print(f'Allocated command buffer')
+		except Exception as e:
+			if DEBUG_MODE:
+				print(f'Failed to allocate command buffer')
+			raise e
 
-		except:
-			self.command_buffer = None
-			if DEBUG_MODE:
-				print(f'Failed to allocate main command buffer')
-		
-		# TODO ? use vkFreeCommandBuffer
+	
