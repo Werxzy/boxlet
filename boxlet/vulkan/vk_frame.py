@@ -3,9 +3,28 @@ from . import *
 
 
 class SwapChainFrame:
-	def __init__(self, image, image_view) -> None:
-		self.image = image
-		self.image_view = image_view
+	def __init__(self, image, format) -> None:
+		components = VkComponentMapping(
+			VK_COMPONENT_SWIZZLE_IDENTITY,
+			VK_COMPONENT_SWIZZLE_IDENTITY,
+			VK_COMPONENT_SWIZZLE_IDENTITY,
+			VK_COMPONENT_SWIZZLE_IDENTITY,
+		)
+
+		subresource_range = VkImageSubresourceRange(
+			aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+			baseMipLevel = 0, levelCount = 1,
+			baseArrayLayer = 0, layerCount = 1
+		)
+
+		create_info = VkImageViewCreateInfo(
+			image = image, viewType = VK_IMAGE_VIEW_TYPE_2D,
+			format = format.format, components = components,
+			subresourceRange = subresource_range
+		)
+
+		self.image_view = vkCreateImageView(device = BVKC.logical_device.device, pCreateInfo = create_info, pAllocator = None)
+		
 		self.frame_buffer = None
 		self.command_buffer = None
 

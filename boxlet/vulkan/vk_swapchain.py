@@ -202,35 +202,10 @@ class SwapChainBundle:
 		vkGetSwapchainImagesKHR = vkGetDeviceProcAddr(BVKC.logical_device.device, 'vkGetSwapchainImagesKHR')
 		images = vkGetSwapchainImagesKHR(BVKC.logical_device.device, self.swapchain)
 
-		components = VkComponentMapping(
-			VK_COMPONENT_SWIZZLE_IDENTITY,
-			VK_COMPONENT_SWIZZLE_IDENTITY,
-			VK_COMPONENT_SWIZZLE_IDENTITY,
-			VK_COMPONENT_SWIZZLE_IDENTITY,
-		)
-
-		subresource_range = VkImageSubresourceRange(
-			aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-			baseMipLevel = 0, levelCount = 1,
-			baseArrayLayer = 0, layerCount = 1
-		)
-
-		self.frames = []
-		for image in images:
-			# TODO if allowed in the future
-			# move this stuff to swapChainFrame and make a list comprehension
-
-			create_info = VkImageViewCreateInfo(
-				image = image, viewType = VK_IMAGE_VIEW_TYPE_2D,
-				format = format.format, components = components,
-				subresourceRange = subresource_range
-			)
-			
-			swapchain_frame = vk_frame.SwapChainFrame(
-				image, 
-				vkCreateImageView(device = BVKC.logical_device.device, pCreateInfo = create_info, pAllocator = None)
-				)
-			self.frames.append(swapchain_frame)
+		self.frames = [
+			vk_frame.SwapChainFrame(image, format)
+			for image in images
+			]
 
 		self.format = format.format
 

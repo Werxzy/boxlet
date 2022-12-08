@@ -145,6 +145,7 @@ class InstanceData:
 		self.owner._destroy_instance(self.indirect_id, self.instance_id)
 		self.owner = None
 
+
 class InstanceBufferSet:
 	def __init__(self, meshes:'vk_mesh.MultiMesh', data_type: np.dtype) -> None:
 		
