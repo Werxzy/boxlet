@@ -52,18 +52,13 @@ class BoxletVK:
 
 		# TODO instead be based on the renderpass associated with the swapchain
 
-		self.swapchain_bundle.init_frame_buffers(RenderPass.get_all_instances()[0])
-
 		self.command_pool = vk_commands.CommandPool(
 			self.queue_families,
 			self.surface,
 			self.instance
 		)
 
-		self.command_buffer = vk_commands.CommandBuffer(
-			self.command_pool,
-			self.swapchain_bundle.frames
-		)
+		self.swapchain_bundle.init_frame_buffers(RenderPass.get_all_instances()[0], self.command_pool)
 
 	def recreate_swapchain(self):
 		if DEBUG_MODE:

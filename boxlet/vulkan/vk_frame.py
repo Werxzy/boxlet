@@ -32,7 +32,6 @@ class ImageView:
 		return FrameBuffer(
 			render_pass, self.extent, [self.vk_addr]
 			)
-		# TODO this probably is a bit too strung together
 	
 	def destroy(self):
 		vkDestroyImageView(
@@ -50,6 +49,17 @@ class SwapChainFrame:
 		self.in_flight = vk_sync.Fence()
 		self.image_available = vk_sync.Semaphore()
 		self.render_finished = vk_sync.Semaphore()
+
+	def init_buffers(self, render_pass, command_pool:'CommandPool'):
+		self.frame_buffer = self.image_view.init_frame_buffer(render_pass)
+
+		alloc_info = VkCommandBufferAllocateInfo(
+			commandPool = command_pool.pool,
+			level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+			commandBufferCount = 1
+		)
+
+		self.command_buffer = vkAllocateCommandBuffers(BVKC.logical_device.device, alloc_info)[0]
 
 	def destroy(self):
 		self.in_flight.destroy()
