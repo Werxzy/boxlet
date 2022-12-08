@@ -10,7 +10,7 @@ class RenderPass(TrackedInstances):
 		self.image_format = image_format
 
 		color_attachment = VkAttachmentDescription(
-			format = image_format,
+			format = image_format.format,
 			samples = VK_SAMPLE_COUNT_1_BIT,
 
 			loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,

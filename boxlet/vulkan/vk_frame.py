@@ -2,7 +2,7 @@ from .vk_module import *
 from . import *
 
 
-class SwapChainFrame:
+class ImageView:
 	def __init__(self, image, format) -> None:
 		components = VkComponentMapping(
 			VK_COMPONENT_SWIZZLE_IDENTITY,
@@ -19,12 +19,27 @@ class SwapChainFrame:
 
 		create_info = VkImageViewCreateInfo(
 			image = image, viewType = VK_IMAGE_VIEW_TYPE_2D,
-			format = format.format, components = components,
+			format = format, components = components,
 			subresourceRange = subresource_range
 		)
 
-		self.image_view = vkCreateImageView(device = BVKC.logical_device.device, pCreateInfo = create_info, pAllocator = None)
-		
+		self.vk_addr = vkCreateImageView(device = BVKC.logical_device.device, pCreateInfo = create_info, pAllocator = None)
+
+	# def init_frame_buffer(self, render_pass):
+	# 	self.frame_buffer = vk_framebuffer.FrameBuffer(
+	# 		render_pass, self.swapchain.extent, [self.image_view]
+	# 		)
+	
+	def destroy(self):
+		vkDestroyImageView(
+			BVKC.logical_device.device, self.vk_addr, None
+		)
+
+
+class SwapChainFrame:
+	def __init__(self, image, swapchain:'vk_swapchain.SwapChainBundle') -> None:
+		self.image_view = ImageView(image, swapchain.format.format)
+
 		self.frame_buffer = None
 		self.command_buffer = None
 
@@ -32,18 +47,12 @@ class SwapChainFrame:
 		self.image_available = vk_sync.Semaphore()
 		self.render_finished = vk_sync.Semaphore()
 
-		# TODO if this is created in only one way
-		# or requires all future variables
-		# move everything into this init function
-
 	def destroy(self):
 		self.in_flight.destroy()
 		self.image_available.destroy()
 		self.render_finished.destroy()
 
-		vkDestroyImageView(
-			BVKC.logical_device.device, self.image_view, None
-		)
+		self.image_view.destroy()
 		if self.frame_buffer is not None:
 			vkDestroyFramebuffer(
 				BVKC.logical_device.device, self.frame_buffer, None

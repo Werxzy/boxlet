@@ -6,7 +6,7 @@ class FramebufferInput:
 
 	def __init__(self, render_pass:vk_pipeline.RenderPass, swapchain_extent, frames:list[vk_frame.SwapChainFrame]) -> None:
 		for i,frame in enumerate(frames): # TODO individualize frame buffers and assign them to this class
-			attachments = [frame.image_view]
+			attachments = [frame.image_view.vk_addr]
 
 			frame_buffer_info = VkFramebufferCreateInfo(
 				renderPass = render_pass.vk_addr,

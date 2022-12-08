@@ -104,9 +104,8 @@ def choose_swapchain_surface_format(formats):
 
 def choose_swapchain_present_mode(presentModes):
 		
-	for presentMode in presentModes:
-		if presentMode == VK_PRESENT_MODE_MAILBOX_KHR:
-			return presentMode
+	if VK_PRESENT_MODE_MAILBOX_KHR in presentModes:
+		return VK_PRESENT_MODE_MAILBOX_KHR
 
 	return VK_PRESENT_MODE_FIFO_KHR
 
@@ -144,7 +143,7 @@ class SwapChainBundle:
 			self.destroy()
 
 		support = SwapChainSupportDetails(self.queue_family.instance, BVKC.physical_device, self.queue_family.surface)
-		format = choose_swapchain_surface_format(support.formats)
+		self.format = choose_swapchain_surface_format(support.formats)
 		presentMode = choose_swapchain_present_mode(support.presentModes)
 		self.extent = choose_swapchain_extent(width, height, support.capabilities)
 
@@ -188,8 +187,8 @@ class SwapChainBundle:
 			pQueueFamilyIndices = None
 
 		createInfo = VkSwapchainCreateInfoKHR(
-			surface = self.queue_family.surface, minImageCount = image_count, imageFormat = format.format,
-			imageColorSpace = format.colorSpace, imageExtent = self.extent, imageArrayLayers = 1,
+			surface = self.queue_family.surface, minImageCount = image_count, imageFormat = self.format.format,
+			imageColorSpace = self.format.colorSpace, imageExtent = self.extent, imageArrayLayers = 1,
 			imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, imageSharingMode = imageSharingMode,
 			queueFamilyIndexCount = queueFamilyIndexCount, pQueueFamilyIndices = pQueueFamilyIndices,
 			preTransform = support.capabilities.currentTransform, compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
@@ -203,11 +202,9 @@ class SwapChainBundle:
 		images = vkGetSwapchainImagesKHR(BVKC.logical_device.device, self.swapchain)
 
 		self.frames = [
-			vk_frame.SwapChainFrame(image, format)
+			vk_frame.SwapChainFrame(image, self)
 			for image in images
 			]
-
-		self.format = format.format
 
 		self.max_frames_in_flight = len(self.frames)
 		self.current_frame = 0
