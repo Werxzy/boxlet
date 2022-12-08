@@ -49,12 +49,10 @@ class RenderPass(TrackedInstances):
 		render_pass_info = VkRenderPassBeginInfo(
 			renderPass = self.vk_addr,
 			framebuffer = frame_buffer,
-			renderArea = area
+			renderArea = area,
+			clearValueCount = 1,
+			pClearValues = [VkClearValue([[1.0, 0.5, 0.25, 1.0]])]
 		)
-
-		clear_color = VkClearValue([[1.0, 0.5, 0.25, 1.0]])
-		render_pass_info.clearValueCount = 1
-		render_pass_info.pClearValues = ffi.addressof(clear_color)
 
 		vkCmdBeginRenderPass(command_buffer, render_pass_info, VK_SUBPASS_CONTENTS_INLINE)
 
