@@ -3,7 +3,10 @@ from . import *
 
 
 class ImageView:
-	def __init__(self, image, format) -> None:
+	def __init__(self, image, format, extent) -> None:
+		self.format = format
+		self.extent = extent
+
 		components = VkComponentMapping(
 			VK_COMPONENT_SWIZZLE_IDENTITY,
 			VK_COMPONENT_SWIZZLE_IDENTITY,
@@ -25,10 +28,11 @@ class ImageView:
 
 		self.vk_addr = vkCreateImageView(device = BVKC.logical_device.device, pCreateInfo = create_info, pAllocator = None)
 
-	# def init_frame_buffer(self, render_pass):
-	# 	self.frame_buffer = vk_framebuffer.FrameBuffer(
-	# 		render_pass, self.swapchain.extent, [self.image_view]
-	# 		)
+	def init_frame_buffer(self, render_pass):
+		return FrameBuffer(
+			render_pass, self.extent, [self.vk_addr]
+			)
+		# TODO this probably is a bit too strung together
 	
 	def destroy(self):
 		vkDestroyImageView(
@@ -38,9 +42,9 @@ class ImageView:
 
 class SwapChainFrame:
 	def __init__(self, image, swapchain:'vk_swapchain.SwapChainBundle') -> None:
-		self.image_view = ImageView(image, swapchain.format.format)
+		self.image_view = ImageView(image, swapchain.format.format, swapchain.extent)
 
-		self.frame_buffer = None
+		self.frame_buffer:FrameBuffer = None
 		self.command_buffer = None
 
 		self.in_flight = vk_sync.Fence()
@@ -54,7 +58,5 @@ class SwapChainFrame:
 
 		self.image_view.destroy()
 		if self.frame_buffer is not None:
-			vkDestroyFramebuffer(
-				BVKC.logical_device.device, self.frame_buffer, None
-			)
+			self.frame_buffer.destroy()
 		

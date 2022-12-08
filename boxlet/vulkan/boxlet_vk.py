@@ -52,11 +52,7 @@ class BoxletVK:
 
 		# TODO instead be based on the renderpass associated with the swapchain
 
-		self.frame_buffer_input = vk_framebuffer.FramebufferInput(
-			RenderPass.get_all_instances()[0],
-			self.swapchain_bundle.extent,
-			self.swapchain_bundle.frames
-		)
+		self.swapchain_bundle.init_frame_buffers(RenderPass.get_all_instances()[0])
 
 		self.command_pool = vk_commands.CommandPool(
 			self.queue_families,

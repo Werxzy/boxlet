@@ -209,6 +209,10 @@ class SwapChainBundle:
 		self.max_frames_in_flight = len(self.frames)
 		self.current_frame = 0
 
+	def init_frame_buffers(self, render_pass):
+		for frame in self.frames:
+			frame.frame_buffer = frame.image_view.init_frame_buffer(render_pass)
+
 	def increment_frame(self):
 		self.current_frame += 1
 		self.current_frame %= self.max_frames_in_flight

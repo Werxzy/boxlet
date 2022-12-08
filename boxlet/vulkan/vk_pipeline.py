@@ -45,10 +45,10 @@ class RenderPass(TrackedInstances):
 
 		self.attached_piplelines:'list[VulkanPipeline]' = []
 
-	def begin(self, command_buffer, frame_buffer, area):
+	def begin(self, command_buffer, frame_buffer:FrameBuffer, area):
 		render_pass_info = VkRenderPassBeginInfo(
 			renderPass = self.vk_addr,
-			framebuffer = frame_buffer,
+			framebuffer = frame_buffer.vk_addr,
 			renderArea = area,
 			clearValueCount = 1,
 			pClearValues = [VkClearValue([[1.0, 0.5, 0.25, 1.0]])]

@@ -15,13 +15,13 @@ from . import vk_logging
 from . import vk_queue_families
 from . import vk_device
 from . import vk_sync
+from .vk_framebuffer import FrameBuffer
 from . import vk_frame
 from . import vk_swapchain
 from . import vk_shaders
 from . import vk_memory
 from .vk_mesh import Mesh, MultiMesh
 from .vk_pipeline import RenderPass, PipelineLayout, GraphicsPipeline
-from .vk_framebuffer import FramebufferInput
 from .vk_commands import CommandPool, CommandBuffer
 
 from .vk_renderer import Renderer, IndirectRenderer
