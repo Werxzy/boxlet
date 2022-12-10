@@ -146,20 +146,23 @@ class LogicalDevice:
 			for index in unique_indices
 		]
 
-		device_features = VkPhysicalDeviceFeatures()
+		device_features = [
+			VkPhysicalDeviceFeatures(multiDrawIndirect=VK_KHR_draw_indirect_count)
+		]
 
 		enabled_layers = []
 		if DEBUG_MODE:
 			enabled_layers.append("VK_LAYER_KHRONOS_validation")
 
 		device_extensions = [
-			VK_KHR_SWAPCHAIN_EXTENSION_NAME
+			VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+			VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME
 		]
 
 		create_info = VkDeviceCreateInfo(
 			queueCreateInfoCount = len(queue_create_info), pQueueCreateInfos = queue_create_info,
 			enabledExtensionCount = len(device_extensions), ppEnabledExtensionNames = device_extensions,
-			pEnabledFeatures = [device_features],
+			pEnabledFeatures = device_features,
 			enabledLayerCount = len(enabled_layers), ppEnabledLayerNames = enabled_layers
 		)
 
