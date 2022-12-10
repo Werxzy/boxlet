@@ -125,12 +125,12 @@ def choose_swapchain_extent(width, height, capabilities):
 
 	return extent
 
-class SwapChainBundle:
+class SwapChainBundle(RenderTarget):
 
 	def __init__(self, queue_family:'vk_queue_families.QueueFamilyIndices', width, height):
 		self.queue_family = queue_family
 
-		self.swapchain = None
+		self.vk_addr = None
 		self.frames:list[vk_frame.SwapChainFrame] = []
 
 		self.remake(width, height)
@@ -139,7 +139,7 @@ class SwapChainBundle:
 		vkDeviceWaitIdle(BVKC.logical_device.device)
 
 		# if the original still exists, we need to destroy it
-		if self.swapchain is not None:
+		if self.vk_addr is not None:
 			self.destroy()
 
 		support = SwapChainSupportDetails(self.queue_family.instance, BVKC.physical_device, self.queue_family.surface)
@@ -196,10 +196,10 @@ class SwapChainBundle:
 		)
 
 		vkCreateSwapchainKHR = vkGetDeviceProcAddr(BVKC.logical_device.device, 'vkCreateSwapchainKHR')
-		self.swapchain = vkCreateSwapchainKHR(BVKC.logical_device.device, createInfo, None)
+		self.vk_addr = vkCreateSwapchainKHR(BVKC.logical_device.device, createInfo, None)
 
 		vkGetSwapchainImagesKHR = vkGetDeviceProcAddr(BVKC.logical_device.device, 'vkGetSwapchainImagesKHR')
-		images = vkGetSwapchainImagesKHR(BVKC.logical_device.device, self.swapchain)
+		images = vkGetSwapchainImagesKHR(BVKC.logical_device.device, self.vk_addr)
 
 		self.frames = [
 			vk_frame.SwapChainFrame(image, self)
@@ -207,7 +207,7 @@ class SwapChainBundle:
 			]
 
 		self.max_frames_in_flight = len(self.frames)
-		self.current_frame = 0
+		self.current_frame = -1
 
 	def init_frame_buffers(self, render_pass, command_pool):
 		for frame in self.frames:
@@ -217,9 +217,13 @@ class SwapChainBundle:
 		self.current_frame += 1
 		self.current_frame %= self.max_frames_in_flight
 
+	def get_frame_buffer(self) -> FrameBuffer:
+		'Used by BoxletVK to get the correct framebuffer to render to.'
+		return self.frames[self.current_frame].frame_buffer
+
 	def destroy(self):
 		for frame in self.frames:
 			frame.destroy()
 
 		destruction_function = vkGetDeviceProcAddr(BVKC.logical_device.device, 'vkDestroySwapchainKHR')
-		destruction_function(BVKC.logical_device.device, self.swapchain, None)
+		destruction_function(BVKC.logical_device.device, self.vk_addr, None)

@@ -7,30 +7,30 @@ class Semaphore:
 		semaphore_info = VkSemaphoreCreateInfo()
 
 		try:
-			self.vk_id = vkCreateSemaphore(BVKC.logical_device.device, semaphore_info, None)
+			self.vk_addr = vkCreateSemaphore(BVKC.logical_device.device, semaphore_info, None)
 		except Exception as ex:
 			if DEBUG_MODE:
 				print('Failed to create semaphore')
 			raise ex
 
 	def destroy(self):
-		vkDestroySemaphore(BVKC.logical_device.device, self.vk_id, None)
+		vkDestroySemaphore(BVKC.logical_device.device, self.vk_addr, None)
 
 class Fence:
 	def __init__(self):
 		fence_info = VkFenceCreateInfo(flags = VK_FENCE_CREATE_SIGNALED_BIT)
 
 		try:
-			self.vk_id = vkCreateFence(BVKC.logical_device.device, fence_info, None)
+			self.vk_addr = vkCreateFence(BVKC.logical_device.device, fence_info, None)
 		except Exception as ex:
 			if DEBUG_MODE:
 				print('Failed to create fence')
 			raise ex
 
 	def wait_for(self, *additional_fences:'Fence'):
-		fences = [self.vk_id]
+		fences = [self.vk_addr]
 		if additional_fences:
-			fences.extend(f.vk_id for f in additional_fences)
+			fences.extend(f.vk_addr for f in additional_fences)
 
 		vkWaitForFences(
 			device = BVKC.logical_device.device, fenceCount = len(fences), pFences = fences,
@@ -38,13 +38,13 @@ class Fence:
 		)
 
 	def reset(self, *additional_fences:'Fence'):
-		fences = [self.vk_id]
+		fences = [self.vk_addr]
 		if additional_fences:
-			fences.extend(f.vk_id for f in additional_fences)
+			fences.extend(f.vk_addr for f in additional_fences)
 
 		vkResetFences(
 			device = BVKC.logical_device.device, fenceCount = len(fences), pFences = fences
 		)
 
 	def destroy(self):
-		vkDestroyFence(BVKC.logical_device.device, self.vk_id, None)
+		vkDestroyFence(BVKC.logical_device.device, self.vk_addr, None)

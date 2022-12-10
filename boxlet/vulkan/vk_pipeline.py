@@ -5,12 +5,13 @@ from . import *
 
 class RenderPass(TrackedInstances):
 
-	def __init__(self, image_format):
+	def __init__(self, render_target:RenderTarget = None):
+		'Render Target as none assumes it will render to the primary render target.'
 
-		self.image_format = image_format
+		self.render_target = render_target if render_target else BVKC.swapchain
 
 		color_attachment = VkAttachmentDescription(
-			format = image_format.format,
+			format = self.render_target.format.format,
 			samples = VK_SAMPLE_COUNT_1_BIT,
 
 			loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -45,11 +46,11 @@ class RenderPass(TrackedInstances):
 
 		self.attached_piplelines:'list[VulkanPipeline]' = []
 
-	def begin(self, command_buffer, frame_buffer:FrameBuffer, area):
+	def begin(self, command_buffer):
 		render_pass_info = VkRenderPassBeginInfo(
 			renderPass = self.vk_addr,
-			framebuffer = frame_buffer.vk_addr,
-			renderArea = area,
+			framebuffer = self.render_target.get_frame_buffer().vk_addr,
+			renderArea = [[0,0], self.render_target.extent],
 			clearValueCount = 1,
 			pClearValues = [VkClearValue([[1.0, 0.5, 0.25, 1.0]])]
 		)
@@ -100,13 +101,12 @@ class ComputePipeline(VulkanPipeline):
 
 	def bind(self, command_buffer):
 		vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, self.pipeline)
+	
+	# TODO complete implementation
 
 class GraphicsPipeline(VulkanPipeline):
-	
-	# NOTE a compute pipeline would need it's own object
-	# at that point, create a PipelineBase class that have functions meant to be overridden
 
-	def __init__(self, render_pass:RenderPass, pipeline_layout:PipelineLayout, extent, vertex_filepath, fragment_filepath):
+	def __init__(self, render_pass:RenderPass, pipeline_layout:PipelineLayout, vertex_filepath, fragment_filepath):
 
 		binding_desc = [vk_mesh.get_pos_color_binding_description()]
 		attribute_desc = vk_mesh.get_pos_color_attribute_descriptions()
@@ -153,6 +153,8 @@ class GraphicsPipeline(VulkanPipeline):
 		input_assembly = VkPipelineInputAssemblyStateCreateInfo(
 			topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
 		)
+
+		extent = render_pass.render_target.extent
 
 		viewport = VkViewport(
 			x = 0, y = 0,

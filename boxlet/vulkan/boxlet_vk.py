@@ -46,7 +46,7 @@ class BoxletVK:
 		BVKC.logical_device = vk_device.LogicalDevice(self.queue_families)
 		[self.graphics_queue, self.present_queue] = self.queue_families.get_queue()
 		
-		self.swapchain_bundle = vk_swapchain.SwapChainBundle(self.queue_families, self.width, self.height)
+		BVKC.swapchain = vk_swapchain.SwapChainBundle(self.queue_families, self.width, self.height)
 
 	def finalize_setup(self):
 
@@ -58,13 +58,13 @@ class BoxletVK:
 			self.instance
 		)
 
-		self.swapchain_bundle.init_frame_buffers(RenderPass.get_all_instances()[0], self.command_pool)
+		BVKC.swapchain.init_frame_buffers(RenderPass.get_all_instances()[0], self.command_pool)
 
 	def recreate_swapchain(self):
 		if DEBUG_MODE:
 			print('recreate swapchain')
 
-		self.swapchain_bundle.remake(self.width, self.height)
+		BVKC.swapchain.remake(self.width, self.height)
 
 		self.command_pool.destroy() 
 		# TODO remove .destroy()? but not destroying the command pool causes a memory leak
@@ -73,7 +73,7 @@ class BoxletVK:
 
 		self.finalize_setup()
 
-	def record_draw_commands(self, command_buffer, image_index):
+	def record_draw_commands(self, command_buffer):
 		begin_info = VkCommandBufferBeginInfo()
 
 		vkBeginCommandBuffer(command_buffer, begin_info)
@@ -84,11 +84,7 @@ class BoxletVK:
 			# configure some sort of frame chain
 			# only the renderpass that outputs to the screen needs the swapchain (probably)
 
-			render_pass.begin(
-				command_buffer, 
-				self.swapchain_bundle.frames[image_index].frame_buffer,
-				[[0,0], self.swapchain_bundle.extent]
-			)
+			render_pass.begin(command_buffer)
 
 			for pipeline in render_pass.attached_piplelines:
 				pipeline.bind(command_buffer)
@@ -101,10 +97,6 @@ class BoxletVK:
 		vkEndCommandBuffer(command_buffer)
 
 	def render(self):
-		# TODO, double check the semphores
-		# I wasn't sure if the tutorial was correct, so I modified them
-		# it appears to work currently, but could have frame lag
-
 		# if the window is minimized, skip the renderloop
 		if not pg_display.get_active():
 			return
@@ -118,42 +110,42 @@ class BoxletVK:
 		vkAcquireNextImageKHR = vkGetDeviceProcAddr(BVKC.logical_device.device, 'vkAcquireNextImageKHR')
 		vkQueuePresentKHR = vkGetDeviceProcAddr(BVKC.logical_device.device, 'vkQueuePresentKHR')
 
-		prev_frame = self.swapchain_bundle.frames[self.swapchain_bundle.current_frame]
+		prev_frame = BVKC.swapchain.frames[BVKC.swapchain.current_frame]
 		prev_frame.in_flight.wait_for()
 		prev_frame.in_flight.reset()
+		# These semaphores and fences are probably used in a bad way, even though it works
 
 		image_index = vkAcquireNextImageKHR(
-			device = BVKC.logical_device.device, swapchain = self.swapchain_bundle.swapchain, timeout = 1000000000,
-			semaphore = prev_frame.image_available.vk_id, fence = VK_NULL_HANDLE
+			device = BVKC.logical_device.device, swapchain = BVKC.swapchain.vk_addr, timeout = 1000000000,
+			semaphore = prev_frame.image_available.vk_addr, fence = VK_NULL_HANDLE
 		)
 
-		next_frame = self.swapchain_bundle.frames[image_index]
+		BVKC.swapchain.current_frame = image_index 
+		next_frame = BVKC.swapchain.frames[image_index]
 
 		command_buffer = next_frame.command_buffer.vk_addr
 		vkResetCommandBuffer(commandBuffer = command_buffer, flags = 0)
-		self.record_draw_commands(command_buffer, image_index)
+		self.record_draw_commands(command_buffer)
 
 		submit_info = VkSubmitInfo(
-			waitSemaphoreCount = 1, pWaitSemaphores = [next_frame.image_available.vk_id],
+			waitSemaphoreCount = 1, pWaitSemaphores = [prev_frame.image_available.vk_addr],
 			pWaitDstStageMask = [VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT],
 			commandBufferCount = 1, pCommandBuffers = [command_buffer],
-			signalSemaphoreCount = 1, pSignalSemaphores = [next_frame.render_finished.vk_id] 
+			signalSemaphoreCount = 1, pSignalSemaphores = [prev_frame.render_finished.vk_addr] 
 		)
 
 		vkQueueSubmit(
 			queue = self.graphics_queue, submitCount = 1,
-			pSubmits = submit_info, fence = next_frame.in_flight.vk_id
+			pSubmits = submit_info, fence = prev_frame.in_flight.vk_addr
 		)
 
 		present_info = VkPresentInfoKHR(
-			waitSemaphoreCount = 1, pWaitSemaphores = [next_frame.render_finished.vk_id],
-			swapchainCount = 1, pSwapchains = [self.swapchain_bundle.swapchain],
+			waitSemaphoreCount = 1, pWaitSemaphores = [prev_frame.render_finished.vk_addr],
+			swapchainCount = 1, pSwapchains = [BVKC.swapchain.vk_addr],
 			pImageIndices = [image_index]
 		)
 
 		vkQueuePresentKHR(self.present_queue, present_info)
-
-		self.swapchain_bundle.increment_frame()
 
 	def close(self):
 
@@ -170,7 +162,7 @@ class BoxletVK:
 		vk_pipeline.PipelineLayout._destroy_all()
 		vk_pipeline.RenderPass._destroy_all()
 
-		self.swapchain_bundle.destroy()
+		BVKC.swapchain.destroy()
 
 		vk_renderer.Renderer._destroy_all()
 

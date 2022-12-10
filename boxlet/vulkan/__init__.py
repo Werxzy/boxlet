@@ -1,5 +1,6 @@
-# a majority of this is from 
-# https://www.youtube.com/watch?v=drregGzhgCA&list=PLn3eTxaOtL2M4qgHpHuxY821C_oX0GvM7&index=3
+# A majority of this code is from the channel GetIntoGameDev.
+# https://www.youtube.com/watch?v=drregGzhgCA&list=PLn3eTxaOtL2M4qgHpHuxY821C_oX0GvM7
+# Though now it has been heavily modified to suit the needs of this engine.
 
 DEBUG_MODE = False
 
@@ -18,6 +19,7 @@ from . import vk_sync
 from .vk_commands import CommandPool, CommandBuffer
 from .vk_framebuffer import FrameBuffer
 from . import vk_frame
+from .vk_RenderTarget import RenderTarget, SimpleRenderTarget
 from . import vk_swapchain
 from . import vk_shaders
 from . import vk_memory

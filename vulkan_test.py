@@ -47,14 +47,11 @@ meshes = MultiMesh(
 #	render pipeline creation
 # - - - - - - - - - - - - - - - - - - - - - - -
 
-#TODO figure out format and extent
-
-render_pass = RenderPass(manager.vulkan_graphics_engine.swapchain_bundle.format)
+render_pass = RenderPass()
 pipeline_layout = PipelineLayout()
 graphics_pipeline = GraphicsPipeline(
 	render_pass,
-	pipeline_layout, 
-	manager.vulkan_graphics_engine.swapchain_bundle.extent,
+	pipeline_layout,
 	'shaders/vert.spv',
 	'shaders/frag.spv'
 )

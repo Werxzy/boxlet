@@ -10,6 +10,7 @@ class BVKC:
 
 	logical_device:'vk_device.LogicalDevice' = None
 	physical_device = None
+	swapchain:'vk_swapchain.SwapChainBundle' = None
 
 	# currently, we will assume that there will only ever be ...
 	# one logical device 
