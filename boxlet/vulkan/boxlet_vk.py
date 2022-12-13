@@ -19,6 +19,12 @@ class BoxletVK:
 
 		self.make_device()
 
+		BVKC.command_pool = vk_commands.CommandPool(
+			self.queue_families,
+			self.surface,
+			self.instance
+		)
+
 
 	def make_pygame_instance(self, wm_info):
 		self.instance = vk_instance.make_instance('ID Tech 12')
@@ -44,21 +50,12 @@ class BoxletVK:
 		BVKC.physical_device = vk_device.choose_physical_device(self.instance)
 		self.queue_families = vk_queue_families.QueueFamilyIndices(self.instance, self.surface)
 		BVKC.logical_device = vk_device.LogicalDevice(self.queue_families)
-		[self.graphics_queue, self.present_queue] = self.queue_families.get_queue()
+		[BVKC.graphics_queue, BVKC.present_queue] = self.queue_families.get_queue()
 		
 		BVKC.swapchain = vk_swapchain.SwapChainBundle(self.queue_families, self.width, self.height)
 
 	def finalize_setup(self):
-
-		# TODO instead be based on the renderpass associated with the swapchain
-
-		self.command_pool = vk_commands.CommandPool(
-			self.queue_families,
-			self.surface,
-			self.instance
-		)
-
-		BVKC.swapchain.init_frame_buffers(RenderPass.get_all_instances()[0], self.command_pool)
+		BVKC.swapchain.init_frame_buffers(RenderPass.get_all_instances()[0], BVKC.command_pool)
 
 	def recreate_swapchain(self):
 		if DEBUG_MODE:
@@ -66,10 +63,16 @@ class BoxletVK:
 
 		BVKC.swapchain.remake(self.width, self.height)
 
-		self.command_pool.destroy() 
+		BVKC.command_pool.destroy() 
 		# TODO remove .destroy()? but not destroying the command pool causes a memory leak
 		# probably would need to free what is in the command_buffer
 		# I think they would normally be freed when the command pool was destroyed
+
+		BVKC.command_pool = vk_commands.CommandPool(
+			self.queue_families,
+			self.surface,
+			self.instance
+		)
 
 		self.finalize_setup()
 
@@ -135,7 +138,7 @@ class BoxletVK:
 		)
 
 		vkQueueSubmit(
-			queue = self.graphics_queue, submitCount = 1,
+			queue = BVKC.graphics_queue, submitCount = 1,
 			pSubmits = submit_info, fence = prev_frame.in_flight.vk_addr
 		)
 
@@ -145,7 +148,7 @@ class BoxletVK:
 			pImageIndices = [image_index]
 		)
 
-		vkQueuePresentKHR(self.present_queue, present_info)
+		vkQueuePresentKHR(BVKC.present_queue, present_info)
 
 	def close(self):
 
@@ -156,7 +159,7 @@ class BoxletVK:
 		if DEBUG_MODE:
 			print("Goodbye see you!\n")
 
-		self.command_pool.destroy()
+		BVKC.command_pool.destroy()
 
 		vk_pipeline.GraphicsPipeline._destroy_all()
 		vk_pipeline.PipelineLayout._destroy_all()
@@ -165,6 +168,8 @@ class BoxletVK:
 		BVKC.swapchain.destroy()
 
 		vk_renderer.Renderer._destroy_all()
+
+		Texture._destroy_all()
 
 		BVKC.logical_device.destroy()
 

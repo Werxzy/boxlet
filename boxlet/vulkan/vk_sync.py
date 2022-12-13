@@ -48,3 +48,4 @@ class Fence:
 
 	def destroy(self):
 		vkDestroyFence(BVKC.logical_device.device, self.vk_addr, None)
+		

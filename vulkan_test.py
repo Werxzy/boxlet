@@ -43,6 +43,8 @@ meshes = MultiMesh(
 	]),
 ])
 
+texture = Texture(pygame.image.load("examples/opengl_example/box.png"))
+
 # - - - - - - - - - - - - - - - - - - - - - - -
 #	render pipeline creation
 # - - - - - - - - - - - - - - - - - - - - - - -
@@ -57,7 +59,7 @@ graphics_pipeline = GraphicsPipeline(
 )
 
 data_type = np.dtype([('model', '(4,4)f4')])
-renderer = IndirectRenderer(graphics_pipeline, meshes, data_type)
+renderer = IndirectRenderer(graphics_pipeline, meshes, data_type, texture)
 
 # - - - - - - - - - - - - - - - - - - - - - - -
 

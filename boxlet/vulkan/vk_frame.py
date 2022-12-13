@@ -26,7 +26,7 @@ class ImageView:
 			subresourceRange = subresource_range
 		)
 
-		self.vk_addr = vkCreateImageView(device = BVKC.logical_device.device, pCreateInfo = create_info, pAllocator = None)
+		self.vk_addr = vkCreateImageView(BVKC.logical_device.device, create_info, None)
 
 	def init_frame_buffer(self, render_pass):
 		return FrameBuffer(
@@ -34,14 +34,12 @@ class ImageView:
 			)
 	
 	def destroy(self):
-		vkDestroyImageView(
-			BVKC.logical_device.device, self.vk_addr, None
-		)
+		vkDestroyImageView(BVKC.logical_device.device, self.vk_addr, None)
 
 
 class SwapChainFrame:
 	def __init__(self, image, swapchain:'vk_swapchain.SwapChainBundle') -> None:
-		self.image_view = ImageView(image, swapchain.format.format, swapchain.extent)
+		self.image_view = ImageView(image, swapchain.format, swapchain.extent)
 
 		self.frame_buffer:FrameBuffer = None
 		self.command_buffer = None

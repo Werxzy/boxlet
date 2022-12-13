@@ -147,7 +147,10 @@ class LogicalDevice:
 		]
 
 		device_features = [
-			VkPhysicalDeviceFeatures(multiDrawIndirect=VK_KHR_draw_indirect_count)
+			VkPhysicalDeviceFeatures(
+				multiDrawIndirect=VK_KHR_draw_indirect_count,
+				samplerAnisotropy=VK_TRUE 
+			)
 		]
 
 		enabled_layers = []
@@ -171,7 +174,4 @@ class LogicalDevice:
 	def destroy(self):
 		'Everything created using this device needs to be destroyed beforehand.'
 		vkDestroyDevice(self.device, None)
-
-
-
 

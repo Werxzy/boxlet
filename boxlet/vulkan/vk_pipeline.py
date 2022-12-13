@@ -11,7 +11,7 @@ class RenderPass(TrackedInstances):
 		self.render_target = render_target if render_target else BVKC.swapchain
 
 		color_attachment = VkAttachmentDescription(
-			format = self.render_target.format.format,
+			format = self.render_target.format,
 			samples = VK_SAMPLE_COUNT_1_BIT,
 
 			loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -21,7 +21,7 @@ class RenderPass(TrackedInstances):
 			stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
 
 			initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-			finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR 
+			finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 		)
 
 		color_attachment_ref = VkAttachmentReference(
@@ -32,7 +32,7 @@ class RenderPass(TrackedInstances):
 		subpass = VkSubpassDescription(
 			pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
 			colorAttachmentCount = 1,
-			pColorAttachments = color_attachment_ref
+			pColorAttachments = [color_attachment_ref]
 		)
 
 		render_pass_info = VkRenderPassCreateInfo(
@@ -76,15 +76,63 @@ class PipelineLayout(TrackedInstances):
 			size = 4 * 4 * 4
 		)
 
+		# potential way of adding a ubo
+		# ubo_layout_binding = VkDescriptorSetLayoutBinding(
+		# 	binding = 0, descriptorCount = 1,
+		# 	descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		# 	stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+		# 	pImmutableSamplers = VK_NULL_HANDLE 
+		# )
+
+		sampler_layout_binding = VkDescriptorSetLayoutBinding(
+			binding = 0, descriptorCount = 1,
+			descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+			pImmutableSamplers = VK_NULL_HANDLE 
+		)
+
+		set_layout_info = VkDescriptorSetLayoutCreateInfo(
+			bindingCount = 1, pBindings = [sampler_layout_binding]
+		)
+
+		self.set_layouts = [
+			vkCreateDescriptorSetLayout(BVKC.logical_device.device, set_layout_info, None)
+		]
+
 		pipeline_layout_info = VkPipelineLayoutCreateInfo(
+			setLayoutCount = len(self.set_layouts), pSetLayouts = self.set_layouts,
 			pushConstantRangeCount = 1, pPushConstantRanges = [push_constant_info],
-			setLayoutCount = 0
 		)
 
 		self.layout = vkCreatePipelineLayout(BVKC.logical_device.device, pipeline_layout_info, None)
 
+	def create_descriptor_pool(self):
+		# TODO more dynamic creation
+
+		pool_sizes = [
+			# for uniform buffer objects
+			# VkDescriptorPoolSize(
+			# 	VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+			# 	BVKC.swapchain.max_frames
+			# ),
+			VkDescriptorPoolSize(
+				VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+				BVKC.swapchain.max_frames
+			)
+		]
+
+		descriptor_pool_info = VkDescriptorPoolCreateInfo(
+			maxSets = BVKC.swapchain.max_frames,
+			poolSizeCount = len(pool_sizes), pPoolSizes = pool_sizes
+		)
+
+		return vkCreateDescriptorPool(BVKC.logical_device.device, descriptor_pool_info, None)
+
 	def on_destroy(self):
 		vkDestroyPipelineLayout(BVKC.logical_device.device, self.layout, None)
+
+		for layout in self.set_layouts:
+			vkDestroyDescriptorSetLayout(BVKC.logical_device.device, layout, None)
 
 
 class VulkanPipeline(TrackedInstances):
@@ -107,6 +155,9 @@ class ComputePipeline(VulkanPipeline):
 class GraphicsPipeline(VulkanPipeline):
 
 	def __init__(self, render_pass:RenderPass, pipeline_layout:PipelineLayout, vertex_filepath, fragment_filepath):
+
+		self.render_pass = render_pass
+		self.pipeline_layout = pipeline_layout
 
 		binding_desc = [vk_mesh.get_pos_color_binding_description()]
 		attribute_desc = vk_mesh.get_pos_color_attribute_descriptions()
@@ -228,9 +279,14 @@ class GraphicsPipeline(VulkanPipeline):
 		self.attached_render_calls:list[Callable] = []
 		render_pass.attach(self)
 
+		self.descriptor_pool = self.pipeline_layout.create_descriptor_pool() # TODO better creation
+
+
 	def bind(self, command_buffer):
 		vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self.pipeline)
 
 	def on_destroy(self):
+		vkDestroyDescriptorPool(BVKC.logical_device.device, self.descriptor_pool, None)
 		vkDestroyPipeline(BVKC.logical_device.device, self.pipeline, None)
+
 

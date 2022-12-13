@@ -45,4 +45,24 @@ class CommandBuffer:
 				print(f'Failed to allocate command buffer')
 			raise e
 
+	def single_time_begin(self):
+		begin_info = VkCommandBufferBeginInfo(
+			flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+		)
+
+		vkBeginCommandBuffer(self.vk_addr, begin_info)
+
+	def single_time_end(self):
+		vkEndCommandBuffer(self.vk_addr)
+
+		submit_info = VkSubmitInfo(
+			commandBufferCount = 1,
+			pCommandBuffers = [self.vk_addr]
+		)
+
+		vkQueueSubmit(BVKC.graphics_queue, 1, [submit_info], None)
+		vkQueueWaitIdle(BVKC.graphics_queue)
+		
+		vkFreeCommandBuffers(BVKC.logical_device.device, BVKC.command_pool.pool, 1, [self.vk_addr])
+	
 	

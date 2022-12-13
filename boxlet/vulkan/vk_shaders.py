@@ -31,7 +31,7 @@ class Shader:
 
 	def stage_create_info(self):
 		return VkPipelineShaderStageCreateInfo(
-			stage =  Shader.TYPES[self.shader_type],
+			stage = Shader.TYPES[self.shader_type],
 			module = self.module,
 			pName = 'main'
 		)

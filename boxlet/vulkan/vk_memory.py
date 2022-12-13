@@ -13,9 +13,15 @@ class Buffer:
 	])
 
 	def __init__(self, usage, data:np.ndarray = None) -> None:
-		self.usage = usage
-		self.data = data if data is not None else np.array([], np.float32)
+		if data is None:
+			self.data = np.array([], np.float32)
+		elif isinstance(data, np.ndarray):
+			self.data = data
+		else:
+			self.data = np.array(data)
+
 		self.size = self.data.nbytes
+		self.usage = usage
 
 		self.buffer = None
 		self.buffer_memory = None
@@ -26,7 +32,7 @@ class Buffer:
 		if self.size > 0:
 			self.create_buffer()
 			self.allocate()
-			self.map_memory(data)
+			self.map_memory(self.data)
 
 	def create_buffer(self):
 		buffer_info = VkBufferCreateInfo(
@@ -47,7 +53,7 @@ class Buffer:
 
 		alloc_info = VkMemoryAllocateInfo(
 			allocationSize = memory_requirements.size,
-			memoryTypeIndex = self.find_memory_type_index(
+			memoryTypeIndex = Buffer.find_memory_type_index(
 				memory_requirements.memoryTypeBits,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
 				# TODO ? these may need to be adjusted

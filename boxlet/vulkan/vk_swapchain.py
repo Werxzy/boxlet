@@ -143,9 +143,11 @@ class SwapChainBundle(RenderTarget):
 			self.destroy()
 
 		support = SwapChainSupportDetails(self.queue_family.instance, BVKC.physical_device, self.queue_family.surface)
-		self.format = choose_swapchain_surface_format(support.formats)
+		format = choose_swapchain_surface_format(support.formats)
 		presentMode = choose_swapchain_present_mode(support.presentModes)
-		self.extent = choose_swapchain_extent(width, height, support.capabilities)
+		extent = choose_swapchain_extent(width, height, support.capabilities)
+		super().__init__(format.format, extent)
+		print(self.format, self.extent)
 
 		image_count = min(
 			support.capabilities.maxImageCount,
@@ -187,8 +189,8 @@ class SwapChainBundle(RenderTarget):
 			pQueueFamilyIndices = None
 
 		createInfo = VkSwapchainCreateInfoKHR(
-			surface = self.queue_family.surface, minImageCount = image_count, imageFormat = self.format.format,
-			imageColorSpace = self.format.colorSpace, imageExtent = self.extent, imageArrayLayers = 1,
+			surface = self.queue_family.surface, minImageCount = image_count, imageFormat = format.format,
+			imageColorSpace = format.colorSpace, imageExtent = extent, imageArrayLayers = 1,
 			imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, imageSharingMode = imageSharingMode,
 			queueFamilyIndexCount = queueFamilyIndexCount, pQueueFamilyIndices = pQueueFamilyIndices,
 			preTransform = support.capabilities.currentTransform, compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
@@ -206,16 +208,14 @@ class SwapChainBundle(RenderTarget):
 			for image in images
 			]
 
-		self.max_frames_in_flight = len(self.frames)
+		self.max_frames = len(self.frames)
 		self.current_frame = -1
+		
+
 
 	def init_frame_buffers(self, render_pass, command_pool):
 		for frame in self.frames:
 			frame.init_buffers(render_pass, command_pool)
-
-	def increment_frame(self):
-		self.current_frame += 1
-		self.current_frame %= self.max_frames_in_flight
 
 	def get_frame_buffer(self) -> FrameBuffer:
 		'Used by BoxletVK to get the correct framebuffer to render to.'

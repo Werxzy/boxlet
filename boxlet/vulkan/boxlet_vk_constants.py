@@ -11,6 +11,9 @@ class BVKC:
 	logical_device:'vk_device.LogicalDevice' = None
 	physical_device = None
 	swapchain:'vk_swapchain.SwapChainBundle' = None
+	command_pool:'CommandPool' = None
+	graphics_queue = None
+	present_queue = None
 
 	# currently, we will assume that there will only ever be ...
 	# one logical device 

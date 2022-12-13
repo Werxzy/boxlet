@@ -2,7 +2,7 @@
 # https://www.youtube.com/watch?v=drregGzhgCA&list=PLn3eTxaOtL2M4qgHpHuxY821C_oX0GvM7
 # Though now it has been heavily modified to suit the needs of this engine.
 
-DEBUG_MODE = False
+DEBUG_MODE = True
 
 from pathlib import Path
 
@@ -19,13 +19,16 @@ from . import vk_sync
 from .vk_commands import CommandPool, CommandBuffer
 from .vk_framebuffer import FrameBuffer
 from . import vk_frame
-from .vk_RenderTarget import RenderTarget, SimpleRenderTarget
+from . import vk_memory
+from .vk_texture import Texture
+from .vk_render_target import RenderTarget, SimpleRenderTarget
 from . import vk_swapchain
 from . import vk_shaders
-from . import vk_memory
 from .vk_mesh import Mesh, MultiMesh
 from .vk_pipeline import RenderPass, PipelineLayout, GraphicsPipeline
 
 from .vk_renderer import Renderer, IndirectRenderer
 
 from .boxlet_vk import BoxletVK
+
+# TODO replace all of the 'from . import' calls
