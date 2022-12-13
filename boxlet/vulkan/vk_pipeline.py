@@ -76,23 +76,27 @@ class PipelineLayout(TrackedInstances):
 			size = 4 * 4 * 4
 		)
 
-		# potential way of adding a ubo
-		# ubo_layout_binding = VkDescriptorSetLayoutBinding(
-		# 	binding = 0, descriptorCount = 1,
-		# 	descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-		# 	stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-		# 	pImmutableSamplers = VK_NULL_HANDLE 
-		# )
+		ubo_layout_binding = VkDescriptorSetLayoutBinding(
+			binding = 0, descriptorCount = 1,
+			descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+			stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+			pImmutableSamplers = VK_NULL_HANDLE 
+		)
+
+		self.ubo_dtype = np.dtype('(3,3)f4')
+		self.ubo_default = np.array([((1,1,0), (1,0,1), (0,1,1))], self.ubo_dtype)
 
 		sampler_layout_binding = VkDescriptorSetLayoutBinding(
-			binding = 0, descriptorCount = 1,
+			binding = 1, descriptorCount = 1,
 			descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 			stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
 			pImmutableSamplers = VK_NULL_HANDLE 
 		)
 
+		bindings = [ubo_layout_binding, sampler_layout_binding]
+
 		set_layout_info = VkDescriptorSetLayoutCreateInfo(
-			bindingCount = 1, pBindings = [sampler_layout_binding]
+			bindingCount = len(bindings), pBindings = bindings
 		)
 
 		self.set_layouts = [
@@ -110,11 +114,10 @@ class PipelineLayout(TrackedInstances):
 		# TODO more dynamic creation
 
 		pool_sizes = [
-			# for uniform buffer objects
-			# VkDescriptorPoolSize(
-			# 	VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-			# 	BVKC.swapchain.max_frames
-			# ),
+			VkDescriptorPoolSize(
+				VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+				BVKC.swapchain.max_frames
+			),
 			VkDescriptorPoolSize(
 				VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 				BVKC.swapchain.max_frames
@@ -123,8 +126,11 @@ class PipelineLayout(TrackedInstances):
 
 		descriptor_pool_info = VkDescriptorPoolCreateInfo(
 			maxSets = BVKC.swapchain.max_frames,
+			flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
 			poolSizeCount = len(pool_sizes), pPoolSizes = pool_sizes
 		)
+		# the above flag is a vulkan 1.2 feature and may not be necessary
+		# unsure if descriptor sets will ever need to be removed
 
 		return vkCreateDescriptorPool(BVKC.logical_device.device, descriptor_pool_info, None)
 
@@ -155,6 +161,7 @@ class ComputePipeline(VulkanPipeline):
 class GraphicsPipeline(VulkanPipeline):
 
 	def __init__(self, render_pass:RenderPass, pipeline_layout:PipelineLayout, vertex_filepath, fragment_filepath):
+		super().__init__()
 
 		self.render_pass = render_pass
 		self.pipeline_layout = pipeline_layout
@@ -276,7 +283,6 @@ class GraphicsPipeline(VulkanPipeline):
 		vertex_shader.destroy()
 		fragment_shader.destroy()
 
-		self.attached_render_calls:list[Callable] = []
 		render_pass.attach(self)
 
 		self.descriptor_pool = self.pipeline_layout.create_descriptor_pool() # TODO better creation

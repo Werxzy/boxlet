@@ -159,6 +159,8 @@ class BoxletVK:
 		if DEBUG_MODE:
 			print("Goodbye see you!\n")
 
+		vk_renderer.Renderer._destroy_all()
+
 		BVKC.command_pool.destroy()
 
 		vk_pipeline.GraphicsPipeline._destroy_all()
@@ -166,8 +168,6 @@ class BoxletVK:
 		vk_pipeline.RenderPass._destroy_all()
 
 		BVKC.swapchain.destroy()
-
-		vk_renderer.Renderer._destroy_all()
 
 		Texture._destroy_all()
 

@@ -22,8 +22,19 @@ class RendererAttributes:
 
 		self.descriptor_sets = vkAllocateDescriptorSets(BVKC.logical_device.device, alloc_info)
 		self.pipeline_layout = pipeline.pipeline_layout
+		self.descriptor_pool = pipeline.descriptor_pool
+		self.ubo_set = []
 
 		for desc_set in self.descriptor_sets:
+			new_buffer = vk_memory.Buffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, self.pipeline_layout.ubo_default)
+			# TODO parameter to keep memory map?
+			self.ubo_set.append(new_buffer)
+
+			buffer_info = VkDescriptorBufferInfo(
+				buffer = new_buffer.buffer,
+				offset = 0,
+				range = new_buffer.size
+			)
 
 			image_info = VkDescriptorImageInfo(
 				sampler = texture.sampler,
@@ -31,16 +42,26 @@ class RendererAttributes:
 				imageLayout = texture.image_layout
 			)
 
-			write = VkWriteDescriptorSet(
-				dstSet = desc_set,
-				dstBinding = 0,
-				dstArrayElement = 0,
-				descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-				descriptorCount = 1,
-				pImageInfo = image_info
-			)
+			write = [
+				VkWriteDescriptorSet(
+					dstSet = desc_set,
+					dstBinding = 0,
+					dstArrayElement = 0,
+					descriptorCount = 1,
+					descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+					pBufferInfo = buffer_info
+				),
+				VkWriteDescriptorSet(
+					dstSet = desc_set,
+					dstBinding = 1,
+					dstArrayElement = 0,
+					descriptorCount = 1,
+					descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+					pImageInfo = image_info
+				)
+			]
 
-			vkUpdateDescriptorSets(BVKC.logical_device.device, 1, write, 0, None)
+			vkUpdateDescriptorSets(BVKC.logical_device.device, len(write), write, 0, None)
 
 	def bind(self, command_buffer):
 		vkCmdBindDescriptorSets(
@@ -49,6 +70,18 @@ class RendererAttributes:
 			0, 1, [self.descriptor_sets[BVKC.swapchain.current_frame]],
 			0, None
 		)
+
+	def destroy(self):
+		vkFreeDescriptorSets(
+			BVKC.logical_device.device, 
+			self.descriptor_pool, 
+			BVKC.swapchain.max_frames,
+			self.descriptor_sets
+		)
+		# Might be unnecessary.
+			
+		for b in self.ubo_set:
+			b.destroy()
 
 
 class IndirectRenderer(Renderer):
@@ -100,4 +133,5 @@ class IndirectRenderer(Renderer):
 
 	def on_destroy(self):
 		self.buffer_set.destroy()
+		self.attributes.destroy()
 
