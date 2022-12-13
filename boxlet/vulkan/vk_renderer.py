@@ -74,6 +74,18 @@ class IndirectRenderer(Renderer):
 
 		self.meshes.bind(command_buffer)
 
+		push_constant_test = np.identity(4, np.float32)
+		push_constant_test[0][0] = 9/16
+		obj_data = ffi.cast('float *', ffi.from_buffer(push_constant_test))
+		# don't really like this, but there doesn't seem to be any other solution
+
+		vkCmdPushConstants(
+			command_buffer, self.pipeline.pipeline_layout.layout,
+			VK_SHADER_STAGE_VERTEX_BIT, 
+			0, 4 * 4 * 4,
+			obj_data
+		)
+
 		self.buffer_set.update_memory()
 		self.buffer_set.bind_to_vertex(command_buffer)
 		self.attributes.bind(command_buffer)

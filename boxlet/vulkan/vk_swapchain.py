@@ -93,6 +93,7 @@ class SwapChainSupportDetails:
 			for presentMode in self.presentModes:
 				print(f"\t{vk_logging.log_present_mode(presentMode)}")
 
+
 def choose_swapchain_surface_format(formats):
 
 	for format in formats:
@@ -124,6 +125,7 @@ def choose_swapchain_extent(width, height, capabilities):
 	)
 
 	return extent
+
 
 class SwapChainBundle(RenderTarget):
 
@@ -210,8 +212,6 @@ class SwapChainBundle(RenderTarget):
 
 		self.max_frames = len(self.frames)
 		self.current_frame = -1
-		
-
 
 	def init_frame_buffers(self, render_pass, command_pool):
 		for frame in self.frames:
