@@ -14,15 +14,16 @@ class RendererAttributes:
 
 	def __init__(self, pipeline:GraphicsPipeline, texture:Texture) -> None:
 
+		self.descriptor_pool = pipeline.pipeline_layout.create_descriptor_pool()
+
 		alloc_info = VkDescriptorSetAllocateInfo(
-			descriptorPool = pipeline.descriptor_pool,
+			descriptorPool = self.descriptor_pool,
 			descriptorSetCount = BVKC.swapchain.max_frames,
 			pSetLayouts = pipeline.pipeline_layout.set_layouts * BVKC.swapchain.max_frames
 		)
 
 		self.descriptor_sets = vkAllocateDescriptorSets(BVKC.logical_device.device, alloc_info)
 		self.pipeline_layout = pipeline.pipeline_layout
-		self.descriptor_pool = pipeline.descriptor_pool
 		self.ubo_set = []
 
 		for desc_set in self.descriptor_sets:
@@ -79,6 +80,8 @@ class RendererAttributes:
 			self.descriptor_sets
 		)
 		# Might be unnecessary.
+
+		vkDestroyDescriptorPool(BVKC.logical_device.device, self.descriptor_pool, None)
 			
 		for b in self.ubo_set:
 			b.destroy()

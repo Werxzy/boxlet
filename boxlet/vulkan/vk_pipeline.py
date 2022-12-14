@@ -285,14 +285,10 @@ class GraphicsPipeline(VulkanPipeline):
 
 		render_pass.attach(self)
 
-		self.descriptor_pool = self.pipeline_layout.create_descriptor_pool() # TODO better creation
-
-
 	def bind(self, command_buffer):
 		vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self.pipeline)
 
 	def on_destroy(self):
-		vkDestroyDescriptorPool(BVKC.logical_device.device, self.descriptor_pool, None)
 		vkDestroyPipeline(BVKC.logical_device.device, self.pipeline, None)
 
 
