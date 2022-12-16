@@ -117,7 +117,7 @@ class IndirectRenderer(Renderer):
 
 		vkCmdPushConstants(
 			command_buffer, self.pipeline.pipeline_layout.layout,
-			VK_SHADER_STAGE_VERTEX_BIT, 
+			VK_SHADER_STAGE_ALL_GRAPHICS, 
 			0, 4 * 4 * 4,
 			obj_data
 		)

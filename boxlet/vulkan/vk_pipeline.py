@@ -72,7 +72,7 @@ class PipelineLayout(TrackedInstances):
 
 	def __init__(self):
 		push_constant_info = VkPushConstantRange(
-			stageFlags = VK_SHADER_STAGE_VERTEX_BIT, offset = 0,
+			stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS, offset = 0,
 			size = 4 * 4 * 4
 		)
 
