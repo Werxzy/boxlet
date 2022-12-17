@@ -11,6 +11,7 @@ def get_path(file:str):
 
 import numpy as np
 
+from .vk_shader_attribute_layout import ShaderAttributeLayout
 from . import vk_instance
 from . import vk_logging
 from . import vk_queue_families

@@ -70,30 +70,17 @@ class RenderPass(TrackedInstances):
 
 class PipelineLayout(TrackedInstances):
 
-	def __init__(self):
-		push_constant_info = VkPushConstantRange(
-			stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS, offset = 0,
-			size = 4 * 4 * 4
+	def __init__(self, shader_attribtues:ShaderAttributeLayout, shader_layout:dict):
+		
+		push_constant_info, self.push_constant_dtype = shader_attribtues.get_push_constant_range(
+			shader_layout['push constants']
 		)
 
-		ubo_layout_binding = VkDescriptorSetLayoutBinding(
-			binding = 0, descriptorCount = 1,
-			descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-			stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-			pImmutableSamplers = VK_NULL_HANDLE 
-		)
+		bindings = shader_attribtues.get_desc_set_layout_bindings(shader_layout['bindings'])
 
-		self.ubo_dtype = np.dtype('(3,3)f4')
-		self.ubo_default = np.array([((1,1,0), (1,0,1), (0,1,1))], self.ubo_dtype)
-
-		sampler_layout_binding = VkDescriptorSetLayoutBinding(
-			binding = 1, descriptorCount = 1,
-			descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-			stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-			pImmutableSamplers = VK_NULL_HANDLE 
-		)
-
-		bindings = [ubo_layout_binding, sampler_layout_binding]
+		# self.ubo_dtype = np.dtype('(3,3)f4')
+		# self.ubo_default = np.array([((1,1,0), (1,0,1), (0,1,1))], self.ubo_dtype)
+		# TODO any ubo's need a dtype generated
 
 		set_layout_info = VkDescriptorSetLayoutCreateInfo(
 			bindingCount = len(bindings), pBindings = bindings
@@ -105,34 +92,10 @@ class PipelineLayout(TrackedInstances):
 
 		pipeline_layout_info = VkPipelineLayoutCreateInfo(
 			setLayoutCount = len(self.set_layouts), pSetLayouts = self.set_layouts,
-			pushConstantRangeCount = 1, pPushConstantRanges = [push_constant_info],
+			pushConstantRangeCount = len(push_constant_info), pPushConstantRanges = push_constant_info,
 		)
 
 		self.layout = vkCreatePipelineLayout(BVKC.logical_device.device, pipeline_layout_info, None)
-
-	def create_descriptor_pool(self):
-		# TODO more dynamic creation
-
-		pool_sizes = [
-			VkDescriptorPoolSize(
-				VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-				BVKC.swapchain.max_frames
-			),
-			VkDescriptorPoolSize(
-				VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-				BVKC.swapchain.max_frames
-			)
-		]
-
-		descriptor_pool_info = VkDescriptorPoolCreateInfo(
-			maxSets = BVKC.swapchain.max_frames,
-			flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
-			poolSizeCount = len(pool_sizes), pPoolSizes = pool_sizes
-		)
-		# the above flag is a vulkan 1.2 feature and may not be necessary
-		# unsure if descriptor sets will ever need to be removed
-
-		return vkCreateDescriptorPool(BVKC.logical_device.device, descriptor_pool_info, None)
 
 	def on_destroy(self):
 		vkDestroyPipelineLayout(BVKC.logical_device.device, self.layout, None)
@@ -160,46 +123,21 @@ class ComputePipeline(VulkanPipeline):
 
 class GraphicsPipeline(VulkanPipeline):
 
-	def __init__(self, render_pass:RenderPass, pipeline_layout:PipelineLayout, vertex_filepath, fragment_filepath):
+	def __init__(self, render_pass:RenderPass, shader_attribute:ShaderAttributeLayout, shader_layout:dict, vertex_filepath, fragment_filepath):
 		super().__init__()
 
 		self.render_pass = render_pass
-		self.pipeline_layout = pipeline_layout
+		self.shader_attribute = shader_attribute
+		self.shader_layout = shader_layout
+		self.pipeline_layout = PipelineLayout(shader_attribute, shader_layout)
 
 		binding_desc = [vk_mesh.get_pos_color_binding_description()]
 		attribute_desc = vk_mesh.get_pos_color_attribute_descriptions()
-		# TODO move this differently
+		# TODO get the mesh attributes differently
 
-
-		# TEMP INSTANCE DATA DESCRIPTIONS
-		binding_desc.append(
-				VkVertexInputBindingDescription(
-					binding = 1, stride = 64, inputRate = VK_VERTEX_INPUT_RATE_INSTANCE
-				)	
-			)
-
-		attribute_desc.extend([
-			VkVertexInputAttributeDescription(
-				binding = 1, location = 2,
-				format = VK_FORMAT_R32G32B32A32_SFLOAT,
-				offset = 0
-			),
-			VkVertexInputAttributeDescription(
-				binding = 1, location = 3,
-				format = VK_FORMAT_R32G32B32A32_SFLOAT,
-				offset = 16
-			),
-			VkVertexInputAttributeDescription(
-				binding = 1, location = 4,
-				format = VK_FORMAT_R32G32B32A32_SFLOAT,
-				offset = 32
-			),
-			VkVertexInputAttributeDescription(
-				binding = 1, location = 5,
-				format = VK_FORMAT_R32G32B32A32_SFLOAT,
-				offset = 48
-			),
-		])
+		bd, ad = shader_attribute.get_vertex_descriptions(shader_layout['attributes'])
+		binding_desc.extend(bd)
+		attribute_desc.extend(ad)
 
 		vertex_input_info = VkPipelineVertexInputStateCreateInfo(
 			vertexBindingDescriptionCount = len(binding_desc), pVertexBindingDescriptions = binding_desc,
@@ -273,7 +211,7 @@ class GraphicsPipeline(VulkanPipeline):
 			pRasterizationState = rasterizer,
 			pMultisampleState = multisampling,
 			pColorBlendState = color_blending, 
-			layout = pipeline_layout.layout,
+			layout = self.pipeline_layout.layout,
 			renderPass = render_pass.vk_addr,
 			subpass = 0
 		)

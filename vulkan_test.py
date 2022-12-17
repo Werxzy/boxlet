@@ -48,18 +48,39 @@ texture = Texture(pygame.image.load("examples/opengl_example/box.png"))
 # - - - - - - - - - - - - - - - - - - - - - - -
 #	render pipeline creation
 # - - - - - - - - - - - - - - - - - - - - - - -
-
+shader_layout = ShaderAttributeLayout(
+	attributes = [
+		('model', 'mat4'),
+	],
+	push_constants = {
+		'box_viewProj': 'mat4', 
+	},
+	bindings = {
+		'ubo' : [('color1', 'vec3'), ('color2', 'vec3'), ('color3', 'vec3')],
+		'texture': ('sampler2D',),
+	},
+)
 render_pass = RenderPass()
-pipeline_layout = PipelineLayout()
 graphics_pipeline = GraphicsPipeline(
 	render_pass,
-	pipeline_layout,
+	shader_layout,
+	{
+		'attributes' : [('model', 2)],
+		'push constants' : ['box_viewProj'],
+		'bindings' : [
+			('ubo', 0, 'vertex'),
+			('texture', 1, 'fragment')
+		]
+	},
 	'shaders/vert.spv',
 	'shaders/frag.spv'
 )
 
 data_type = np.dtype([('model', '(4,4)f4')])
-renderer = IndirectRenderer(graphics_pipeline, meshes, data_type, texture)
+renderer = IndirectRenderer(graphics_pipeline, meshes, {
+	0 : np.array([[1,1,0,0], [1,0,1,0], [0,1,1,0]], np.float32),
+	1 : texture
+})
 
 # - - - - - - - - - - - - - - - - - - - - - - -
 

@@ -3,12 +3,14 @@ import numpy as np
 
 
 class ShaderAttributeLayout:
-	'Used to determine the layout of data for instance attributes'
+	'''
+	Used to determine the layout of data for instance attributes
+
+	Meant for conveying layout between multiple pipelines.
+	'''
 	# not actually a vulkan object
 
-	
-
-	def __init__(self, attributes = None, push_constants = None, bindings = None):
+	def __init__(self, attributes = None, push_constants = None, bindings:dict = None):
 
 		self.attributes = attributes
 		# data unique to each instance
@@ -17,26 +19,30 @@ class ShaderAttributeLayout:
 		self.bindings = bindings
 		# data mostly for each instance group
 
-
+		self._prepare_vertex_descriptions()
+		self._prepare_desc_set_layout_bindings()
+		
+	def _prepare_vertex_descriptions(self):
 		# builds dtype for renderer attributes
 		dtype_format = []
 		self.attribute_format = {}
+		# (byte offset, location offset, format)
 		offset = 0
-		for t in attributes:
+		for t in self.attributes:
 			name = t[0]
 			attr_type = t[1]
 
 			if attr_type == 'vec4':
 				dtype_format.append((name, '(4,)f4'))
 				self.attribute_format[name] = [
-					(offset, VK_FORMAT_R32G32B32A32_SFLOAT)
+					(offset, 0, VK_FORMAT_R32G32B32A32_SFLOAT)
 				]
 				offset += 16
 
 			elif attr_type == 'mat4':
 				dtype_format.append((name, '(4,4)f4'))
 				self.attribute_format[name] = [
-					(offset + o * 16, VK_FORMAT_R32G32B32A32_SFLOAT)
+					(offset + o * 16, o, VK_FORMAT_R32G32B32A32_SFLOAT)
 					for o in range(4)
 				]
 				offset += 64
@@ -47,19 +53,6 @@ class ShaderAttributeLayout:
 		self.data_type = np.dtype(dtype_format)
 		self.data_stride = offset
 
-
-		self.descriptor_types = {}
-		for name in self.bindings:
-			b = self.bindings[name]
-			if isinstance(b, list):
-				desc_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
-			elif b[0] == 'sampler2D':
-				desc_type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
-			# TODO fill this out
-
-			self.descriptor_types[name] = desc_type 
-			# potentially gather more info together
-
 	def get_vertex_descriptions(self, attributes:list[tuple[str,int]], binding = 1):
 		binding_desc = [
 			VkVertexInputBindingDescription(
@@ -69,25 +62,38 @@ class ShaderAttributeLayout:
 
 		attribute_desc = []
 		for name, loc in attributes:
-			for offset, format in self.attribute_format[name]:
+			for offset, loc_off, format in self.attribute_format[name]:
 				attribute_desc.append(
 					VkVertexInputAttributeDescription(
-						binding = binding, location = loc,
+						binding = binding, location = loc + loc_off,
 						format = format, offset = offset
 					)
 				)
 
 		return binding_desc, attribute_desc
 
+	def _prepare_desc_set_layout_bindings(self):
+		self.descriptor_types = {}
+		for name, b in self.bindings.items():
+			if isinstance(b, list):
+				desc_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+				#TODO build numpy data type
+
+			elif b[0] == 'sampler2D':
+				desc_type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+			# TODO fill this out
+
+			self.descriptor_types[name] = desc_type 
+			# potentially gather more info together
+
 	def get_desc_set_layout_bindings(self, bindings:list[tuple[str, int, str]]):
 		all_bindings = []
 		
 		for name, bind, stages in bindings:
 			stage_flags = 0
-			s = stages.split(',')
-			if 'vertex' in s: 
+			if 'vertex' in stages: 
 				stage_flags |= VK_SHADER_STAGE_VERTEX_BIT
-			if 'fragment' in s: 
+			if 'fragment' in stages: 
 				stage_flags |= VK_SHADER_STAGE_FRAGMENT_BIT
 			# duplicate info in vk_shaders
 
@@ -107,31 +113,7 @@ class ShaderAttributeLayout:
 		# TODO? do I need to manage seperate sets?
 		return all_bindings
 
-	def get_push_constant_range(self, push:list[tuple[str,str]]):
-		# constants = {'vertex' : 0, 'fragment' : 0}
-		# for name, stages in push:
-		# 	size = self.get_type_size(self.push_constants[name])
-		# 	for s in stages.split(','):
-		# 		if s in constants:
-		# 			constants[s] += size
-		# 		else:
-		# 			raise Exception('Unsupported shader stage.')
-
-		# return [
-		# 	VkPushConstantRange(
-		# 		stageFlags = flag, offset = 0,
-		# 		size = constants[t]
-		# 	)
-		# 	for flag, t in [
-		# 		(VK_SHADER_STAGE_VERTEX_BIT, 'vertex'),
-		# 		(VK_SHADER_STAGE_FRAGMENT_BIT, 'fragment'),
-		# 		VK_SHADER_STAGE_ALL_GRAPHICS
-		# 	] # duplicate info in vk_shaders
-		# ]
-		# TODO test how a shader with push constants in multiple stages handles this
-		# might just change how this is setup, 
-		# requiring that everything in a push_constant is labeled at each shader stage
-
+	def get_push_constant_range(self, push:list[str]):
 		size = 0
 		pc_data_format = []
 		for name in push:
@@ -152,6 +134,24 @@ class ShaderAttributeLayout:
 
 		return pc_range, pc_dtype
 
+	def create_descriptor_pool(self, bindings:list[tuple[str,int,str]]):
+		pool_sizes = [
+			VkDescriptorPoolSize(
+				self.descriptor_types[name],
+				BVKC.swapchain.max_frames
+			)
+			for name, _, _ in bindings
+		]
+
+		descriptor_pool_info = VkDescriptorPoolCreateInfo(
+			maxSets = BVKC.swapchain.max_frames,
+			flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
+			poolSizeCount = len(pool_sizes), pPoolSizes = pool_sizes
+		)
+		# the above flag is a vulkan 1.2 feature and may not be necessary
+		# unsure if descriptor sets will ever need to be removed
+
+		return vkCreateDescriptorPool(BVKC.logical_device.device, descriptor_pool_info, None)
 
 	@staticmethod
 	def get_type_size(t):
@@ -215,8 +215,9 @@ if __name__ == 'never':
 	# or turn pipeline layout into shader attributes layout
 	# or just move functionality to pipeline layout
 	
-	class PipelineLayout: ... #just to ignore syntax
-	PipelineLayout(
+	class GraphicsPipeline: ... # just to ignore syntax
+	GraphicsPipeline(
+		...,
 		{
 			'attributes':[
 				('model', 2), # string is the attribute used
@@ -234,7 +235,8 @@ if __name__ == 'never':
 				# uniforms and textures can be combined into bindings 
 				# since their names can't overlap anyways
 			]
-		}
+		},
+		...
 	)
 	
 	

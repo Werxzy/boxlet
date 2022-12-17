@@ -8,13 +8,13 @@ class Renderer(TrackedInstances):
 		...
 
 
-class RendererAttributes:
+class RendererBindings:
 	
 	# can also be considered a vulkan descriptor set
 
-	def __init__(self, pipeline:GraphicsPipeline, texture:Texture) -> None:
-
-		self.descriptor_pool = pipeline.pipeline_layout.create_descriptor_pool()
+	def __init__(self, pipeline:GraphicsPipeline, defaults:dict[int]) -> None:
+		bindings = pipeline.shader_layout['bindings']
+		self.descriptor_pool = pipeline.shader_attribute.create_descriptor_pool(bindings)
 
 		alloc_info = VkDescriptorSetAllocateInfo(
 			descriptorPool = self.descriptor_pool,
@@ -24,45 +24,58 @@ class RendererAttributes:
 
 		self.descriptor_sets = vkAllocateDescriptorSets(BVKC.logical_device.device, alloc_info)
 		self.pipeline_layout = pipeline.pipeline_layout
-		self.ubo_set = []
+		self.ubo_set:list[vk_memory.Buffer] = []
 
 		for desc_set in self.descriptor_sets:
-			new_buffer = vk_memory.Buffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, self.pipeline_layout.ubo_default)
-			# TODO parameter to keep memory map?
-			self.ubo_set.append(new_buffer)
+			
+			write = []
+			for name, binding, _ in bindings:
+				desc_type = pipeline.shader_attribute.descriptor_types[name]
+				buffer_info = None
+				image_info = None
 
-			buffer_info = VkDescriptorBufferInfo(
-				buffer = new_buffer.buffer,
-				offset = 0,
-				range = new_buffer.size
-			)
+				if desc_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+					new_buffer = vk_memory.Buffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, defaults[binding])
+					# TODO parameter to keep memory map?
+					self.ubo_set.append(new_buffer)
 
-			image_info = VkDescriptorImageInfo(
-				sampler = texture.sampler,
-				imageView = texture.image_view.vk_addr,
-				imageLayout = texture.image_layout
-			)
+					buffer_info = VkDescriptorBufferInfo(
+						buffer = new_buffer.buffer,
+						offset = 0,
+						range = new_buffer.size
+					)
 
-			write = [
-				VkWriteDescriptorSet(
-					dstSet = desc_set,
-					dstBinding = 0,
-					dstArrayElement = 0,
-					descriptorCount = 1,
-					descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-					pBufferInfo = buffer_info
-				),
-				VkWriteDescriptorSet(
-					dstSet = desc_set,
-					dstBinding = 1,
-					dstArrayElement = 0,
-					descriptorCount = 1,
-					descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-					pImageInfo = image_info
+				elif desc_type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+					texture = defaults[binding]
+
+					if not isinstance(texture, Texture):
+						raise Exception('Expected Texture object.')
+
+					image_info = VkDescriptorImageInfo(
+						sampler = texture.sampler,
+						imageView = texture.image_view.vk_addr,
+						imageLayout = texture.image_layout
+					)
+
+				write.append(
+					VkWriteDescriptorSet(
+						dstSet = desc_set,
+						dstBinding = binding,
+						dstArrayElement = 0,
+						descriptorCount = 1,
+						descriptorType = desc_type,
+						pBufferInfo = buffer_info,
+						pImageInfo = image_info
+					)
 				)
-			]
+				# TODO add more functionality for other possible types
+				# does dstArrayElement or descriptorCount need be different
 
 			vkUpdateDescriptorSets(BVKC.logical_device.device, len(write), write, 0, None)
+
+		# TODO get some way to update the data
+		# maybe just update the buffer and it will handle it's range when it's about to be used
+		# don't know what to do for images
 
 	def bind(self, command_buffer):
 		vkCmdBindDescriptorSets(
@@ -88,18 +101,18 @@ class RendererAttributes:
 
 
 class IndirectRenderer(Renderer):
-	def __init__(self, pipeline:GraphicsPipeline, meshes:vk_mesh.MultiMesh, data_type, texture):
+	def __init__(self, pipeline:GraphicsPipeline, meshes:vk_mesh.MultiMesh, defaults:dict[int]):
 
 		self.meshes = meshes
 
 		self.buffer_set = vk_memory.InstanceBufferSet(
 			meshes,
-			data_type
+			pipeline.shader_attribute.data_type
 		)
 		
 		pipeline.attach(self.prepare)
 		self.pipeline = pipeline
-		self.attributes = RendererAttributes(pipeline, texture)
+		self.attributes = RendererBindings(pipeline, defaults)
 
 	def create_instance(self, model_id):
 		return self.buffer_set.create_instance(model_id)
