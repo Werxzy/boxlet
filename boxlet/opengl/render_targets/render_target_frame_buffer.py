@@ -100,16 +100,22 @@ class ApplyShaderToFrame(RenderTarget):
 
 		if ApplyShaderToFrame.default_shader == None:
 			ApplyShaderToFrame.default_shader = VertFragShader(ApplyShaderToFrame.vertex_screen_shader, ApplyShaderToFrame.fragment_screen_shader)
-	
-			ApplyShaderToFrame.rect_model = Model.gen_quad_2d()
-			ApplyShaderToFrame.rect_vao = glGenVertexArrays(1)
-			glBindVertexArray(ApplyShaderToFrame.rect_vao)
-			ApplyShaderToFrame.rect_model.bind(ApplyShaderToFrame.default_shader)
-			glBindVertexArray(0)
+
+		ApplyShaderToFrame.init_rect(ApplyShaderToFrame.default_shader)		
 
 		self.from_texture = from_texture
 		self.to_frame = to_frame
 		self.shader = shader or self.default_shader
+
+	@staticmethod
+	def init_rect(shader):
+		if ApplyShaderToFrame.rect_model: return
+
+		ApplyShaderToFrame.rect_model = Model.gen_quad_2d()
+		ApplyShaderToFrame.rect_vao = glGenVertexArrays(1)
+		glBindVertexArray(ApplyShaderToFrame.rect_vao)
+		ApplyShaderToFrame.rect_model.bind(shader)
+		glBindVertexArray(0)
 
 	def prepare(self):
 		BoxletGL.viewport(0, 0, *manager.display_size)
@@ -155,6 +161,8 @@ class ApplyDitherToFrame(RenderTarget):
 		if ApplyDitherToFrame.shader is None:
 			ApplyDitherToFrame.shader = VertFragShader(ApplyShaderToFrame.vertex_screen_shader, ApplyDitherToFrame.dither_screen_shader)
 
+		ApplyShaderToFrame.init_rect(ApplyDitherToFrame.shader)
+
 		super().__init__(queue, pass_names)
 
 		self.from_texture = from_texture
@@ -167,10 +175,11 @@ class ApplyDitherToFrame(RenderTarget):
 		glDisable(GL_DEPTH_TEST)
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT)
 		
-		glUseProgram(self.shader.program)
+		self.shader.use()
 		self.shader.apply_uniform('random', manager.time)
 		BoxletGL.bind_vao(ApplyShaderToFrame.rect_vao)
 		BoxletGL.bind_texture(GL_TEXTURE0, GL_TEXTURE_2D, self.from_texture)
+
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, None)
 
 
