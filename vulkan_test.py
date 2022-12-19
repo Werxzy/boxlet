@@ -78,7 +78,7 @@ graphics_pipeline = GraphicsPipeline(
 
 data_type = np.dtype([('model', '(4,4)f4')])
 renderer = IndirectRenderer(graphics_pipeline, meshes, {
-	0 : np.array([[1,1,0,0], [1,0,1,0], [0,1,1,0]], np.float32),
+	0 : np.array([[1,1,0,0], [1,0,1,0], [0,1,1,0]], np.float32), # they are vec3s don't forget about padding
 	1 : texture
 })
 

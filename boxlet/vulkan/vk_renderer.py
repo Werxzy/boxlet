@@ -100,6 +100,28 @@ class RendererBindings:
 			b.destroy()
 
 
+class PushConstantManager:
+	def __init__(self, dtype:np.dtype) -> None:
+		self.data = np.array([0], dtype)
+
+	def __setitem__(self, key, value):
+		self.data[0][key] = value
+
+	def __getitem__(self, key):
+		return self.data[0][key]
+
+	def push(self, command_buffer, layout):
+		obj_data = ffi.cast('float *', ffi.from_buffer(self.data))
+		# don't really like this, but there doesn't seem to be any other solution
+
+		vkCmdPushConstants(
+			command_buffer, layout, # TODO move layout away from here
+			VK_SHADER_STAGE_ALL_GRAPHICS, 
+			0, 4 * 4 * 4,
+			obj_data
+		)
+
+
 class IndirectRenderer(Renderer):
 	def __init__(self, pipeline:GraphicsPipeline, meshes:vk_mesh.MultiMesh, defaults:dict[int]):
 
@@ -114,6 +136,11 @@ class IndirectRenderer(Renderer):
 		self.pipeline = pipeline
 		self.attributes = RendererBindings(pipeline, defaults)
 
+		self.push_constants = PushConstantManager(np.dtype([('viewProj', '(4,4)f4')]))
+		mat = np.identity(4, np.float32)
+		mat[0][0] = 9/16
+		self.push_constants['viewProj'] = mat
+
 	def create_instance(self, model_id):
 		return self.buffer_set.create_instance(model_id)
 
@@ -123,17 +150,7 @@ class IndirectRenderer(Renderer):
 
 		self.meshes.bind(command_buffer)
 
-		push_constant_test = np.identity(4, np.float32)
-		push_constant_test[0][0] = 9/16
-		obj_data = ffi.cast('float *', ffi.from_buffer(push_constant_test))
-		# don't really like this, but there doesn't seem to be any other solution
-
-		vkCmdPushConstants(
-			command_buffer, self.pipeline.pipeline_layout.layout,
-			VK_SHADER_STAGE_ALL_GRAPHICS, 
-			0, 4 * 4 * 4,
-			obj_data
-		)
+		self.push_constants.push(command_buffer, self.pipeline.pipeline_layout.layout)
 
 		self.buffer_set.update_memory()
 		self.buffer_set.bind_to_vertex(command_buffer)
