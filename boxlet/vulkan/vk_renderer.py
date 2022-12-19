@@ -101,8 +101,11 @@ class RendererBindings:
 
 
 class PushConstantManager:
-	def __init__(self, dtype:np.dtype) -> None:
-		self.data = np.array([0], dtype)
+
+	def __init__(self, pipeline_layout:PipelineLayout) -> None:
+		self.pipeline_layout = pipeline_layout
+		self.data = np.array([0], pipeline_layout.push_constant_dtype)
+		self.itemsize = pipeline_layout.push_constant_dtype.itemsize
 
 	def __setitem__(self, key, value):
 		self.data[0][key] = value
@@ -110,16 +113,19 @@ class PushConstantManager:
 	def __getitem__(self, key):
 		return self.data[0][key]
 
-	def push(self, command_buffer, layout):
+	def push(self, command_buffer):
 		obj_data = ffi.cast('float *', ffi.from_buffer(self.data))
 		# don't really like this, but there doesn't seem to be any other solution
 
+		# TODO update global constants
+
 		vkCmdPushConstants(
-			command_buffer, layout, # TODO move layout away from here
-			VK_SHADER_STAGE_ALL_GRAPHICS, 
-			0, 4 * 4 * 4,
+			command_buffer, self.pipeline_layout.layout, 
+			VK_SHADER_STAGE_ALL_GRAPHICS,
+			0, self.itemsize,
 			obj_data
 		)
+		# TODO restrict stage flag to only used stages
 
 
 class IndirectRenderer(Renderer):
@@ -136,10 +142,10 @@ class IndirectRenderer(Renderer):
 		self.pipeline = pipeline
 		self.attributes = RendererBindings(pipeline, defaults)
 
-		self.push_constants = PushConstantManager(np.dtype([('viewProj', '(4,4)f4')]))
+		self.push_constants = PushConstantManager(pipeline.pipeline_layout)
 		mat = np.identity(4, np.float32)
 		mat[0][0] = 9/16
-		self.push_constants['viewProj'] = mat
+		self.push_constants['box_viewProj'] = mat
 
 	def create_instance(self, model_id):
 		return self.buffer_set.create_instance(model_id)
@@ -150,8 +156,7 @@ class IndirectRenderer(Renderer):
 
 		self.meshes.bind(command_buffer)
 
-		self.push_constants.push(command_buffer, self.pipeline.pipeline_layout.layout)
-
+		self.push_constants.push(command_buffer)
 		self.buffer_set.update_memory()
 		self.buffer_set.bind_to_vertex(command_buffer)
 		self.attributes.bind(command_buffer)
