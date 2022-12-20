@@ -1,3 +1,4 @@
+from typing import Any
 from .vk_module import *
 from . import *
 
@@ -6,6 +7,101 @@ class Renderer(TrackedInstances):
 
 	def prepare(self, command_buffer):
 		...
+
+
+class DescriptorSet:
+	def __init__(self, binder:'RendererBindings', binding:int) -> None:
+		self.binder = binder
+		self.binding = binding
+		self.needs_update = [False] * len(binder.descriptor_sets)
+		self.set_range = range(len(self.needs_update))
+
+	def get_update(self, set_number) -> list[Any]:
+		if self.needs_update[set_number]:
+			self.needs_update[set_number] = False
+			return [self.get_write(set_number)]
+		return []
+
+	def force_update_all(self):
+		for i in self.set_range:
+			self.needs_update[i] = False
+		
+		return [self.get_write(i) for i in self.set_range]
+
+	def set_descriptor(self, data) -> None: 
+		'''
+		Sets the vulkan object that the descriptor is linked to.
+
+		It is recommended to use this as little as possible and instead update the buffer/image themselves.
+		'''
+
+	def get_write(self, set_number) -> Any: ...
+
+	def destroy(self): ...
+
+
+class UniformBufferDescriptorSet(DescriptorSet):
+	def __init__(self, binder:'RendererBindings', binding:int) -> None:
+		super().__init__(binder, binding)
+		self.buffers = []
+
+	def set_descriptor(self, data:np.ndarray) -> None:
+		for b in self.buffers:
+			b.destroy()
+
+		for i in self.set_range:
+			self.needs_update[i] = True
+
+		self.buffers = [
+			vk_memory.Buffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, data)
+			for _ in self.set_range
+		]
+		# TODO parameter to keep memory map?
+
+	def get_write(self, set_number):
+		b = self.buffers[set_number]
+		buffer_info = VkDescriptorBufferInfo(
+			buffer = b.buffer,
+			offset = 0,
+			range = b.size
+		)
+
+		return VkWriteDescriptorSet(
+			dstSet = self.binder.descriptor_sets[set_number],
+			dstBinding = self.binding,
+			dstArrayElement = 0,
+			descriptorCount = 1,
+			descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+			pBufferInfo = buffer_info,
+		)
+
+	def destroy(self):
+		for b in self.buffers:
+			b.destroy()
+
+
+class ImageDescriptorSet(DescriptorSet):
+	def set_descriptor(self, data:Texture) -> None:
+		for i in self.set_range:
+			self.needs_update[i] = True
+
+		self.texture = data
+
+	def get_write(self, set_number):
+		image_info = VkDescriptorImageInfo(
+			sampler = self.texture.sampler,
+			imageView = self.texture.image_view.vk_addr,
+			imageLayout = self.texture.image_layout
+		)
+
+		return VkWriteDescriptorSet(
+			dstSet = self.binder.descriptor_sets[set_number],
+			dstBinding = self.binding,
+			dstArrayElement = 0,
+			descriptorCount = 1,
+			descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			pImageInfo = image_info,
+		)
 
 
 class RendererBindings:
@@ -26,58 +122,37 @@ class RendererBindings:
 		self.pipeline_layout = pipeline.pipeline_layout
 		self.ubo_set:list[vk_memory.Buffer] = []
 
-		for desc_set in self.descriptor_sets:
-			
-			write = []
-			for name, binding, _ in bindings:
-				desc_type = pipeline.shader_attribute.descriptor_types[name]
-				buffer_info = None
-				image_info = None
+		self.descriptors:dict[str, DescriptorSet] = {}
+		write = []
+		for name, binding, _ in bindings:
+			desc_type = pipeline.shader_attribute.descriptor_types[name]
 
-				if desc_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-					new_buffer = vk_memory.Buffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, defaults[binding])
-					# TODO parameter to keep memory map?
-					self.ubo_set.append(new_buffer)
+			if desc_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+				desc = UniformBufferDescriptorSet(self, binding)
+			elif desc_type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+				desc = ImageDescriptorSet(self, binding)
+			else:
+				raise Exception('Unsupported descriptor type.')
 
-					buffer_info = VkDescriptorBufferInfo(
-						buffer = new_buffer.buffer,
-						offset = 0,
-						range = new_buffer.size
-					)
+			# TODO add more functionality for other possible types
 
-				elif desc_type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-					texture = defaults[binding]
+			desc.set_descriptor(defaults[binding])
+			self.descriptors[name] = desc
 
-					if not isinstance(texture, Texture):
-						raise Exception('Expected Texture object.')
+			write.extend(desc.force_update_all())
 
-					image_info = VkDescriptorImageInfo(
-						sampler = texture.sampler,
-						imageView = texture.image_view.vk_addr,
-						imageLayout = texture.image_layout
-					)
+		vkUpdateDescriptorSets(BVKC.logical_device.device, len(write), write, 0, None)
 
-				write.append(
-					VkWriteDescriptorSet(
-						dstSet = desc_set,
-						dstBinding = binding,
-						dstArrayElement = 0,
-						descriptorCount = 1,
-						descriptorType = desc_type,
-						pBufferInfo = buffer_info,
-						pImageInfo = image_info
-					)
-				)
-				# TODO add more functionality for other possible types
-				# does dstArrayElement or descriptorCount need be different
-
+	def _update_descriptors(self, set_number):
+		write = []
+		for desc in self.descriptors.values():
+			write.extend(desc.get_update(set_number))
+		if write:
 			vkUpdateDescriptorSets(BVKC.logical_device.device, len(write), write, 0, None)
 
-		# TODO get some way to update the data
-		# maybe just update the buffer and it will handle it's range when it's about to be used
-		# don't know what to do for images
-
 	def bind(self, command_buffer):
+		self._update_descriptors(BVKC.swapchain.current_frame)
+
 		vkCmdBindDescriptorSets(
 			command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, 
 			self.pipeline_layout.layout,
@@ -86,6 +161,9 @@ class RendererBindings:
 		)
 
 	def destroy(self):
+		for desc in self.descriptors.values():
+			desc.destroy()
+
 		vkFreeDescriptorSets(
 			BVKC.logical_device.device, 
 			self.descriptor_pool, 
