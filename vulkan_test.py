@@ -82,6 +82,10 @@ renderer = IndirectRenderer(graphics_pipeline, meshes, {
 	1 : texture
 })
 
+mat = np.identity(4, np.float32)
+mat[0][0] = 9/16
+PushConstantManager.set_global('box_viewProj', mat)
+
 # - - - - - - - - - - - - - - - - - - - - - - -
 
 instances_to_delete = []

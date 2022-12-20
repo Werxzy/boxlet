@@ -28,7 +28,7 @@ from . import vk_shaders
 from .vk_mesh import Mesh, MultiMesh
 from .vk_pipeline import RenderPass, PipelineLayout, GraphicsPipeline
 
-from .vk_renderer import Renderer, IndirectRenderer
+from .vk_renderer import Renderer, IndirectRenderer, PushConstantManager
 
 from .boxlet_vk import BoxletVK
 

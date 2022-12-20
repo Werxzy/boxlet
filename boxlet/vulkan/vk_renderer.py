@@ -102,10 +102,16 @@ class RendererBindings:
 
 class PushConstantManager:
 
+	global_values:dict[str,np.ndarray] = {}
+
 	def __init__(self, pipeline_layout:PipelineLayout) -> None:
 		self.pipeline_layout = pipeline_layout
 		self.data = np.array([0], pipeline_layout.push_constant_dtype)
 		self.itemsize = pipeline_layout.push_constant_dtype.itemsize
+		self.globals_to_update = [
+			n for n in pipeline_layout.push_constant_dtype.names
+			if n.lower().startswith('box_') 
+		]
 
 	def __setitem__(self, key, value):
 		self.data[0][key] = value
@@ -114,10 +120,11 @@ class PushConstantManager:
 		return self.data[0][key]
 
 	def push(self, command_buffer):
+		for key in self.globals_to_update:
+			self.data[key] = PushConstantManager.global_values[key]
+
 		obj_data = ffi.cast('float *', ffi.from_buffer(self.data))
 		# don't really like this, but there doesn't seem to be any other solution
-
-		# TODO update global constants
 
 		vkCmdPushConstants(
 			command_buffer, self.pipeline_layout.layout, 
@@ -126,6 +133,21 @@ class PushConstantManager:
 			obj_data
 		)
 		# TODO restrict stage flag to only used stages
+
+	@staticmethod
+	def set_global(key:str, value:np.ndarray):
+		'''
+		Sets the global value that is shared between all PushConstantManagers.
+		
+		The key should always start with 'box_'.
+		'''
+		assert key.lower().startswith('box_')
+
+		PushConstantManager.global_values[key] = value
+
+	@staticmethod
+	def get_global(key:str):
+		return PushConstantManager.global_values[key]
 
 
 class IndirectRenderer(Renderer):
@@ -141,11 +163,7 @@ class IndirectRenderer(Renderer):
 		pipeline.attach(self.prepare)
 		self.pipeline = pipeline
 		self.attributes = RendererBindings(pipeline, defaults)
-
 		self.push_constants = PushConstantManager(pipeline.pipeline_layout)
-		mat = np.identity(4, np.float32)
-		mat[0][0] = 9/16
-		self.push_constants['box_viewProj'] = mat
 
 	def create_instance(self, model_id):
 		return self.buffer_set.create_instance(model_id)
