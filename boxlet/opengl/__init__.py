@@ -1,6 +1,6 @@
 import numpy as np
 
-from . import transform_math as Tmath 
+from ..util_3d import *
 
 from .boxlet_gl import BoxletGL
 
@@ -9,7 +9,6 @@ from .render_bases.render_pass import RenderPass
 from .render_bases.render_target import RenderTarget
 from .render_instance_metaclass import RenderInstance
 
-from .transform import Transform
 from .model import Model
 from .texture import Texture, MultiTexture
 from .shader import Shader, VertFragShader, ComputeShader
