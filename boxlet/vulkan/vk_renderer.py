@@ -43,23 +43,23 @@ class DescriptorSet:
 class UniformBufferDescriptorSet(DescriptorSet):
 	def __init__(self, binder:'RendererBindings', binding:int) -> None:
 		super().__init__(binder, binding)
-		self.buffers = []
+		self.buffer_group:vk_memory.UniformBufferGroup = None
 
 	def set_descriptor(self, data:np.ndarray) -> None:
-		for b in self.buffers:
-			b.destroy()
+		self.destroy()
 
 		for i in self.set_range:
 			self.needs_update[i] = True
 
-		self.buffers = [
-			vk_memory.Buffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, data)
-			for _ in self.set_range
-		]
+		self.buffer_group = vk_memory.UniformBufferGroup(data, len(self.needs_update))
 		# TODO parameter to keep memory map?
 
+	def get_update(self, set_number) -> list[Any]:
+		self.buffer_group.update_memory(set_number)
+		return super().get_update(set_number)
+
 	def get_write(self, set_number):
-		b = self.buffers[set_number]
+		b = self.buffer_group.buffers[set_number]
 		buffer_info = VkDescriptorBufferInfo(
 			buffer = b.buffer,
 			offset = 0,
@@ -76,8 +76,8 @@ class UniformBufferDescriptorSet(DescriptorSet):
 		)
 
 	def destroy(self):
-		for b in self.buffers:
-			b.destroy()
+		if self.buffer_group:
+			self.buffer_group.destroy()
 
 
 class ImageDescriptorSet(DescriptorSet):

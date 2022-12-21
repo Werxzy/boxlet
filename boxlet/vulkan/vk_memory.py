@@ -30,9 +30,12 @@ class Buffer:
 		self.size_changed = False
 
 		if self.size > 0:
-			self.create_buffer()
-			self.allocate()
-			self.map_memory(self.data)
+			self.full_allocation()
+
+	def full_allocation(self):
+		self.create_buffer()
+		self.allocate()
+		self.map_memory(self.data)
 
 	def create_buffer(self):
 		buffer_info = VkBufferCreateInfo(
@@ -102,9 +105,7 @@ class Buffer:
 		if self.size_changed: # data size changed, need to reshape buffer
 			self.size_changed = False
 			self.destroy()
-			self.create_buffer()
-			self.allocate()
-			self.map_memory(self.data)
+			self.full_allocation()
 		else:
 			self.map_memory(self.data)
 			# TODO potentially allow tracking of what memory needs to be updated
@@ -132,6 +133,46 @@ class Buffer:
 				return i
 
 		return 0
+
+
+class UniformBufferGroup:
+	'''
+	Holds a list of buffers for the use of uniform buffer descriptor set.
+	
+	They all share the same data, but only update in the gpu when calling
+	update_memory() on the buffer associated with the current swapchain frame.
+	'''
+
+	def __init__(self, data, count) -> None:
+		self.data = np.array(data)
+
+		self.buffers = [
+			Buffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, self.data)
+			for _ in range(count)
+		]
+		# all the buffers will share the same numpy array 
+		# due to 'self.data = data' in Buffer
+
+	def update_memory(self, i):
+		'only updates memory for a buffer that is currently not in use.'
+		self.buffers[i].update_memory()
+
+	def __setitem__(self, key, value):
+		'Prefered method of updating values in the buffers.'
+
+		# sets the value in the data and notifies 
+		# the buffers that they need to update
+		self.data[key] = value
+
+		for b in self.buffers:
+			b.needs_update = True
+
+	def __getitem__(self, key):
+		return self.data[key]
+
+	def destroy(self):
+		for b in self.buffers:
+			b.destroy()
 
 
 class InstanceData:
