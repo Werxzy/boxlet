@@ -232,6 +232,7 @@ class IndirectRenderer(Renderer):
 	def __init__(self, pipeline:GraphicsPipeline, meshes:vk_mesh.MultiMesh, defaults:dict[int]):
 
 		self.meshes = meshes
+		meshes.init_buffers()
 
 		self.buffer_set = vk_memory.InstanceBufferSet(
 			meshes,

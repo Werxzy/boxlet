@@ -123,7 +123,13 @@ class ComputePipeline(VulkanPipeline):
 
 class GraphicsPipeline(VulkanPipeline):
 
-	def __init__(self, render_pass:RenderPass, shader_attribute:ShaderAttributeLayout, shader_layout:dict, vertex_filepath, fragment_filepath):
+	def __init__(self, 
+			render_pass:RenderPass, 
+			shader_attribute:ShaderAttributeLayout, 
+			shader_layout:dict, vertex_filepath, 
+			fragment_filepath, 
+			binding_model:Mesh):
+
 		super().__init__()
 
 		self.render_pass = render_pass
@@ -131,11 +137,9 @@ class GraphicsPipeline(VulkanPipeline):
 		self.shader_layout = shader_layout
 		self.pipeline_layout = PipelineLayout(shader_attribute, shader_layout)
 
-		binding_desc = [vk_mesh.get_pos_color_binding_description()]
-		attribute_desc = vk_mesh.get_pos_color_attribute_descriptions()
-		# TODO get the mesh attributes differently
+		binding_desc, attribute_desc = binding_model.get_descriptions(shader_layout['vertex attributes'])
 
-		bd, ad = shader_attribute.get_vertex_descriptions(shader_layout['attributes'])
+		bd, ad = shader_attribute.get_vertex_descriptions(shader_layout['instance attributes'])
 		binding_desc.extend(bd)
 		attribute_desc.extend(ad)
 

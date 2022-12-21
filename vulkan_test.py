@@ -5,43 +5,48 @@ import pyrr
 
 manager.init(render_mode='vulkan')
 
-meshes = MultiMesh(
-	[
-	np.array([ # triangle
-		0.0, -0.05, 0.0, 1.0, 0.0,
-		0.05, 0.05, 0.0, 1.0, 0.0,
-		-0.05, 0.05, 0.0, 1.0, 0.0,
-	]),
-	np.array([ # square
-		-0.05, 0.05, 1.0, 0.0, 0.0,
-		-0.05, -0.05, 1.0, 0.0, 0.0,
-		0.05, -0.05, 1.0, 0.0, 0.0,
-		0.05, 0.05, 1.0, 0.0, 0.0,
-	]),
-	np.array([ # star4
-		-0.05, -0.025, 0.0, 0.0, 1.0,
-		-0.02, -0.025, 0.0, 0.0, 1.0,
-		-0.03, 0.0, 0.0, 0.0, 1.0,
-		0.0, -0.05, 0.0, 0.0, 1.0,
-		0.02, -0.025, 0.0, 0.0, 1.0,
-		0.05, -0.025, 0.0, 0.0, 1.0, 
-		0.03, 0.0, 0.0, 0.0, 1.0, 
-		0.04, 0.05, 0.0, 0.0, 1.0, 
-		0.0, 0.01, 0.0, 0.0, 1.0, 
-		-0.04, 0.05, 0.0, 0.0, 1.0,
-	]),
-],
-[
-	np.array([
-		0,1,2
-	]),
-	np.array([
-		0,1,2, 2,3,0
-	]),
-	np.array([
-		0,1,2, 1,3,4, 2,1,4, 4,5,6, 2,4,6, 6,7,8, 2,6,8, 2,8,9, 
-	]),
-])
+mesh_list = [
+	Mesh.gen_cube(0.05),
+	Mesh(vertices = {
+			'position' : [
+				-0.05, -0.025, 0,
+				-0.02, -0.025, 0,
+				-0.03, 0.0, 0,
+				0.0, -0.05, 0,
+				0.02, -0.025, 0,
+				0.05, -0.025,  0,
+				0.03, 0.0, 0,
+				0.04, 0.05, 0,
+				0.0, 0.01, 0,
+				-0.04, 0.05, 0,
+			],
+			'texcoord':[
+				0.0, 0.25,
+				0.3, 0.25,
+				0.2, 0.5,
+				0.5, 0.0,
+				0.7, 0.25,
+				1.0, 0.25, 
+				0.8, 0.5, 
+				0.9, 1.0, 
+				0.5, 0.6, 
+				0.1, 1.0,
+			]
+		},
+		indices = [ 
+			0,1,2, 1,3,4, 2,1,4, 4,5,6, 2,4,6, 6,7,8, 2,6,8, 2,8,9 
+		],
+		dim = 3
+	),
+	Mesh.gen_quad_3d(-0.049, 0.049),
+]
+
+meshes = MultiMesh(mesh_list)
+
+for m in mesh_list:
+	m.destroy()
+mesh_list.clear()
+# clears out extra meshes that aren't needed after initializing the multimeshh
 
 texture = Texture(pygame.image.load("examples/opengl_example/box.png"))
 
@@ -65,7 +70,8 @@ graphics_pipeline = GraphicsPipeline(
 	render_pass,
 	shader_layout,
 	{
-		'attributes' : [('model', 2)],
+		'vertex attributes' : [('position', 0), ('texcoord', 1)],
+		'instance attributes' : [('model', 2)],
 		'push constants' : ['box_viewProj'],
 		'bindings' : [
 			('ubo', 0, 'vertex'),
@@ -73,7 +79,8 @@ graphics_pipeline = GraphicsPipeline(
 		]
 	},
 	'shaders/vert.spv',
-	'shaders/frag.spv'
+	'shaders/frag.spv',
+	meshes
 )
 
 data_type = np.dtype([('model', '(4,4)f4')])
@@ -84,6 +91,8 @@ renderer = IndirectRenderer(graphics_pipeline, meshes, {
 
 mat = np.identity(4, np.float32)
 mat[0][0] = 9/16
+mat[2][0] = 0.5
+mat[2][1] = 0.5
 PushConstantManager.set_global('box_viewProj', mat)
 
 # - - - - - - - - - - - - - - - - - - - - - - -
