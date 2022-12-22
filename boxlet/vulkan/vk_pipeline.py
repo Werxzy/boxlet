@@ -1,12 +1,83 @@
-from typing import Callable
 from .vk_module import *
 from . import *
 
 
-class RenderPass(TrackedInstances):
+class RenderingStep:
+	'''
+	Manages a tree of render steps, such as 
+	beginning and ending render passes,
+	binding piplines, or making render calls.
 
-	def __init__(self, render_target:RenderTarget = None):
+	After a RenderingStep begins, 
+	it will loop through all its attachments to begin,
+	afterwhich the original RenderingStep will call its end function.
+	'''
+	base_attachments:list['RenderingStep'] = []
+
+	keyed_attachments:dict[str, list['RenderingStep']] = {}
+
+	def __init__(self, priority = 0, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.attached_steps:list['RenderingStep'] = []
+		self.priority = priority
+
+	def attach(self, step:'RenderingStep'):
+		RenderingStep._attach_to_list(self.attached_steps, step)
+
+	def attach_to_key(self, key:str):
+		att = RenderingStep.keyed_attachments.setdefault(key, list())
+		RenderingStep._attach_to_list(att, self)
+
+	def attach_to_base(self):
+		RenderingStep._attach_to_list(RenderingStep.base_attachments, self)
+
+	def full_begin(self, command_buffer):
+		'''
+		Calls the begin and end functions while looping through any attached render steps.
+		'''
+		self.begin(command_buffer)
+
+		for att in self.attached_steps:
+			att.full_begin(command_buffer)
+			
+		self.end(command_buffer)
+
+	def begin(self, command_buffer): ...
+
+	def end(self, command_buffer): ...
+
+	@staticmethod
+	def _attach_to_list(attach_list:list['RenderingStep'], step):
+		attach_list.append(step)
+		attach_list.sort(key = lambda r : r.priority)
+
+	@staticmethod
+	def begin_from_base(command_buffer):
+		'Loops through all rendering steps attached to the base class'
+		for att in RenderingStep.base_attachments:
+			att.full_begin(command_buffer)
+
+
+class KeyedStep(RenderingStep):
+	'''
+	Loops through a list of rendering steps that are attached to a key instead of ones that are attached to this object.
+	'''
+	def __init__(self, key, priority):
+		self.key = key
+		self.priority = priority
+
+	def full_begin(self, command_buffer):
+		for att in RenderingStep.keyed_attachments[self.key]:
+			att.full_begin(command_buffer)
+
+
+class RenderPass(TrackedInstances, RenderingStep):
+
+	def __init__(self, render_target:RenderTarget = None, priority = 0):
 		'Render Target as none assumes it will render to the primary render target.'
+
+		super().__init__(priority)
+		self.attach_to_base()
 
 		self.render_target = render_target if render_target else BVKC.swapchain
 
@@ -44,8 +115,6 @@ class RenderPass(TrackedInstances):
 
 		self.vk_addr = vkCreateRenderPass(BVKC.logical_device.device, render_pass_info, None)
 
-		self.attached_piplelines:'list[VulkanPipeline]' = []
-
 	def begin(self, command_buffer):
 		render_pass_info = VkRenderPassBeginInfo(
 			renderPass = self.vk_addr,
@@ -59,10 +128,6 @@ class RenderPass(TrackedInstances):
 
 	def end(self, command_buffer):
 		vkCmdEndRenderPass(command_buffer)
-
-	def attach(self, pipeline):
-		# TODO assert that pipeline is the correct type (graphics vs compute vs ...)
-		self.attached_piplelines.append(pipeline)
 
 	def on_destroy(self):
 		vkDestroyRenderPass(BVKC.logical_device.device, self.vk_addr, None)
@@ -104,15 +169,13 @@ class PipelineLayout(TrackedInstances):
 			vkDestroyDescriptorSetLayout(BVKC.logical_device.device, layout, None)
 
 
-class VulkanPipeline(TrackedInstances):
-	def __init__(self) :
+class VulkanPipeline(TrackedInstances, RenderingStep):
+	def __init__(self, priority = 0) :
+		super().__init__(priority)
 		self.pipeline = None
-		self.attached_render_calls:list[Callable] = []
 
 	def bind(self, command_buffer): ...
 
-	def attach(self, render_call:Callable):
-		self.attached_render_calls.append(render_call)
 
 class ComputePipeline(VulkanPipeline):
 
@@ -128,9 +191,10 @@ class GraphicsPipeline(VulkanPipeline):
 			shader_attribute:ShaderAttributeLayout, 
 			shader_layout:dict, vertex_filepath, 
 			fragment_filepath, 
-			binding_model:Mesh):
+			binding_model:Mesh,
+			priority = 0):
 
-		super().__init__()
+		super().__init__(priority)
 
 		self.render_pass = render_pass
 		self.shader_attribute = shader_attribute
@@ -227,7 +291,7 @@ class GraphicsPipeline(VulkanPipeline):
 
 		render_pass.attach(self)
 
-	def bind(self, command_buffer):
+	def begin(self, command_buffer):
 		vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self.pipeline)
 
 	def on_destroy(self):

@@ -81,21 +81,7 @@ class BoxletVK:
 
 		vkBeginCommandBuffer(command_buffer, begin_info)
 
-		for render_pass in RenderPass.get_all_instances():
-			
-			# TODO alter how this framebuffer is selected
-			# configure some sort of frame chain
-			# only the renderpass that outputs to the screen needs the swapchain (probably)
-
-			render_pass.begin(command_buffer)
-
-			for pipeline in render_pass.attached_piplelines:
-				pipeline.bind(command_buffer)
-				
-				for render in pipeline.attached_render_calls:
-					render(command_buffer)
-
-			render_pass.end(command_buffer)
+		RenderingStep.begin_from_base(command_buffer)
 
 		vkEndCommandBuffer(command_buffer)
 

@@ -3,10 +3,10 @@ from .vk_module import *
 from . import *
 
 
-class Renderer(TrackedInstances):
-
-	def prepare(self, command_buffer):
-		...
+class Renderer(TrackedInstances, RenderingStep):
+	...
+	# no real use in having renderer as an extended class?
+	# only reason is for the order of deallocation of vulkan memory
 
 
 class DescriptorSet:
@@ -229,8 +229,9 @@ class PushConstantManager:
 
 
 class IndirectRenderer(Renderer):
-	def __init__(self, pipeline:GraphicsPipeline, meshes:vk_mesh.MultiMesh, defaults:dict[int]):
-
+	def __init__(self, pipeline:GraphicsPipeline, meshes:vk_mesh.MultiMesh, defaults:dict[int], priority = 0):
+		super().__init__(priority)
+		
 		self.meshes = meshes
 		meshes.init_buffers()
 
@@ -239,7 +240,7 @@ class IndirectRenderer(Renderer):
 			pipeline.shader_attribute.data_type
 		)
 		
-		pipeline.attach(self.prepare)
+		pipeline.attach(self)
 		self.pipeline = pipeline
 		self.attributes = RendererBindings(pipeline, defaults)
 		self.push_constants = PushConstantManager(pipeline.pipeline_layout)
@@ -247,7 +248,7 @@ class IndirectRenderer(Renderer):
 	def create_instance(self, model_id):
 		return self.buffer_set.create_instance(model_id)
 
-	def prepare(self, command_buffer):
+	def begin(self, command_buffer):
 		if self.buffer_set.indirect_count == 0:
 			return
 

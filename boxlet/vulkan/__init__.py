@@ -26,7 +26,7 @@ from .vk_render_target import RenderTarget, SimpleRenderTarget
 from . import vk_swapchain
 from . import vk_shaders
 from .vk_mesh import Mesh, MultiMesh
-from .vk_pipeline import RenderPass, PipelineLayout, GraphicsPipeline
+from .vk_pipeline import RenderingStep, KeyedStep, RenderPass, PipelineLayout, GraphicsPipeline
 
 from .vk_renderer import Renderer, IndirectRenderer, PushConstantManager
 
