@@ -25,7 +25,6 @@ class BoxletVK:
 			self.instance
 		)
 
-
 	def make_pygame_instance(self, wm_info):
 		self.instance = vk_instance.make_instance('ID Tech 12')
 

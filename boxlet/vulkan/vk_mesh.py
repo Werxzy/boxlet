@@ -160,7 +160,7 @@ class Mesh(TrackedInstances):
 		return Mesh(
 			vertices = {
 				'position':[
-					high,high,0, low,high,0, low,low,0, high,low,0
+					low,low,0, low,high,0, high,high,0, high,low,0
 				], 
 				'texcoord':[
 					0,0, 0,1, 1,1, 1,0

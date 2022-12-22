@@ -1,6 +1,5 @@
 from boxlet import *
 from boxlet.vulkan import *
-import pyrr
 
 
 manager.init(render_mode='vulkan')
@@ -9,28 +8,28 @@ mesh_list = [
 	Mesh.gen_cube(0.05),
 	Mesh(vertices = {
 			'position' : [
-				-0.05, -0.025, 0,
-				-0.02, -0.025, 0,
+				-0.05, 0.025, 0,
+				-0.02, 0.025, 0,
 				-0.03, 0.0, 0,
-				0.0, -0.05, 0,
-				0.02, -0.025, 0,
-				0.05, -0.025,  0,
+				0.0, 0.05, 0,
+				0.02, 0.025, 0,
+				0.05, 0.025,  0,
 				0.03, 0.0, 0,
-				0.04, 0.05, 0,
-				0.0, 0.01, 0,
-				-0.04, 0.05, 0,
+				0.04, -0.05, 0,
+				0.0, -0.01, 0,
+				-0.04, -0.05, 0,
 			],
 			'texcoord':[
-				0.0, 0.25,
-				0.3, 0.25,
+				0.0, 0.75,
+				0.3, 0.75,
 				0.2, 0.5,
-				0.5, 0.0,
-				0.7, 0.25,
-				1.0, 0.25, 
+				0.5, 1.0,
+				0.7, 0.75,
+				1.0, 0.75, 
 				0.8, 0.5, 
-				0.9, 1.0, 
-				0.5, 0.6, 
-				0.1, 1.0,
+				0.9, 0.0, 
+				0.5, 0.4, 
+				0.1, 0.0,
 			]
 		},
 		indices = [ 
@@ -65,6 +64,10 @@ shader_layout = ShaderAttributeLayout(
 		'texture': ('sampler2D',),
 	},
 )
+
+camera_step = Camera3D(priority = -1)
+camera_controller = CameraController(camera_step)
+
 render_pass = RenderPass()
 graphics_pipeline = GraphicsPipeline(
 	render_pass,
@@ -102,21 +105,21 @@ test = 0
 
 for y in np.arange(-1.0, 1.0, 0.05):
 	inst = renderer.create_instance(0)
-	inst.set(0, pyrr.matrix44.create_from_translation([-0.3 + (y%0.4)/3, y, 0]))
+	inst.set(0, Tmath.translate([-0.3 + (y%0.4)/3, y, 0]))
 	test = (test + 1) % 4
 	if test == 0:
 		instances_to_delete.append(inst)
 
 for y in np.arange(-1.0, 1.0, 0.1):
 	inst = renderer.create_instance(1)
-	inst.set(0, pyrr.matrix44.create_from_translation([(y%0.4)/3, y, 0]))
+	inst.set(0, Tmath.translate([(y%0.4)/3, y, 0]))
 	test = (test + 1) % 8
 	if test == 0:
 		instances_to_delete.append(inst)
 
 for y in np.arange(-1.0, 1.0, 0.1):
 	inst = renderer.create_instance(2)
-	inst.set(0, pyrr.matrix44.create_from_translation([0.3 + (y%0.4)/3, y, 0]))
+	inst.set(0, Tmath.translate([0.3 + (y%0.4)/3, y, 0]))
 	test = (test + 1) % 2
 	if test == 0:
 		instances_to_delete.append(inst)
@@ -126,7 +129,7 @@ for i in instances_to_delete:
 
 for y in np.arange(-1.0, 1.0, 0.1):
 	inst = renderer.create_instance(2)
-	inst.set(0, pyrr.matrix44.create_from_translation([0.4 + (y%0.4)/3, y, 0]))
+	inst.set(0, Tmath.translate([0.4 + (y%0.4)/3, y, 0]))
 
 
 manager.run()

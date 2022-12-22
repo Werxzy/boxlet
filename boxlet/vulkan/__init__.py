@@ -11,6 +11,8 @@ def get_path(file:str):
 
 import numpy as np
 
+from ..util_3d import CameraBase, CameraController, Tmath, Transform
+
 from .vk_shader_attribute_layout import ShaderAttributeLayout
 from . import vk_instance
 from . import vk_logging
@@ -29,6 +31,8 @@ from .vk_mesh import Mesh, MultiMesh
 from .vk_pipeline import RenderingStep, KeyedStep, RenderPass, PipelineLayout, GraphicsPipeline
 
 from .vk_renderer import Renderer, IndirectRenderer, PushConstantManager
+
+from .vk_camera import Camera3D
 
 from .boxlet_vk import BoxletVK
 

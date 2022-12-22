@@ -7,10 +7,12 @@ from .. import manager
 
 
 class CameraBase(Transform):
-	def __init__(self, *args, horizontal_fov = False, **kwargs) -> None:
+	def __init__(self, *args, horizontal_fov = False, invert_y = 1, **kwargs) -> None:
 		super().__init__(*args, **kwargs)
 
 		self.horizontal_fov = horizontal_fov
+		self.invert_y = invert_y
+
 		self.perspective(90, 16.0/9.0, 0.1, 1000)
 		# self.orthographic(-5, 5, -5 * 9 / 16, 5 * 9 / 16, 0.1, 1000)
 
@@ -20,7 +22,7 @@ class CameraBase(Transform):
 		self.clip_near, self.clip_far = near, far
 
 		x = 1 / (f if self.horizontal_fov else f * aspect)
-		y = aspect * x
+		y = aspect * x * self.invert_y
 		z1 = (near + far) / (near - far)
 		z2 = 2 * near * far / (near - far)
 
@@ -40,7 +42,7 @@ class CameraBase(Transform):
 		self.clip_near, self.clip_far = near, far
 
 		x = 1 / (f if self.horizontal_fov else f * aspect)
-		y = aspect * x
+		y = aspect * x * self.invert_y
 		z1 = (near + far) / (near - far)
 		z2 = 2 * near * far / (near - far)
 
@@ -59,7 +61,7 @@ class CameraBase(Transform):
 		self.clip_near, self.clip_far = near, far
 
 		dx = 1 / (right - left)
-		dy = 1 / (top - bottom)
+		dy = self.invert_y / (top - bottom)
 		dz = 1 / (far - near)
 
 		rx = -(right + left) * dx
