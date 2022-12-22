@@ -21,4 +21,4 @@ from .render_targets.camera_2d import Camera2D
 from .renderers.terrain_renderer import TerrainRenderer
 from .renderers.instanced_renderer import InstancedRenderer
 
-from .camera_controller import CameraController
+from ..util_3d import CameraController
