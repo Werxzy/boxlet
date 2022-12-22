@@ -48,7 +48,6 @@ class Texture(TrackedInstances):
 			memoryTypeIndex = vk_memory.Buffer.find_memory_type_index(
 				memory_requirements.memoryTypeBits,
 				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-				# TODO ? these may need to be adjusted
 			)
 		)
 

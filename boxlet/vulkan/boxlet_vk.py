@@ -64,9 +64,6 @@ class BoxletVK:
 		BVKC.swapchain.remake(self.width, self.height)
 
 		BVKC.command_pool.destroy() 
-		# TODO remove .destroy()? but not destroying the command pool causes a memory leak
-		# probably would need to free what is in the command_buffer
-		# I think they would normally be freed when the command pool was destroyed
 
 		BVKC.command_pool = vk_commands.CommandPool(
 			self.queue_families,

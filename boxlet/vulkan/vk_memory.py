@@ -59,7 +59,6 @@ class Buffer:
 			memoryTypeIndex = Buffer.find_memory_type_index(
 				memory_requirements.memoryTypeBits,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-				# TODO ? these may need to be adjusted
 			)
 		)
 
@@ -244,7 +243,7 @@ class InstanceBufferSet:
 		# the needs update here is a bit redundant, but might be needed
 
 	def create_instance(self, model_id):
-		# TODO, add function for creating multiple meshes
+		# TODO, add function for creating multiple instances
 		if not self._indirect_unfilled[model_id]:
 			self.create_indirect_group(model_id)
 

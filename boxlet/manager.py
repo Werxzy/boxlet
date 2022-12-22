@@ -97,7 +97,6 @@ class Manager:
 
 		if self.render_mode == 'vulkan':
 			self.vulkan_graphics_engine.finalize_setup()
-			# TODO would prefer this not be needed
 
 		self.system_time = time.time()
 		try:

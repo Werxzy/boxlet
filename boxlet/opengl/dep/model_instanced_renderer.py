@@ -3,7 +3,6 @@ from OpenGL.GL import *
 
 
 class ModelInstancedRenderer(Renderer):
-	# position and size are in pixel coordinates
 
 	vertex_shader = """
 		#version 330
@@ -56,8 +55,6 @@ class ModelInstancedRenderer(Renderer):
 
 		glBindVertexArray(0)
 
-		#TODO this is sort of an example
-		#TODO, allow for premade vao and multimodel to reduce vao bind count
 		BoxletGL.add_render_call(pass_name, self.shader, self.render)
 
 	def new_instance(self, **kwargs):
