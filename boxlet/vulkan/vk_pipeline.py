@@ -291,7 +291,7 @@ class GraphicsPipeline(VulkanPipeline):
 			pAttachments = color_blend_attachment,
 			blendConstants = [0.0, 0.0, 0.0, 0.0]
 		)
-		
+
 		depth_stencil = VkPipelineDepthStencilStateCreateInfo(
 			depthTestEnable = True,
 			depthWriteEnable = True,
@@ -301,6 +301,14 @@ class GraphicsPipeline(VulkanPipeline):
 			maxDepthBounds = 1.0,
 		)
 
+		dynamic_state = VkPipelineDynamicStateCreateInfo(
+			dynamicStateCount = 2,
+			pDynamicStates = [
+				VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR
+			]
+		)
+		self.viewport_needs_update = True		
+		
 		pipeline_info = VkGraphicsPipelineCreateInfo(
 			stageCount = len(shader_stages),
 			pStages = shader_stages,
@@ -311,6 +319,7 @@ class GraphicsPipeline(VulkanPipeline):
 			pMultisampleState = multisampling,
 			pDepthStencilState = depth_stencil,
 			pColorBlendState = color_blending, 
+			pDynamicState = dynamic_state,
 			layout = self.pipeline_layout.layout,
 			renderPass = render_pass.vk_addr,
 			subpass = 0
@@ -324,7 +333,28 @@ class GraphicsPipeline(VulkanPipeline):
 		render_pass.attach(self)
 
 	def begin(self, command_buffer):
+		if self.viewport_needs_update:
+			self.update_viewport(command_buffer)
+
 		vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self.pipeline)
+
+	def update_viewport(self, command_buffer):
+		# self.viewport_needs_update = False
+		extent = self.render_pass.render_target.extent
+		
+		viewport = VkViewport(
+			x = 0, y = 0,
+			width = extent.width,
+			height = extent.height,
+			minDepth = 0.0, maxDepth = 1.0
+		)
+		vkCmdSetViewport(command_buffer, 0, 1, [viewport])
+
+		scissor = VkRect2D(
+			offset = [0,0],
+			extent = extent
+		)
+		vkCmdSetScissor(command_buffer, 0, 1, [scissor])
 
 	def on_destroy(self):
 		vkDestroyPipeline(BVKC.logical_device.device, self.pipeline, None)
