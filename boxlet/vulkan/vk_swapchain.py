@@ -213,9 +213,17 @@ class SwapChainBundle(RenderTarget):
 		self.max_frames = len(self.frames)
 		self.current_frame = -1
 
+		self.depth_image = Texture(
+			format = vk_device.find_depth_format(BVKC.physical_device),
+			extent = [width, height],
+			tiling = VK_IMAGE_TILING_OPTIMAL,
+			usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+			aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT
+		)
+
 	def init_frame_buffers(self, render_pass, command_pool):
 		for frame in self.frames:
-			frame.init_buffers(render_pass, command_pool)
+			frame.init_buffers(render_pass, command_pool, [self.depth_image.image_view.vk_addr])
 
 	def get_frame_buffer(self) -> FrameBuffer:
 		'Used by BoxletVK to get the correct framebuffer to render to.'
@@ -224,6 +232,8 @@ class SwapChainBundle(RenderTarget):
 	def destroy(self):
 		for frame in self.frames:
 			frame.destroy()
+
+		self.depth_image.destroy()
 
 		destruction_function = vkGetDeviceProcAddr(BVKC.logical_device.device, 'vkDestroySwapchainKHR')
 		destruction_function(BVKC.logical_device.device, self.vk_addr, None)

@@ -3,7 +3,7 @@ from . import *
 
 
 class ImageView:
-	def __init__(self, image, format, extent) -> None:
+	def __init__(self, image, format, extent, aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT) -> None:
 		self.format = format
 		self.extent = extent
 
@@ -15,7 +15,7 @@ class ImageView:
 		)
 
 		subresource_range = VkImageSubresourceRange(
-			aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+			aspectMask = aspect_mask,
 			baseMipLevel = 0, levelCount = 1,
 			baseArrayLayer = 0, layerCount = 1
 		)
@@ -28,9 +28,9 @@ class ImageView:
 
 		self.vk_addr = vkCreateImageView(BVKC.logical_device.device, create_info, None)
 
-	def init_frame_buffer(self, render_pass):
+	def init_frame_buffer(self, render_pass, additional_attachments:list = []):
 		return FrameBuffer(
-			render_pass, self.extent, [self.vk_addr]
+			render_pass, self.extent, [self.vk_addr] + additional_attachments
 			)
 	
 	def destroy(self):
@@ -48,14 +48,14 @@ class SwapChainFrame:
 		self.image_available = vk_sync.Semaphore()
 		self.render_finished = vk_sync.Semaphore()
 
-	def init_buffers(self, render_pass, command_pool:'CommandPool'):
+	def init_buffers(self, render_pass, command_pool:'CommandPool', additional_attachments:list = []):
 		'''
 		Initializes some buffers seperate from __init__.
 		
 		These buffers are seperate because they may be initialized/destroyed multiple times during the application's lifetime.
 		'''
 
-		self.frame_buffer = self.image_view.init_frame_buffer(render_pass)
+		self.frame_buffer = self.image_view.init_frame_buffer(render_pass, additional_attachments)
 		self.command_buffer = CommandBuffer(command_pool)
 		
 	def destroy(self):

@@ -134,6 +134,29 @@ def choose_physical_device(instance):
 
 	return None
 
+def find_depth_format(physical_device):
+	return find_supported_format(
+		[
+			VK_FORMAT_D24_UNORM_S8_UINT,
+			VK_FORMAT_D32_SFLOAT, 
+			VK_FORMAT_D32_SFLOAT_S8_UINT
+		],
+		VK_IMAGE_TILING_OPTIMAL, 
+		VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT,
+		physical_device
+	)
+
+def find_supported_format(candidates:list, tiling, features, physical_device):
+	for format in candidates:
+		props = vkGetPhysicalDeviceFormatProperties(physical_device, format)
+
+		if (tiling, features) == (VK_IMAGE_TILING_LINEAR, props.linearTilingFeatures & features):
+			return format
+		if (tiling, features) == (VK_IMAGE_TILING_OPTIMAL, props.optimalTilingFeatures & features):
+			return format
+
+	raise Exception('Failed to find suitable format.')
+
 class LogicalDevice:
 	def __init__(self, queue_family:'vk_queue_families.QueueFamilyIndices'):
 		unique_indices = list(set([queue_family.graphics_family, queue_family.present_family]))

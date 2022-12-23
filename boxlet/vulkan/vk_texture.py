@@ -3,11 +3,28 @@ from . import *
 import pygame
 
 class Texture(TrackedInstances):
-	def __init__(self, input_image:pygame.Surface) -> None:
+	def __init__(self, input_image:pygame.Surface = None,
+			format = VK_FORMAT_R8G8B8A8_UNORM,
+			extent:list|tuple|None = None,
+			image_layout = VK_IMAGE_LAYOUT_UNDEFINED,
+			tiling = VK_IMAGE_TILING_LINEAR,
+			usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT
+		) -> None:
 		
-		self.format = VK_FORMAT_R8G8B8A8_UNORM
-		self.extent = VkExtent3D(input_image.get_width(), input_image.get_height(), 1)
-		self.image_layout = VK_IMAGE_LAYOUT_UNDEFINED
+		self.format = format
+		self.image_layout = image_layout
+
+		if extent:
+			if len(extent) == 3:
+				self.extent = VkExtent3D(*extent)
+			else:
+				self.extent = VkExtent3D(*extent, 1)
+
+		elif input_image:
+			self.extent = VkExtent3D(input_image.get_width(), input_image.get_height(), 1)
+		else:
+			raise Exception('No valid extent provided.')
 
 		image_create_info = VkImageCreateInfo(
 			imageType = VK_IMAGE_TYPE_2D,
@@ -16,8 +33,8 @@ class Texture(TrackedInstances):
 			mipLevels = 1,
 			arrayLayers = 1,
 			samples = VK_SAMPLE_COUNT_1_BIT,
-			tiling = VK_IMAGE_TILING_LINEAR,
-			usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			tiling = tiling,
+			usage = usage,
 			sharingMode = VK_SHARING_MODE_EXCLUSIVE,
 			initialLayout = self.image_layout
 		)
@@ -28,15 +45,16 @@ class Texture(TrackedInstances):
 
 		self.allocate()
 
-		staging_buffer = vk_memory.Buffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, pygame.image.tostring(input_image, "RGBA", True))
+		if input_image:
+			staging_buffer = vk_memory.Buffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, pygame.image.tostring(input_image, "RGBA", True))
 
-		self.transition_image_layout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
-		self.copy_buffer_to_image(staging_buffer.buffer)
-		self.transition_image_layout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+			self.transition_image_layout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+			self.copy_buffer_to_image(staging_buffer.buffer)
+			self.transition_image_layout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 
-		staging_buffer.destroy()
+			staging_buffer.destroy()
 
-		self.image_view = vk_frame.ImageView(self.image, self.format, self.extent)
+		self.image_view = vk_frame.ImageView(self.image, self.format, self.extent, aspect_mask)
 
 	def allocate(self):
 		memory_requirements = vkGetImageMemoryRequirements(

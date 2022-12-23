@@ -100,15 +100,37 @@ class RenderPass(TrackedInstances, RenderingStep):
 			layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 		)
 
+		depth_attachment = VkAttachmentDescription(
+			format = vk_device.find_depth_format(BVKC.physical_device),
+			samples = VK_SAMPLE_COUNT_1_BIT,
+
+			loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+			storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+			
+			stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+			stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+
+			initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+			finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+		)
+
+		depth_attachment_ref = VkAttachmentReference(
+			attachment = 1,
+			layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+		)
+
+		attachments = [color_attachment, depth_attachment]
+
 		subpass = VkSubpassDescription(
 			pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
 			colorAttachmentCount = 1,
-			pColorAttachments = [color_attachment_ref]
+			pColorAttachments = [color_attachment_ref],
+			pDepthStencilAttachment = [depth_attachment_ref]
 		)
 
 		render_pass_info = VkRenderPassCreateInfo(
-			attachmentCount = 1,
-			pAttachments = color_attachment,
+			attachmentCount = len(attachments),
+			pAttachments = attachments,
 			subpassCount = 1,
 			pSubpasses = subpass
 		)
@@ -120,8 +142,8 @@ class RenderPass(TrackedInstances, RenderingStep):
 			renderPass = self.vk_addr,
 			framebuffer = self.render_target.get_frame_buffer().vk_addr,
 			renderArea = [[0,0], self.render_target.extent],
-			clearValueCount = 1,
-			pClearValues = [VkClearValue([[1.0, 0.5, 0.25, 1.0]])]
+			clearValueCount = 2,
+			pClearValues = [VkClearValue([[1.0, 0.5, 0.25, 1.0]]), VkClearValue([[1.0, 0.0]])]
 		)
 
 		vkCmdBeginRenderPass(command_buffer, render_pass_info, VK_SUBPASS_CONTENTS_INLINE)
@@ -270,6 +292,15 @@ class GraphicsPipeline(VulkanPipeline):
 			blendConstants = [0.0, 0.0, 0.0, 0.0]
 		)
 		
+		depth_stencil = VkPipelineDepthStencilStateCreateInfo(
+			depthTestEnable = True,
+			depthWriteEnable = True,
+			depthCompareOp = VK_COMPARE_OP_LESS,
+			depthBoundsTestEnable = False,
+			minDepthBounds = 0.0,
+			maxDepthBounds = 1.0,
+		)
+
 		pipeline_info = VkGraphicsPipelineCreateInfo(
 			stageCount = len(shader_stages),
 			pStages = shader_stages,
@@ -278,6 +309,7 @@ class GraphicsPipeline(VulkanPipeline):
 			pViewportState = viewport_state,
 			pRasterizationState = rasterizer,
 			pMultisampleState = multisampling,
+			pDepthStencilState = depth_stencil,
 			pColorBlendState = color_blending, 
 			layout = self.pipeline_layout.layout,
 			renderPass = render_pass.vk_addr,

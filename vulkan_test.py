@@ -105,21 +105,21 @@ test = 0
 
 for y in np.arange(-1.0, 1.0, 0.05):
 	inst = renderer.create_instance(0)
-	inst.set(0, Tmath.translate([-0.3 + (y%0.4)/3, y, 0]))
+	inst.set(0, Tmath.translate([-0.3 + (y%0.4)/3, y, y % 0.11]))
 	test = (test + 1) % 4
 	if test == 0:
 		instances_to_delete.append(inst)
 
 for y in np.arange(-1.0, 1.0, 0.1):
 	inst = renderer.create_instance(1)
-	inst.set(0, Tmath.translate([(y%0.4)/3, y, 0]))
+	inst.set(0, Tmath.translate([(y%0.4)/3, y, y % 0.11]))
 	test = (test + 1) % 8
 	if test == 0:
 		instances_to_delete.append(inst)
 
 for y in np.arange(-1.0, 1.0, 0.1):
 	inst = renderer.create_instance(2)
-	inst.set(0, Tmath.translate([0.3 + (y%0.4)/3, y, 0]))
+	inst.set(0, Tmath.translate([0.3 + (y%0.4)/3, y, y % 0.11]))
 	test = (test + 1) % 2
 	if test == 0:
 		instances_to_delete.append(inst)
@@ -129,7 +129,7 @@ for i in instances_to_delete:
 
 for y in np.arange(-1.0, 1.0, 0.1):
 	inst = renderer.create_instance(2)
-	inst.set(0, Tmath.translate([0.4 + (y%0.4)/3, y, 0]))
+	inst.set(0, Tmath.translate([0.4 + (y%0.4)/3, y, y % 0.11]))
 
 
 manager.run()
