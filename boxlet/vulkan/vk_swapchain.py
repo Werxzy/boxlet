@@ -105,8 +105,8 @@ def choose_swapchain_surface_format(formats):
 
 def choose_swapchain_present_mode(presentModes):
 		
-	if VK_PRESENT_MODE_MAILBOX_KHR in presentModes:
-		return VK_PRESENT_MODE_MAILBOX_KHR
+	# if VK_PRESENT_MODE_MAILBOX_KHR in presentModes:
+	# 	return VK_PRESENT_MODE_MAILBOX_KHR
 
 	return VK_PRESENT_MODE_FIFO_KHR
 

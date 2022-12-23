@@ -132,5 +132,24 @@ for y in np.arange(-1.0, 1.0, 0.1):
 	inst.set(0, Tmath.translate([0.4 + (y%0.4)/3, y, y % 0.11]))
 
 
+class FPSCheck(Entity):
+	def __init__(self):
+		self.t = 0
+		self.c = 0
+
+	def vary_update(self):
+		self.t += manager.delta_time
+		self.c += 1
+
+		# if manager.delta_time > 0:
+		# 	print(1.0 / manager.delta_time)
+
+		if self.t >= 1:
+			print(self.c)
+			self.t = self.c = 0
+
+
+FPSCheck()
+
 manager.run()
 

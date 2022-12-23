@@ -61,9 +61,9 @@ class Manager:
 
 		elif self.render_mode == 'vulkan':
 			# TODO fullscreen
-			self.vsync = False
+			self.vsync = True
 
-			self.display = pygame.display.set_mode(self.display_size, flags = pygame.DOUBLEBUF | pygame.RESIZABLE)
+			self.display = pygame.display.set_mode(self.display_size, flags = pygame.DOUBLEBUF | pygame.RESIZABLE, vsync = self.vsync)
 			wm_info = pygame.display.get_wm_info()
 			from .vulkan.boxlet_vk import BoxletVK
 			self.vulkan_graphics_engine = BoxletVK(*self.display_size, wm_info)
