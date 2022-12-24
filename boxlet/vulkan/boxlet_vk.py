@@ -54,13 +54,15 @@ class BoxletVK:
 		BVKC.swapchain = vk_swapchain.SwapChainBundle(self.queue_families, self.width, self.height)
 
 	def finalize_setup(self):
-		BVKC.swapchain.init_frame_buffers(RenderPass.get_all_instances()[0], BVKC.command_pool)
+		for target in RenderTarget.get_all_instances():
+			target.init_frame_buffer()
 
 	def recreate_swapchain(self):
 		if DEBUG_MODE:
 			print('recreate swapchain')
 
-		BVKC.swapchain.remake(self.width, self.height)
+		for target in RenderTarget.get_all_instances():
+			target.remake(self.width, self.height)
 
 		BVKC.command_pool.destroy() 
 
@@ -149,7 +151,7 @@ class BoxletVK:
 		vk_pipeline.PipelineLayout._destroy_all()
 		vk_pipeline.RenderPass._destroy_all()
 
-		BVKC.swapchain.destroy()
+		BVKC.swapchain.on_destroy()
 
 		Texture._destroy_all()
 

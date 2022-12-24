@@ -142,7 +142,7 @@ class SwapChainBundle(RenderTarget):
 
 		# if the original still exists, we need to destroy it
 		if self.vk_addr is not None:
-			self.destroy()
+			self.on_destroy()
 
 		support = SwapChainSupportDetails(self.queue_family.instance, BVKC.physical_device, self.queue_family.surface)
 		format = choose_swapchain_surface_format(support.formats)
@@ -221,15 +221,15 @@ class SwapChainBundle(RenderTarget):
 			aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT
 		)
 
-	def init_frame_buffers(self, render_pass, command_pool):
+	def init_frame_buffer(self):
 		for frame in self.frames:
-			frame.init_buffers(render_pass, command_pool, self.depth_image.image_view)
+			frame.init_buffers(self.recent_render_pass, BVKC.command_pool, self.depth_image.image_view)
 
 	def get_frame_buffer(self) -> FrameBuffer:
 		'Used by BoxletVK to get the correct framebuffer to render to.'
 		return self.frames[self.current_frame].frame_buffer
 
-	def destroy(self):
+	def on_destroy(self):
 		for frame in self.frames:
 			frame.destroy()
 

@@ -80,6 +80,7 @@ class RenderPass(TrackedInstances, RenderingStep):
 		self.attach_to_base()
 
 		self.render_target = render_target if render_target else BVKC.swapchain
+		self.render_target.set_recent_render_pass(self)
 
 		color_attachment = VkAttachmentDescription(
 			format = self.render_target.format,
