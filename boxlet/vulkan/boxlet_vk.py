@@ -151,7 +151,7 @@ class BoxletVK:
 		vk_pipeline.PipelineLayout._destroy_all()
 		vk_pipeline.RenderPass._destroy_all()
 
-		BVKC.swapchain.on_destroy()
+		RenderTarget._destroy_all()
 
 		Texture._destroy_all()
 
