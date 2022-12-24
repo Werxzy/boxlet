@@ -223,7 +223,7 @@ class SwapChainBundle(RenderTarget):
 
 	def init_frame_buffers(self, render_pass, command_pool):
 		for frame in self.frames:
-			frame.init_buffers(render_pass, command_pool, [self.depth_image.image_view.vk_addr])
+			frame.init_buffers(render_pass, command_pool, self.depth_image.image_view)
 
 	def get_frame_buffer(self) -> FrameBuffer:
 		'Used by BoxletVK to get the correct framebuffer to render to.'

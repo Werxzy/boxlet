@@ -3,14 +3,14 @@ from . import *
 
 
 class FrameBuffer:
-	def __init__(self, render_pass:'vk_pipeline.RenderPass', extent, attachments:list):
+	def __init__(self, render_pass:'vk_pipeline.RenderPass', width, height, attachments:list):
 
 		frame_buffer_info = VkFramebufferCreateInfo(
 			renderPass = render_pass.vk_addr,
 			attachmentCount = len(attachments),
 			pAttachments = attachments,
-			width = extent.width,
-			height = extent.height,
+			width = width,
+			height = height,
 			layers = 1
 		)
 

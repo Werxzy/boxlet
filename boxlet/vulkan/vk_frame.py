@@ -27,11 +27,6 @@ class ImageView:
 		)
 
 		self.vk_addr = vkCreateImageView(BVKC.logical_device.device, create_info, None)
-
-	def init_frame_buffer(self, render_pass, additional_attachments:list = []):
-		return FrameBuffer(
-			render_pass, self.extent, [self.vk_addr] + additional_attachments
-			)
 	
 	def destroy(self):
 		vkDestroyImageView(BVKC.logical_device.device, self.vk_addr, None)
@@ -48,14 +43,14 @@ class SwapChainFrame:
 		self.image_available = vk_sync.Semaphore()
 		self.render_finished = vk_sync.Semaphore()
 
-	def init_buffers(self, render_pass, command_pool:'CommandPool', additional_attachments:list = []):
+	def init_buffers(self, render_pass, command_pool:'CommandPool', depth_buffer:ImageView):
 		'''
 		Initializes some buffers seperate from __init__.
 		
 		These buffers are seperate because they may be initialized/destroyed multiple times during the application's lifetime.
 		'''
-
-		self.frame_buffer = self.image_view.init_frame_buffer(render_pass, additional_attachments)
+		extent = self.image_view.extent
+		self.frame_buffer = FrameBuffer(render_pass, extent.width, extent.height, [self.image_view.vk_addr, depth_buffer.vk_addr])
 		self.command_buffer = CommandBuffer(command_pool)
 		
 	def destroy(self):
