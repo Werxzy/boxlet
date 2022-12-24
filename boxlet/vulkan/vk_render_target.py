@@ -33,6 +33,57 @@ class RenderTarget(TrackedInstances):
 		...
 
 
-class SimpleRenderTarget:
-	def __init__(self) -> None:
-		pass
+class SimpleRenderTarget(RenderTarget):
+	def __init__(self, width, height) -> None:
+		super().__init__(VK_FORMAT_R16G16B16A16_SFLOAT, VkExtent2D(width, height))
+		# TODO, add scaling settings like in opengl version
+
+		self.image = None
+		self.depth_buffer = None
+		self.frame_buffer = None
+
+		self.remake(width, height)
+
+	def remake(self, width, height):
+
+		if self.image:
+			self.on_destroy()
+
+		self.extent = VkExtent2D(width, height)
+
+		self.image = Texture(
+			format = self.format,
+			extent = [width, height],
+			tiling = VK_IMAGE_TILING_OPTIMAL,
+			usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
+		)
+		
+		self.depth_buffer = Texture(
+			format = vk_device.find_depth_format(BVKC.physical_device),
+			extent = [width, height],
+			tiling = VK_IMAGE_TILING_OPTIMAL,
+			usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+			aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT
+		)
+
+	def get_image(self):
+		return self.image
+
+	def init_frame_buffer(self):
+		self.frame_buffer = FrameBuffer(
+			self.recent_render_pass, 
+			self.extent.width, self.extent.height, 
+			[
+				self.image.image_view.vk_addr, 
+				self.depth_buffer.image_view.vk_addr
+			])
+
+	def get_frame_buffer(self) -> FrameBuffer:
+		return self.frame_buffer
+
+	def on_destroy(self):
+		self.image.destroy()
+		self.depth_buffer.destroy()
+
+		if self.frame_buffer:
+			self.frame_buffer.destroy()
