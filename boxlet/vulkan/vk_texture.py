@@ -9,7 +9,9 @@ class Texture(TrackedInstances):
 			image_layout = VK_IMAGE_LAYOUT_UNDEFINED,
 			tiling = VK_IMAGE_TILING_LINEAR,
 			usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT
+			aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT,
+			access_mask = 0,
+			stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
 		) -> None:
 		
 		self.format = format
@@ -18,6 +20,9 @@ class Texture(TrackedInstances):
 		self.usage = usage
 		self.image = None
 		self.aspect_mask = aspect_mask
+
+		self.access_mask = access_mask
+		self.stage_mask = stage_mask
 
 		if input_image:
 			extent = [input_image.get_width(), input_image.get_height(), 1]
@@ -29,9 +34,17 @@ class Texture(TrackedInstances):
 		if input_image:
 			staging_buffer = vk_memory.Buffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, pygame.image.tostring(input_image, "RGBA", True))
 
-			self.transition_image_layout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+			self.transition_image_layout(
+				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				VK_ACCESS_TRANSFER_WRITE_BIT,
+				VK_PIPELINE_STAGE_TRANSFER_BIT
+			)
 			self.copy_buffer_to_image(staging_buffer.buffer)
-			self.transition_image_layout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+			self.transition_image_layout(
+				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+				VK_ACCESS_SHADER_READ_BIT,
+				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+			)
 
 			staging_buffer.destroy()
 
@@ -94,13 +107,19 @@ class Texture(TrackedInstances):
 			self.image_memory, 0
 		)
 
-	def transition_image_layout(self, new_layout):
-		temp_command_buffer = CommandBuffer(BVKC.command_pool)
-		temp_command_buffer.single_time_begin()
+	def transition_image_layout(self, new_layout, new_access, new_stage, command_buffer = None):
+		if command_buffer is None:
+			temp_command_buffer = CommandBuffer(BVKC.command_pool)
+			command_buffer_addr = temp_command_buffer.vk_addr
+			temp_command_buffer.single_time_begin()
+		else:
+			command_buffer_addr = command_buffer
 
-		subresource = VkImageSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1)
+		subresource = VkImageSubresourceRange(self.aspect_mask, 0, 1, 0, 1)
 
 		barrier = VkImageMemoryBarrier(
+			srcAccessMask = self.access_mask,
+			dstAccessMask = new_access,
 			oldLayout = self.image_layout,
 			newLayout = new_layout,
 			srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
@@ -109,37 +128,24 @@ class Texture(TrackedInstances):
 			subresourceRange = subresource
 		)
 
-		if self.image_layout == VK_IMAGE_LAYOUT_UNDEFINED and new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-			barrier.srcAccessMask = 0
-			barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT
-			src_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
-			dst_stage = VK_PIPELINE_STAGE_TRANSFER_BIT
-
-		elif self.image_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL and new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT
-			barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT
-			src_stage = VK_PIPELINE_STAGE_TRANSFER_BIT
-			dst_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-
-		else:
-			raise Exception('unsupported layout transition')
-
-		# TODO allow for more controlled transitions
-
 		vkCmdPipelineBarrier(
-			temp_command_buffer.vk_addr, 
-			src_stage, dst_stage,
+			command_buffer_addr, 
+			self.stage_mask, new_stage,
 			0, 0, None, 0, None, 1, [barrier]
 		)
 
-		temp_command_buffer.single_time_end()
+		if command_buffer is None:
+			temp_command_buffer.single_time_end()
+
 		self.image_layout = new_layout
+		self.access_mask = new_access
+		self.stage_mask = new_stage
 
 	def copy_buffer_to_image(self, buffer):
 		temp_command_buffer = CommandBuffer(BVKC.command_pool)
 		temp_command_buffer.single_time_begin()
 
-		subresource = VkImageSubresourceLayers(VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1)
+		subresource = VkImageSubresourceLayers(self.aspect_mask, 0, 0, 1)
 
 		region = VkBufferImageCopy(0, 0, 0, subresource, [0, 0, 0], self.extent)
 
