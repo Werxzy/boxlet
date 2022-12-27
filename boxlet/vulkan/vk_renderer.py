@@ -86,6 +86,7 @@ class ImageDescriptorSet(DescriptorSet):
 			self.needs_update[i] = True
 
 		self.texture = data
+		self.orig_image_view = self.texture.image_view
 
 	def get_write(self, set_number):
 		image_info = VkDescriptorImageInfo(
@@ -102,6 +103,14 @@ class ImageDescriptorSet(DescriptorSet):
 			descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 			pImageInfo = image_info,
 		)
+
+	def get_update(self, set_number) -> list[Any]:
+		if self.orig_image_view != self.texture.image_view:
+			self.orig_image_view = self.texture.image_view
+			for i in self.set_range:
+				self.needs_update[i] = True
+			
+		return super().get_update(set_number)
 
 
 class RendererBindings:
