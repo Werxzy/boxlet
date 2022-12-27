@@ -13,6 +13,11 @@ class Texture(TrackedInstances):
 			access_mask = 0,
 			stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
 		) -> None:
+
+		if input_image:
+			image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+			access_mask = VK_ACCESS_SHADER_READ_BIT
+			stage_mask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
 		
 		self.format = format
 		self.image_layout = image_layout
@@ -29,33 +34,23 @@ class Texture(TrackedInstances):
 		elif not extent:
 			raise Exception('No valid extent provided.')
 
-		self.remake(extent)
+		self.remake(extent, input_image)
 
-		if input_image:
-			staging_buffer = vk_memory.Buffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, pygame.image.tostring(input_image, "RGBA", True))
-
-			self.transition_image_layout(
-				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-				VK_ACCESS_TRANSFER_WRITE_BIT,
-				VK_PIPELINE_STAGE_TRANSFER_BIT
-			)
-			self.copy_buffer_to_image(staging_buffer.buffer)
-			self.transition_image_layout(
-				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-				VK_ACCESS_SHADER_READ_BIT,
-				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-			)
-
-			staging_buffer.destroy()
-
-		
-
-	def remake(self, extent):
+	def remake(self, extent, input_image = None):
 		# so that a reference to the Texture is kept
 		# and the vulkan changes can be tracked
 
 		if self.image:
 			self.on_destroy()
+
+		# stores and resets the following so that the new image can be transitioned.
+		image_layout = self.image_layout
+		access_mask = self.access_mask
+		stage_mask = self.stage_mask
+
+		self.image_layout = VK_IMAGE_LAYOUT_UNDEFINED
+		self.access_mask = 0
+		self.stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
 
 		if extent:
 			if len(extent) == 3:
@@ -84,6 +79,24 @@ class Texture(TrackedInstances):
 
 		self.image_view = vk_frame.ImageView(self.image, self.format, self.extent, self.aspect_mask)
 
+		if input_image:
+			staging_buffer = vk_memory.Buffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, pygame.image.tostring(input_image, "RGBA", True))
+
+			self.transition_image_layout(
+				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				VK_ACCESS_TRANSFER_WRITE_BIT,
+				VK_PIPELINE_STAGE_TRANSFER_BIT
+			)
+			self.copy_buffer_to_image(staging_buffer.buffer)
+			staging_buffer.destroy()
+
+		if access_mask:
+			self.transition_image_layout(
+				image_layout,
+				access_mask,
+				stage_mask
+			)
+
 	def allocate(self):
 		memory_requirements = vkGetImageMemoryRequirements(
 			BVKC.logical_device.device, self.image
@@ -108,8 +121,9 @@ class Texture(TrackedInstances):
 		)
 
 	def transition_image_layout(self, new_layout, new_access, new_stage, command_buffer = None):
-		if ((self.image_layout, self.access_mask, self.stage_mask) == 
-				(new_layout, new_access, new_stage)):
+		if (self.image_layout == new_layout 
+				and self.access_mask == new_access
+				and self.stage_mask == new_stage): 
 			return
 
 		if command_buffer is None:
