@@ -1,3 +1,4 @@
+from math import floor
 from .vk_module import *
 from . import *
 
@@ -49,15 +50,19 @@ class RenderTarget(TrackedInstances):
 
 
 class SimpleRenderTarget(RenderTarget):
-	def __init__(self, width, height) -> None:
+	def __init__(self, width = 0, height = 0, width_mult = 1, height_mult = 1) -> None:
+		# Setting width and/or height to a non-zero value with set the corresponding component.
+		# Otherwise, multiply the display's resoultion by the 'mult' value and round down.
+
+		self.size_data = (width, height, width_mult, height_mult)
+		width, height = self.gen_size(BVKC.width, BVKC.height)
+		# Regenerates the width and height based on the given parameters.
+
 		super().__init__(VK_FORMAT_R16G16B16A16_SFLOAT, VkExtent2D(width, height))
-		# TODO, add scaling settings like in opengl version
 
 		self.image = None
 		self.depth_buffer = None
 		self.frame_buffer = None
-
-		self.extent = VkExtent2D(width, height)
 
 		self.image = Texture(
 			format = self.format,
@@ -78,11 +83,19 @@ class SimpleRenderTarget(RenderTarget):
 			aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT,
 		)
 
+	def gen_size(self, width, height):
+		(w, h, wm, hm) = self.size_data
+		return (
+			max(width if w else floor(wm * width), 1),
+			max(height if h else floor(hm * height), 1)
+		)
+
 	def remake(self, width, height):
 
 		if self.frame_buffer:
 			self.frame_buffer.destroy()
 
+		width, height = self.gen_size(width, height)
 		self.extent = VkExtent2D(width, height)
 
 		self.image.remake([width, height, 1])
@@ -94,14 +107,12 @@ class SimpleRenderTarget(RenderTarget):
 	def get_image_initial_layouts(self):
 		return [
 			self.image.image_layout,
-			# VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 
 			self.depth_buffer.image_layout
 		]
 
 	def get_image_final_layouts(self):
 		return [
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 
-			# VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 
 			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
 		]
 
@@ -130,22 +141,9 @@ class SimpleRenderTarget(RenderTarget):
 		if self.frame_buffer:
 			self.frame_buffer.destroy()
 
-	def begin(self, command_buffer):
-		...
-		# self.image.transition_image_layout(
-		# 	VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-		# 	VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-		# 	VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-		# 	command_buffer
-		# )
-
 	def end(self, command_buffer):
-		# self.image.transition_image_layout(
-		# 	VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		# 	VK_ACCESS_SHADER_READ_BIT,
-		# 	VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-		# 	command_buffer
-		# )
+		# Necessary barrier to prevent visual glitches.
+		# Though not sure if it is the correct fix.
 		vkCmdPipelineBarrier(
 			command_buffer, 
 			VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 

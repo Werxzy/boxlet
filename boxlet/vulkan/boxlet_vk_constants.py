@@ -8,6 +8,8 @@ class BVKC:
 	# meant to be part of BoxletVK, but due to how things are laid out,
 	#	There needs to be a seperate point of reference
 
+	width:int = 0
+	height:int = 0
 	logical_device:'vk_device.LogicalDevice' = None
 	physical_device = None
 	swapchain:'vk_swapchain.SwapChainBundle' = None

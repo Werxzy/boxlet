@@ -69,7 +69,7 @@ camera_step = Camera3D(priority = -1)
 camera_controller = CameraController(camera_step)
 camera_controller.pos[2] -= 1
 
-srt = SimpleRenderTarget(100,100)
+srt = SimpleRenderTarget(width_mult = 0.2, height_mult = 0.2)
 render_pass2 = RenderPass(srt)
 graphics_pipeline2 = GraphicsPipeline(
 	render_pass2,

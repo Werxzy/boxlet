@@ -6,10 +6,8 @@ from pygame import display as pg_display
 class BoxletVK:
 	def __init__(self, width, height, wm_info):
 
-		#glfw window parameters
-		self.width = width
-		self.height = height
-		# self.window = window
+		BVKC.width = width
+		BVKC.height = height
 
 		if DEBUG_MODE:
 			print("Making a graphics engine")
@@ -51,7 +49,7 @@ class BoxletVK:
 			self.instance
 		)
 		
-		BVKC.swapchain = vk_swapchain.SwapChainBundle(self.queue_families, self.width, self.height)
+		BVKC.swapchain = vk_swapchain.SwapChainBundle(self.queue_families, BVKC.width, BVKC.height)
 
 	def finalize_setup(self):
 		for target in RenderTarget.get_all_instances():
@@ -62,7 +60,7 @@ class BoxletVK:
 			print('recreate swapchain')
 
 		for target in RenderTarget.get_all_instances():
-			target.remake(self.width, self.height)
+			target.remake(BVKC.width, BVKC.height)
 
 		BVKC.command_pool.destroy() 
 
@@ -89,8 +87,8 @@ class BoxletVK:
 			return
 
 		# if the window is a different size than before, than recreate the swapchain
-		if pg_display.get_window_size() != (self.width, self.height):
-			self.width, self.height = pg_display.get_window_size()
+		if pg_display.get_window_size() != (BVKC.width, BVKC.height):
+			BVKC.width, BVKC.height = pg_display.get_window_size()
 			self.recreate_swapchain()
 			return
 
