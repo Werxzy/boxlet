@@ -42,13 +42,6 @@ class SimpleRenderTarget(RenderTarget):
 		self.depth_buffer = None
 		self.frame_buffer = None
 
-		self.remake(width, height)
-
-	def remake(self, width, height):
-
-		if self.image:
-			self.on_destroy()
-
 		self.extent = VkExtent2D(width, height)
 
 		self.image = Texture(
@@ -65,6 +58,16 @@ class SimpleRenderTarget(RenderTarget):
 			usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
 			aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT
 		)
+
+	def remake(self, width, height):
+
+		if self.frame_buffer:
+			self.frame_buffer.destroy()
+
+		self.extent = VkExtent2D(width, height)
+
+		self.image.remake([width, height, 1])
+		self.depth_buffer.remake([width, height, 1])
 
 	def get_image(self):
 		return self.image

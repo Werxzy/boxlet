@@ -14,36 +14,17 @@ class Texture(TrackedInstances):
 		
 		self.format = format
 		self.image_layout = image_layout
+		self.tiling = tiling
+		self.usage = usage
+		self.image = None
+		self.aspect_mask = aspect_mask
 
-		if extent:
-			if len(extent) == 3:
-				self.extent = VkExtent3D(*extent)
-			else:
-				self.extent = VkExtent3D(*extent, 1)
-
-		elif input_image:
-			self.extent = VkExtent3D(input_image.get_width(), input_image.get_height(), 1)
-		else:
+		if input_image:
+			extent = [input_image.get_width(), input_image.get_height(), 1]
+		elif not extent:
 			raise Exception('No valid extent provided.')
 
-		image_create_info = VkImageCreateInfo(
-			imageType = VK_IMAGE_TYPE_2D,
-			format = self.format,
-			extent = self.extent,
-			mipLevels = 1,
-			arrayLayers = 1,
-			samples = VK_SAMPLE_COUNT_1_BIT,
-			tiling = tiling,
-			usage = usage,
-			sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-			initialLayout = self.image_layout
-		)
-
-		self.image = vkCreateImage(BVKC.logical_device.device, image_create_info, None)
-
-		self.create_sampler()
-
-		self.allocate()
+		self.remake(extent)
 
 		if input_image:
 			staging_buffer = vk_memory.Buffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, pygame.image.tostring(input_image, "RGBA", True))
@@ -54,7 +35,41 @@ class Texture(TrackedInstances):
 
 			staging_buffer.destroy()
 
-		self.image_view = vk_frame.ImageView(self.image, self.format, self.extent, aspect_mask)
+		
+
+	def remake(self, extent):
+		# so that a reference to the Texture is kept
+		# and the vulkan changes can be tracked
+
+		if self.image:
+			self.on_destroy()
+
+		if extent:
+			if len(extent) == 3:
+				self.extent = VkExtent3D(*extent)
+			else:
+				self.extent = VkExtent3D(*extent, 1)
+
+		image_create_info = VkImageCreateInfo(
+			imageType = VK_IMAGE_TYPE_2D,
+			format = self.format,
+			extent = self.extent,
+			mipLevels = 1,
+			arrayLayers = 1,
+			samples = VK_SAMPLE_COUNT_1_BIT,
+			tiling = self.tiling,
+			usage = self.usage,
+			sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+			initialLayout = self.image_layout
+		)
+
+		self.image = vkCreateImage(BVKC.logical_device.device, image_create_info, None)
+
+		self.create_sampler()
+
+		self.allocate()
+
+		self.image_view = vk_frame.ImageView(self.image, self.format, self.extent, self.aspect_mask)
 
 	def allocate(self):
 		memory_requirements = vkGetImageMemoryRequirements(
