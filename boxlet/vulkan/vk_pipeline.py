@@ -139,6 +139,8 @@ class RenderPass(TrackedInstances, RenderingStep):
 		self.vk_addr = vkCreateRenderPass(BVKC.logical_device.device, render_pass_info, None)
 
 	def begin(self, command_buffer):
+		self.render_target.begin(command_buffer)
+
 		render_pass_info = VkRenderPassBeginInfo(
 			renderPass = self.vk_addr,
 			framebuffer = self.render_target.get_frame_buffer().vk_addr,
@@ -151,6 +153,8 @@ class RenderPass(TrackedInstances, RenderingStep):
 
 	def end(self, command_buffer):
 		vkCmdEndRenderPass(command_buffer)
+		
+		self.render_target.end(command_buffer)
 
 	def on_destroy(self):
 		vkDestroyRenderPass(BVKC.logical_device.device, self.vk_addr, None)

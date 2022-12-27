@@ -32,6 +32,12 @@ class RenderTarget(TrackedInstances):
 	def on_destroy(self):
 		...
 
+	def begin(self, command_buffer):
+		...
+	
+	def end(self, command_buffer):
+		...
+
 
 class SimpleRenderTarget(RenderTarget):
 	def __init__(self, width, height) -> None:
