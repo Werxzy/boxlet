@@ -108,6 +108,10 @@ class Texture(TrackedInstances):
 		)
 
 	def transition_image_layout(self, new_layout, new_access, new_stage, command_buffer = None):
+		if ((self.image_layout, self.access_mask, self.stage_mask) == 
+				(new_layout, new_access, new_stage)):
+			return
+
 		if command_buffer is None:
 			temp_command_buffer = CommandBuffer(BVKC.command_pool)
 			command_buffer_addr = temp_command_buffer.vk_addr
