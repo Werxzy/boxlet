@@ -17,13 +17,7 @@ class BoxletVK:
 		# self.make_instance()
 		self.make_pygame_instance(wm_info)
 
-		self.make_device()
-
-		BVKC.command_pool = vk_commands.CommandPool(
-			self.queue_families,
-			self.surface,
-			self.instance
-		)
+		self.make_device()		
 
 	def make_pygame_instance(self, wm_info):
 		self.instance = vk_instance.make_instance('ID Tech 12')
@@ -50,6 +44,12 @@ class BoxletVK:
 		self.queue_families = vk_queue_families.QueueFamilyIndices(self.instance, self.surface)
 		BVKC.logical_device = vk_device.LogicalDevice(self.queue_families)
 		[BVKC.graphics_queue, BVKC.present_queue] = self.queue_families.get_queue()
+
+		BVKC.command_pool = vk_commands.CommandPool(
+			self.queue_families,
+			self.surface,
+			self.instance
+		)
 		
 		BVKC.swapchain = vk_swapchain.SwapChainBundle(self.queue_families, self.width, self.height)
 
