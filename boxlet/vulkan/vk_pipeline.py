@@ -82,6 +82,10 @@ class RenderPass(TrackedInstances, RenderingStep):
 		self.render_target = render_target if render_target else BVKC.swapchain
 		self.render_target.set_recent_render_pass(self)
 
+		initial_layouts = self.render_target.get_image_initial_layouts()
+		final_layouts = self.render_target.get_image_final_layouts()
+		attach_layouts = self.render_target.get_image_attachment_layouts()
+
 		color_attachment = VkAttachmentDescription(
 			format = self.render_target.format,
 			samples = VK_SAMPLE_COUNT_1_BIT,
@@ -92,13 +96,13 @@ class RenderPass(TrackedInstances, RenderingStep):
 			stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
 			stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
 
-			initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-			finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+			initialLayout = initial_layouts[0],
+			finalLayout = final_layouts[0]
 		)
 
 		color_attachment_ref = VkAttachmentReference(
 			attachment = 0,
-			layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+			layout = attach_layouts[0]
 		)
 
 		depth_attachment = VkAttachmentDescription(
@@ -111,13 +115,13 @@ class RenderPass(TrackedInstances, RenderingStep):
 			stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
 			stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
 
-			initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-			finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+			initialLayout = initial_layouts[1],
+			finalLayout = final_layouts[1]
 		)
 
 		depth_attachment_ref = VkAttachmentReference(
 			attachment = 1,
-			layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+			layout = attach_layouts[1]
 		)
 
 		attachments = [color_attachment, depth_attachment]

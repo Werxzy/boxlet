@@ -221,6 +221,24 @@ class SwapChainBundle(RenderTarget):
 			aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT
 		)
 
+	def get_image_initial_layouts(self):
+		return [
+			VK_IMAGE_LAYOUT_UNDEFINED, 
+			VK_IMAGE_LAYOUT_UNDEFINED
+		]
+
+	def get_image_final_layouts(self):
+		return [
+			VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 
+			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+		]
+
+	def get_image_attachment_layouts(self):
+		return [
+			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 
+			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+		]
+
 	def init_frame_buffer(self):
 		for frame in self.frames:
 			frame.init_buffers(self.recent_render_pass, BVKC.command_pool, self.depth_image.image_view)

@@ -67,8 +67,28 @@ shader_layout = ShaderAttributeLayout(
 
 camera_step = Camera3D(priority = -1)
 camera_controller = CameraController(camera_step)
+camera_controller.pos[2] -= 1
 
-render_pass = RenderPass()
+srt = SimpleRenderTarget(100,100)
+render_pass2 = RenderPass(srt)
+graphics_pipeline2 = GraphicsPipeline(
+	render_pass2,
+	shader_layout,
+	{
+		'vertex attributes' : [('position', 0), ('texcoord', 1)],
+		'instance attributes' : [('model', 2)],
+		'push constants' : ['box_viewProj'],
+		'bindings' : [
+			('ubo', 0, 'vertex'),
+			('texture', 1, 'fragment')
+		]
+	},
+	'shaders/vert.spv',
+	'shaders/frag.spv',
+	meshes
+)
+
+render_pass = RenderPass(priority=1)
 graphics_pipeline = GraphicsPipeline(
 	render_pass,
 	shader_layout,
@@ -86,11 +106,18 @@ graphics_pipeline = GraphicsPipeline(
 	meshes
 )
 
-data_type = np.dtype([('model', '(4,4)f4')])
-renderer = IndirectRenderer(graphics_pipeline, meshes, {
+
+renderer = IndirectRenderer(graphics_pipeline2, meshes, {
 	0 : np.array([[1,1,0,0], [1,0,1,0], [0,1,1,0]], np.float32), # they are vec3s don't forget about padding
 	1 : texture
 })
+
+renderer2 = IndirectRenderer(graphics_pipeline, meshes, {
+	0 : np.array([[1,1,0,0], [1,0,1,0], [0,1,1,0]], np.float32), # they are vec3s don't forget about padding
+	1 : srt.get_image()
+	# 1 : texture
+})
+
 
 mat = np.identity(4, np.float32)
 mat[0][0] = 9/16
@@ -131,6 +158,8 @@ for y in np.arange(-1.0, 1.0, 0.1):
 	inst = renderer.create_instance(2)
 	inst.set(0, Tmath.translate([0.4 + (y%0.4)/3, y, y % 0.11]))
 
+inst = renderer2.create_instance(0)
+inst.set(0, Tmath.scale([4,4,4]))
 
 class FPSCheck(Entity):
 	def __init__(self):
