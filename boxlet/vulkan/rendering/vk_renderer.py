@@ -1,6 +1,6 @@
 from typing import Any
-from .vk_module import *
-from . import *
+from ..vk_module import *
+from .. import *
 
 
 class Renderer(TrackedInstances, RenderingStep):
@@ -238,7 +238,7 @@ class PushConstantManager:
 
 
 class IndirectRenderer(Renderer):
-	def __init__(self, pipeline:GraphicsPipeline, meshes:vk_mesh.MultiMesh, defaults:dict[int], priority = 0):
+	def __init__(self, pipeline:GraphicsPipeline, meshes:'MultiMesh', defaults:dict[int], priority = 0):
 		super().__init__(priority)
 		
 		self.meshes = meshes

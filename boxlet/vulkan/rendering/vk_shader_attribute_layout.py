@@ -1,4 +1,4 @@
-from .vk_module import *
+from ..vk_module import *
 import numpy as np
 
 

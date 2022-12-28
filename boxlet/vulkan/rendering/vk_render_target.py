@@ -1,6 +1,6 @@
 from math import floor
-from .vk_module import *
-from . import *
+from ..vk_module import *
+from .. import *
 
 
 class RenderTarget(TrackedInstances):

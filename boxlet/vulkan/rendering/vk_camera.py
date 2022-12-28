@@ -1,6 +1,6 @@
 import numpy as np
 
-from . import PushConstantManager, CameraBase, RenderingStep
+from .. import PushConstantManager, CameraBase, RenderingStep
 
 
 class Camera3D(CameraBase, RenderingStep):

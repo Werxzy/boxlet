@@ -1,5 +1,5 @@
-from .vk_module import *
-from . import *
+from ..vk_module import *
+from .. import *
 import pygame
 
 class Texture(TrackedInstances):

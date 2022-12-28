@@ -1,9 +1,9 @@
-from .vk_module import *
-from . import *
+from ..vk_module import *
+from .. import *
 
 
 class FrameBuffer:
-	def __init__(self, render_pass:'vk_pipeline.RenderPass', width, height, attachments:list):
+	def __init__(self, render_pass:'RenderPass', width, height, attachments:list):
 
 		frame_buffer_info = VkFramebufferCreateInfo(
 			renderPass = render_pass.vk_addr,

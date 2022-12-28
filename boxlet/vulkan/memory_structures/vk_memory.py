@@ -1,5 +1,5 @@
-from .vk_module import *
-from . import *
+from ..vk_module import *
+from .. import *
 
 
 class Buffer:
@@ -196,7 +196,7 @@ class InstanceData:
 
 
 class InstanceBufferSet:
-	def __init__(self, meshes:'vk_mesh.MultiMesh', data_type: np.dtype) -> None:
+	def __init__(self, meshes:'MultiMesh', data_type: np.dtype) -> None:
 		
 		# TODO more control over the buffer size increase, indirect buffer size, etc
 
