@@ -20,14 +20,18 @@ from . import vk_queue_families
 from . import vk_device
 from . import vk_sync
 from .vk_commands import CommandPool, CommandBuffer
-from .images.vk_framebuffer import FrameBuffer
-from .images import vk_frame
+
 from .memory_structures import vk_memory
+from .memory_structures.vk_mesh import Mesh, MultiMesh
+
+from .images.vk_framebuffer import FrameBuffer
+from .images.vk_image_view import ImageView
+from .images.vk_swapchain_frame import SwapChainFrame
 from .images.vk_texture import Texture
+
 from .rendering.vk_render_target import RenderTarget, SimpleRenderTarget
 from .rendering import vk_swapchain
 from .rendering import vk_shaders
-from .memory_structures.vk_mesh import Mesh, MultiMesh
 from .rendering.vk_rendering_step import RenderingStep, KeyedStep
 from .rendering.vk_render_pass import RenderPass
 from .rendering.vk_pipeline import PipelineLayout, GraphicsPipeline

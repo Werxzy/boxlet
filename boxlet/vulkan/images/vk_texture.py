@@ -2,6 +2,7 @@ from ..vk_module import *
 from .. import *
 import pygame
 
+
 class Texture(TrackedInstances):
 	def __init__(self, input_image:pygame.Surface = None,
 			format = VK_FORMAT_R8G8B8A8_UNORM,
@@ -77,7 +78,7 @@ class Texture(TrackedInstances):
 
 		self.allocate()
 
-		self.image_view = vk_frame.ImageView(self.image, self.format, self.extent, self.aspect_mask)
+		self.image_view = ImageView(self.image, self.format, self.extent, self.aspect_mask)
 
 		if input_image:
 			staging_buffer = vk_memory.Buffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, pygame.image.tostring(input_image, "RGBA", True))

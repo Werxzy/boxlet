@@ -133,7 +133,7 @@ class SwapChainBundle(RenderTarget):
 		self.queue_family = queue_family
 
 		self.vk_addr = None
-		self.frames:list[vk_frame.SwapChainFrame] = []
+		self.frames:list[SwapChainFrame] = []
 
 		self.remake(width, height)
 
@@ -206,7 +206,7 @@ class SwapChainBundle(RenderTarget):
 		images = vkGetSwapchainImagesKHR(BVKC.logical_device.device, self.vk_addr)
 
 		self.frames = [
-			vk_frame.SwapChainFrame(image, self)
+			SwapChainFrame(image, self)
 			for image in images
 			]
 
