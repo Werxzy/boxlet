@@ -83,6 +83,9 @@ class Buffer:
 		vkUnmapMemory(device = BVKC.logical_device.device, memory = self.buffer_memory)
 
 	def destroy(self):
+		# vkDeviceWaitIdle(BVKC.logical_device.device)
+		vkQueueWaitIdle(BVKC.graphics_queue)
+		# I would rather not need this
 		if self.buffer != None:
 			vkDestroyBuffer(
 				device = BVKC.logical_device.device, 

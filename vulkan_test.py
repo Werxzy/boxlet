@@ -161,6 +161,7 @@ for y in np.arange(-1.0, 1.0, 0.1):
 	inst.set(0, Tmath.translate([0.4 + (y%0.4)/3, y, y % 0.11]))
 
 
+# import random 
 class FPSCheck(Entity):
 	def __init__(self):
 		self.t = 0
@@ -176,6 +177,10 @@ class FPSCheck(Entity):
 		if self.t >= 1:
 			print(self.c)
 			self.t = self.c = 0
+
+	# def fixed_update(self):	
+	# 	inst = renderer.create_instance(0)
+	# 	inst.set(0, Tmath.translate([random.uniform(-1,1), random.uniform(-1,1), random.uniform(-1,1)]))
 
 
 FPSCheck()
