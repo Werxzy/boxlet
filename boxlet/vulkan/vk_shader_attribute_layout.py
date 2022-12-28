@@ -12,17 +12,20 @@ class ShaderAttributeLayout:
 
 	def __init__(self, attributes = None, push_constants = None, bindings:dict = None):
 
-		self.attributes = attributes
+		self.attributes = attributes or []
 		# data unique to each instance
-		self.push_constants = push_constants
+		self.push_constants = push_constants or []
 		# data for each group that will likely change each frame
-		self.bindings = bindings
+		self.bindings = bindings or {}
 		# data mostly for each instance group
 
 		self._prepare_vertex_descriptions()
 		self._prepare_desc_set_layout_bindings()
 		
 	def _prepare_vertex_descriptions(self):
+		if not self.attributes:
+			return
+
 		# builds dtype for renderer attributes
 		dtype_format = []
 		self.attribute_format = {}

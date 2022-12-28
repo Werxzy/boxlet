@@ -30,7 +30,7 @@ from . import vk_shaders
 from .vk_mesh import Mesh, MultiMesh
 from .vk_pipeline import RenderingStep, KeyedStep, RenderPass, PipelineLayout, GraphicsPipeline
 
-from .vk_renderer import Renderer, IndirectRenderer, PushConstantManager
+from .vk_renderer import Renderer, IndirectRenderer, PushConstantManager, ScreenRenderer
 
 from .vk_camera import Camera3D
 

@@ -168,9 +168,13 @@ class PipelineLayout(TrackedInstances):
 
 	def __init__(self, shader_attribtues:ShaderAttributeLayout, shader_layout:dict):
 		
-		push_constant_info, self.push_constant_dtype = shader_attribtues.get_push_constant_range(
-			shader_layout['push constants']
-		)
+		if consts := shader_layout['push constants']:
+			push_constant_info, self.push_constant_dtype = shader_attribtues.get_push_constant_range(
+				consts
+			)
+		else:
+			push_constant_info = []
+			self.push_constant_dtype = None
 
 		bindings = shader_attribtues.get_desc_set_layout_bindings(shader_layout['bindings'])
 
@@ -229,14 +233,20 @@ class GraphicsPipeline(VulkanPipeline):
 
 		self.render_pass = render_pass
 		self.shader_attribute = shader_attribute
-		self.shader_layout = shader_layout
-		self.pipeline_layout = PipelineLayout(shader_attribute, shader_layout)
+		self.shader_layout = {
+			'vertex attributes' : [],
+			'instance attributes' : [],
+			'push constants' : [],
+			'bindings' : []
+		} | shader_layout
+		self.pipeline_layout = PipelineLayout(shader_attribute, self.shader_layout)
 
-		binding_desc, attribute_desc = binding_model.get_descriptions(shader_layout['vertex attributes'])
+		binding_desc, attribute_desc = binding_model.get_descriptions(self.shader_layout['vertex attributes'])
 
-		bd, ad = shader_attribute.get_vertex_descriptions(shader_layout['instance attributes'])
-		binding_desc.extend(bd)
-		attribute_desc.extend(ad)
+		if attr := self.shader_layout['instance attributes']:
+			bd, ad = shader_attribute.get_vertex_descriptions(attr)
+			binding_desc.extend(bd)
+			attribute_desc.extend(ad)
 
 		vertex_input_info = VkPipelineVertexInputStateCreateInfo(
 			vertexBindingDescriptionCount = len(binding_desc), pVertexBindingDescriptions = binding_desc,

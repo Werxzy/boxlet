@@ -52,6 +52,19 @@ texture = Texture(pygame.image.load("examples/opengl_example/box.png"))
 # - - - - - - - - - - - - - - - - - - - - - - -
 #	render pipeline creation
 # - - - - - - - - - - - - - - - - - - - - - - -
+
+
+camera_step = Camera3D(priority = -1)
+camera_controller = CameraController(camera_step)
+camera_controller.pos[2] -= 1
+
+mat = np.identity(4, np.float32)
+mat[0][0] = 9/16
+mat[2][0] = 0.5
+mat[2][1] = 0.5
+PushConstantManager.set_global('box_viewProj', mat)
+
+# - - render pass for normal rendering to texture - -
 shader_layout = ShaderAttributeLayout(
 	attributes = [
 		('model', 'mat4'),
@@ -65,30 +78,8 @@ shader_layout = ShaderAttributeLayout(
 	},
 )
 
-camera_step = Camera3D(priority = -1)
-camera_controller = CameraController(camera_step)
-camera_controller.pos[2] -= 1
-
-srt = SimpleRenderTarget(width_mult = 0.2, height_mult = 0.2)
-render_pass2 = RenderPass(srt)
-graphics_pipeline2 = GraphicsPipeline(
-	render_pass2,
-	shader_layout,
-	{
-		'vertex attributes' : [('position', 0), ('texcoord', 1)],
-		'instance attributes' : [('model', 2)],
-		'push constants' : ['box_viewProj'],
-		'bindings' : [
-			('ubo', 0, 'vertex'),
-			('texture', 1, 'fragment')
-		]
-	},
-	'shaders/vert.spv',
-	'shaders/frag.spv',
-	meshes
-)
-
-render_pass = RenderPass(priority=1)
+srt = SimpleRenderTarget()
+render_pass = RenderPass(srt)
 graphics_pipeline = GraphicsPipeline(
 	render_pass,
 	shader_layout,
@@ -101,29 +92,40 @@ graphics_pipeline = GraphicsPipeline(
 			('texture', 1, 'fragment')
 		]
 	},
-	'shaders/vert.spv',
-	'shaders/frag.spv',
+	'shaders/test_shader/vert.spv',
+	'shaders/test_shader/frag.spv',
 	meshes
 )
-
-
-renderer = IndirectRenderer(graphics_pipeline2, meshes, {
+renderer = IndirectRenderer(graphics_pipeline, meshes, {
 	0 : np.array([[1,1,0,0], [1,0,1,0], [0,1,1,0]], np.float32), # they are vec3s don't forget about padding
 	1 : texture
 })
 
-renderer2 = IndirectRenderer(graphics_pipeline, meshes, {
-	0 : np.array([[1,1,0,0], [1,0,1,0], [0,1,1,0]], np.float32), # they are vec3s don't forget about padding
-	1 : srt.get_image()
-	# 1 : texture
+
+# - - render pass for presenting - -
+shader_layout_screen = ShaderAttributeLayout(
+	bindings = {
+		'texture': ('sampler2D',),
+	},
+)
+
+render_pass_screen = RenderPass(priority=1)
+graphics_pipeline_screen = GraphicsPipeline(
+	render_pass_screen,
+	shader_layout_screen,
+	{
+		'vertex attributes' : [('position', 0), ('texcoord', 1)],
+		'bindings' : [
+			('texture', 0, 'fragment')
+		]
+	},
+	'shaders/vignette_shader/vert.spv',
+	'shaders/vignette_shader/frag.spv',
+	ScreenRenderer.get_screen_mesh()
+)
+renderer_screen = ScreenRenderer(graphics_pipeline_screen, {
+	0 : srt.get_image()
 })
-
-
-mat = np.identity(4, np.float32)
-mat[0][0] = 9/16
-mat[2][0] = 0.5
-mat[2][1] = 0.5
-PushConstantManager.set_global('box_viewProj', mat)
 
 # - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -158,8 +160,6 @@ for y in np.arange(-1.0, 1.0, 0.1):
 	inst = renderer.create_instance(2)
 	inst.set(0, Tmath.translate([0.4 + (y%0.4)/3, y, y % 0.11]))
 
-inst = renderer2.create_instance(0)
-inst.set(0, Tmath.scale([4,4,4]))
 
 class FPSCheck(Entity):
 	def __init__(self):
