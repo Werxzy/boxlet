@@ -28,7 +28,8 @@ from .rendering.vk_render_target import RenderTarget, SimpleRenderTarget
 from .rendering import vk_swapchain
 from .rendering import vk_shaders
 from .memory_structures.vk_mesh import Mesh, MultiMesh
-from .rendering.vk_pipeline import RenderingStep, KeyedStep, RenderPass, PipelineLayout, GraphicsPipeline
+from .rendering.vk_rendering_step import RenderingStep, KeyedStep
+from .rendering.vk_pipeline import RenderPass, PipelineLayout, GraphicsPipeline
 
 from .rendering.vk_renderer import Renderer, IndirectRenderer, PushConstantManager, ScreenRenderer
 
