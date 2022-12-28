@@ -206,7 +206,7 @@ class MultiModel:
 		'Binds vertex positions to location 0 in the array buffer, vertex UV coordinates to location 1 in the array buffer, and the indicies to the element array buffer.'
 		# currently just a copy of Model.bind()
 
-		# TODO add parameters to allow customization of binding things other than vertex position or uv coordinate
+		# add parameters to allow customization of binding things other than vertex position or uv coordinate
 
 		# Doesn't create buffer unless the model is actually bound
 		if self.vbo is None:

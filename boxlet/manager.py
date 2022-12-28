@@ -1,18 +1,30 @@
 import time
 
-from . import Entity, clamp, np, pygame, os, BoxletGL
+from . import Entity, clamp, np, pygame
 	
+class ExitGame(Exception):
+	'Exception to quickly exit game'
 
 class Manager:
 
 	def __init__(self) -> None:
 		pygame.init()
 
-		self.fullscreen = int(os.environ.get('BOXLET_FULLSCREEN', '0'))
+	def init(self, *,
+			render_mode = 'sdl2',
+			fullscreen = False,
+			display_size = (960,540),
+			vsync = False,
+			target_frames_per_second = 120,
+			target_updates_per_second = 60,
+			**kwargs
+			):
+
+		self.fullscreen = fullscreen
 		if not self.fullscreen:
-			self.display_size = np.array([i for i in os.environ.get('BOXLET_RESOLUTION', '960,540').split(',')], dtype=int)
+			self.display_size = np.array(display_size, dtype=int)
 		
-		self.render_mode = os.environ.get('BOXLET_RENDER_MODE', 'sdl2')
+		self.render_mode = render_mode
 		if self.render_mode == 'sdl2':
 			self.vsync = 0
 			self.screen_pos = np.zeros(2)
@@ -22,27 +34,39 @@ class Manager:
 			else:
 				self.display = pygame.display.set_mode(self.display_size, flags = pygame.DOUBLEBUF)
 
-			self.fill_color = os.environ.get('BOXLET_FILL_COLOR', 'black')
+			self.fill_color = kwargs.get('fill_color', 'black')
 			if self.fill_color.count(',') > 0: # instead create a list
 				self.fill_color = [int(c) for c in self.fill_color.split(',')]
 
-			self.canvas_size = np.array([i for i in os.environ.get('BOXLET_CANVAS_SIZE', '0,0').split(',')], dtype=int)
+			self.canvas_size = np.array(kwargs.get('canvas_size', (0,0)), dtype=int)
 			if 0 in self.canvas_size:
 				self.canvas_size = np.array(self.display_size, dtype=int)
 			self.canvas = pygame.surface.Surface(self.canvas_size)
 		
 		elif self.render_mode == 'opengl':
-			self.vsync = int(os.environ.get('BOXLET_OPENGL_VSYNC', '1'))
+			self.vsync = vsync
 
-			if os.environ.get('BOXLET_SKIP_GL_CONTEXT_SETUP', '0') == '0':
-				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MAJOR_VERSION, int(os.environ.get('BOXLET_GL_CONTEXT_MAJOR_VERSION', '3')))
-				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MINOR_VERSION, int(os.environ.get('BOXLET_GL_CONTEXT_MINOR_VERSION', '3')))
+			if kwargs.get('skip_gl_context_setup', False):
+				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MAJOR_VERSION, kwargs.get('gl_major_version', 3))
+				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MINOR_VERSION, kwargs.get('gl_minor_version', 3))
 				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_PROFILE_MASK, pygame.GL_CONTEXT_PROFILE_CORE)
 			if self.fullscreen:
 				self.display = pygame.display.set_mode(flags = pygame.OPENGL | pygame.FULLSCREEN | pygame.DOUBLEBUF, vsync = self.vsync)
 				self.display_size = np.array(self.display.get_size())
 			else:
 				self.display = pygame.display.set_mode(self.display_size, flags = pygame.OPENGL | pygame.DOUBLEBUF, vsync = self.vsync)
+
+			from .opengl import BoxletGL
+			self.boxlet_gl = BoxletGL
+
+		elif self.render_mode == 'vulkan':
+			# TODO fullscreen
+			self.vsync = True
+
+			self.display = pygame.display.set_mode(self.display_size, flags = pygame.DOUBLEBUF | pygame.RESIZABLE, vsync = self.vsync)
+			wm_info = pygame.display.get_wm_info()
+			from .vulkan.boxlet_vk import BoxletVK
+			self.vulkan_graphics_engine = BoxletVK(*self.display_size, wm_info)
 
 		else:
 			raise Exception('Unrecognized render mode.')
@@ -52,8 +76,8 @@ class Manager:
 
 		self.clock = pygame.time.Clock()
 
-		self.fps = int(os.environ.get('BOXLET_FRAME_RATE', '120')) # frames per second, may get replaced by turning on vsync
-		self.ups = int(os.environ.get('BOXLET_UPDATE_RATE', '60')) # fixed updates per second
+		self.fps = target_frames_per_second # frames per second, may get replaced by turning on vsync
+		self.ups = target_updates_per_second # fixed updates per second
 		self.fixed_delta_time = 1 / self.ups # time passed for fixed update
 		self.delta_time = 0.0 # time passed for vary update
 		self.max_delta_time = self.fixed_delta_time * 3 # prevents large jumps in time, either from lag or changing the clock
@@ -66,73 +90,73 @@ class Manager:
 		self.joysticks = []
 		self.current_joystick = None
 
-		self.exit_program = False
-
 	def run(self):
 		pygame.event.set_blocked(None)
 		pygame.event.set_allowed(Entity.watched_events)
 		pygame.event.set_allowed([pygame.WINDOWEXPOSED, pygame.JOYDEVICEADDED, pygame.JOYDEVICEREMOVED, pygame.QUIT])
 
+		if self.render_mode == 'vulkan':
+			self.vulkan_graphics_engine.finalize_setup()
+
 		self.system_time = time.time()
+		try:
+			while True:
+				for _ in pygame.event.get(eventtype=pygame.WINDOWEXPOSED):
+					self.system_time = time.time() # this still does not help every case it freezes, maybe have a maximum delta time.
 
-		while True:
-			for _ in pygame.event.get(eventtype=pygame.WINDOWEXPOSED):
-				self.system_time = time.time() # this still does not help every case it freezes, maybe have a maximum delta time.
+				new_system_time = time.time()
+				self.delta_time = clamp(new_system_time - self.system_time, 0, self.max_delta_time)
+				self.time += self.delta_time
+				self.system_time = new_system_time
 
-			new_system_time = time.time()
-			self.delta_time = clamp(new_system_time - self.system_time, 0, self.max_delta_time)
-			self.time += self.delta_time
-			self.system_time = new_system_time
+				for event in pygame.event.get(Entity.watched_events, False):
+					Entity.__call_event_function__(event.type, event)
 
-			for event in pygame.event.get(Entity.watched_events, False):
-				Entity.__call_event_function__(event.type, event)
+				for event in pygame.event.get([pygame.JOYDEVICEADDED, pygame.JOYDEVICEREMOVED], False):
+					self.joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
+					if event.type == pygame.JOYDEVICEADDED:
+						self.current_joystick = self.joysticks[event.device_index]
+					elif self.current_joystick.get_instance_id() == event.instance_id:
+						self.current_joystick = None
 
-			if self.exit_program: return
+				for event in pygame.event.get(pygame.QUIT, False):
+					self.quit()
 
-			for event in pygame.event.get([pygame.JOYDEVICEADDED, pygame.JOYDEVICEREMOVED], False):
-				self.joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
-				if event.type == pygame.JOYDEVICEADDED:
-					self.current_joystick = self.joysticks[event.device_index]
-				elif self.current_joystick.get_instance_id() == event.instance_id:
-					self.current_joystick = None
+				pygame.event.clear(pump=False)
+				
+				for i in range(5):
+					if self.time >= self.fixed_time + self.fixed_delta_time:
+						self.fixed_time += self.fixed_delta_time
+						Entity.__call_function__('fixed_update')
+					else:
+						break
+				
+				self.interpolate_time = clamp((self.time - self.fixed_time) / self.fixed_delta_time, 0, 1)
 
-			for event in pygame.event.get(pygame.QUIT, False):
-				pygame.quit()
-				return
+				Entity.__call_function__('vary_update')
+				Entity.__add_new_entities__()
+				Entity.__destroy_entities__()
+				
+				self.__render()	
 
-			pygame.event.clear(pump=False)
-			
-			for i in range(5):
-				if self.time >= self.fixed_time + self.fixed_delta_time:
-					self.fixed_time += self.fixed_delta_time
-					Entity.__call_function__('fixed_update')
-				else:
-					break
+				if not self.vsync:
+					self.clock.tick_busy_loop(self.fps)
 
-			if self.exit_program: return
-			
-			self.interpolate_time = clamp((self.time - self.fixed_time) / self.fixed_delta_time, 0, 1)
+		except ExitGame:
+			self.__close()
 
-			Entity.__call_function__('vary_update')
-			Entity.__add_new_entities__()
-			Entity.__destroy_entities__()
-			
-			if self.exit_program: return
-
-			self.render()	
-
-			if not self.vsync:
-				self.clock.tick_busy_loop(self.fps)
-
-	def render(self):
+	def __render(self):
 		if self.render_mode == 'sdl2':
 			self.canvas.fill(self.fill_color)
 			Entity.__call_function__('render')
 			pygame.transform.scale(self.canvas, self.display.get_size(), self.display)
 			pygame.display.update()
 		
-		else:
-			BoxletGL.render()
+		elif self.render_mode == 'vulkan':
+			self.vulkan_graphics_engine.render()
+
+		elif self.render_mode == 'opengl':
+			self.boxlet_gl.render()
 			pygame.display.flip()
 
 	def set_display(self, display_size = None, canvas_size = None, fullscreen = None, vsync = None):
@@ -161,10 +185,19 @@ class Manager:
 			else:
 				self.display = pygame.display.set_mode(self.display_size, flags = pygame.OPENGL | pygame.DOUBLEBUF, vsync = self.vsync)
 
-	def quit(self):
-		self.exit_program = True
-		pygame.quit()
+		elif self.render_mode == 'vulkan':
+			...
+			# TODO
 
+	def quit(self):
+		'Exits the program immediately by raising exception ExitGame.'
+		raise ExitGame()
+
+	def __close(self):
+		if self.render_mode == 'vulkan':
+			self.vulkan_graphics_engine.close()
+
+		pygame.quit()
 
 instance = Manager()
 

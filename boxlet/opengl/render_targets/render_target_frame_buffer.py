@@ -1,6 +1,7 @@
 from OpenGL.GL import *
 
-from ... import BoxletGL, Model, RenderTarget, Shader, VertFragShader, manager
+from .. import BoxletGL, Model, RenderTarget, Shader, VertFragShader
+from ... import manager
 
 
 class FrameBufferStep(RenderTarget):
@@ -85,13 +86,10 @@ class ApplyShaderToFrame(RenderTarget):
 			FragColor = vec4(texture(screenTexture, uv).rgb, 1.0);
 		} 
 		"""
-	default_shader = VertFragShader(vertex_screen_shader, fragment_screen_shader)
-	
-	rect_model = Model.gen_quad_2d()
-	rect_vao = glGenVertexArrays(1)
-	glBindVertexArray(rect_vao)
-	rect_model.bind(default_shader)
-	glBindVertexArray(0)
+
+	default_shader = None
+	rect_model = None
+	rect_vao = None
 
 	def __init__(self, from_texture, to_frame = 0, shader:VertFragShader = None, queue = 1000, pass_names:list[str] = None):
 		"""
@@ -100,9 +98,24 @@ class ApplyShaderToFrame(RenderTarget):
 
 		super().__init__(queue, pass_names)
 
+		if ApplyShaderToFrame.default_shader == None:
+			ApplyShaderToFrame.default_shader = VertFragShader(ApplyShaderToFrame.vertex_screen_shader, ApplyShaderToFrame.fragment_screen_shader)
+
+		ApplyShaderToFrame.init_rect(ApplyShaderToFrame.default_shader)		
+
 		self.from_texture = from_texture
 		self.to_frame = to_frame
 		self.shader = shader or self.default_shader
+
+	@staticmethod
+	def init_rect(shader):
+		if ApplyShaderToFrame.rect_model: return
+
+		ApplyShaderToFrame.rect_model = Model.gen_quad_2d()
+		ApplyShaderToFrame.rect_vao = glGenVertexArrays(1)
+		glBindVertexArray(ApplyShaderToFrame.rect_vao)
+		ApplyShaderToFrame.rect_model.bind(shader)
+		glBindVertexArray(0)
 
 	def prepare(self):
 		BoxletGL.viewport(0, 0, *manager.display_size)
@@ -136,7 +149,7 @@ class ApplyDitherToFrame(RenderTarget):
 			FragColor = vec4(col, 1.0);
 		} 
 		"""
-	shader = VertFragShader(ApplyShaderToFrame.vertex_screen_shader, dither_screen_shader)
+	shader = None
 
 	def __init__(self, from_texture, to_frame = 0, queue = 1000, pass_names:list[str] = None):
 		"""
@@ -144,6 +157,11 @@ class ApplyDitherToFrame(RenderTarget):
 		
 		Uses a dithering shader to reduce color banding.
 		"""
+
+		if ApplyDitherToFrame.shader is None:
+			ApplyDitherToFrame.shader = VertFragShader(ApplyShaderToFrame.vertex_screen_shader, ApplyDitherToFrame.dither_screen_shader)
+
+		ApplyShaderToFrame.init_rect(ApplyDitherToFrame.shader)
 
 		super().__init__(queue, pass_names)
 
@@ -157,10 +175,11 @@ class ApplyDitherToFrame(RenderTarget):
 		glDisable(GL_DEPTH_TEST)
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT)
 		
-		glUseProgram(self.shader.program)
+		self.shader.use()
 		self.shader.apply_uniform('random', manager.time)
 		BoxletGL.bind_vao(ApplyShaderToFrame.rect_vao)
 		BoxletGL.bind_texture(GL_TEXTURE0, GL_TEXTURE_2D, self.from_texture)
+
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, None)
 
 

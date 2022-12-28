@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Callable
 from OpenGL.GL import *
 
 if TYPE_CHECKING:
-	from boxlet import RenderPass, RenderTarget, Shader
+	from . import RenderPass, RenderTarget, Shader
 
 class BoxletGL:
 	

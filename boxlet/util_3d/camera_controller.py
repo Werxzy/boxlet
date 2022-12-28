@@ -1,8 +1,10 @@
-from .. import Entity, Camera3D, np, pygame, manager, Tmath, clamp
+import numpy as np
+from . import CameraBase, Tmath
+from .. import Entity, pygame, manager, clamp
 
 
 class CameraController(Entity):
-	def __init__(self, camera:Camera3D) -> None:
+	def __init__(self, camera:CameraBase) -> None:
 		self.pos = np.array([0,0,0], float)
 		self.x_rot = 0
 		self.y_rot = 0

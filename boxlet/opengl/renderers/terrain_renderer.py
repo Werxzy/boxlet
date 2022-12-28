@@ -3,7 +3,8 @@ from math import ceil, floor
 import numpy as np
 from OpenGL.GL import *
 
-from ... import BoxletGL, Model, Renderer, Texture, VertFragShader, lerp
+from .. import BoxletGL, Model, Renderer, Texture, VertFragShader
+from ... import lerp
 
 
 class TerrainRenderer(Renderer):
@@ -37,10 +38,13 @@ class TerrainRenderer(Renderer):
 		}
 		"""
 
-	shader = VertFragShader(vertex_shader, fragment_shader)
+	shader = None
 
 	def __init__(self, image:Texture, pass_name = ''):	
 		super().__init__()
+
+		if TerrainRenderer.shader is None:
+			TerrainRenderer.shader = VertFragShader(TerrainRenderer.vertex_shader, TerrainRenderer.fragment_shader)
 		
 		self.image = image
 		w,h = image.orignal.get_size()

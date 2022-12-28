@@ -197,7 +197,7 @@ class RenderInstanceList(Generic[T]):
 	def _expand_data(self, amount):
 		self._free_indices.extend(range(self._instance_total_space, self._instance_total_space + amount))
 		self._instance_total_space += amount
-		self._data = np.append(self._data, np.array([0]*amount, dtype=self._data.dtype)) # TODO double check that this creates the proper space
+		self._data = np.append(self._data, np.array([0]*amount, dtype=self._data.dtype))
 		self._update_full = True
 
 	def destroy_instance(self, id):

@@ -89,7 +89,7 @@ class SpriteRenderer(Renderer):
 
 		for i in SpriteRenderer.instances:
 			glBindTexture(GL_TEXTURE_2D, i.image.image_texture)
-			#TODO sort by instances of the same texture when added?
+			# sort by instances of the same texture when added?
 			# only calling active texture and bind texture once only causes a slight performance boost
 
 			# apply renderer values

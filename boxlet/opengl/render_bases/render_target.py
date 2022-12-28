@@ -1,4 +1,4 @@
-from ... import BoxletGL
+from .. import BoxletGL
 
 
 class RenderTarget:

@@ -3,7 +3,7 @@ from OpenGL.GL import *
 from OpenGL.GL import shaders as ogl_shaders
 import re
 
-from .. import BoxletGL, Model, RenderInstance, Texture, np
+from . import BoxletGL, Model, RenderInstance, Texture, np
 
 
 class Shader:
@@ -11,11 +11,8 @@ class Shader:
 	# TODO? have a dictionary (or hashset?) of already created shaders to save on duplicate vertex/fragment shaders
 	# (not sure how useful that would be though.
 
-	_test_vao = glGenVertexArrays(1)
-	glBindVertexArray(_test_vao)
-	_test_model = Model()
-	_test_model.bind(position = 0, texcoord = 1)
-	glBindVertexArray(0)
+	_test_vao = None
+	_test_model = None
 
 	global_uniforms = {
 		'box_frameSize': [[0,0]],
@@ -212,7 +209,7 @@ class Shader:
 
 	def apply_uniform(self, name, value):
 		u = self.uniforms[name]
-		if u[1] == GL_FLOAT_MAT4: # TODO this is less than ideal
+		if u[1] == GL_FLOAT_MAT4:
 			self.apply_uniform_matrix(name, value)
 		else:
 			extra_gl.UNIFORM_TYPE_DICT[u[1]][0](u[2], u[0], value)
@@ -229,6 +226,16 @@ class Shader:
 	# def destroy(self):
 	# 	glDeleteShader(self.program)
 
+	@staticmethod
+	def init_testing_vao():
+		if Shader._test_vao: return
+
+		Shader._test_vao = glGenVertexArrays(1)
+		glBindVertexArray(Shader._test_vao)
+		Shader._test_model = Model()
+		Shader._test_model.bind(position = 0, texcoord = 1)
+		glBindVertexArray(0)
+
 
 def generate_once(func):
 	# Runs the function once and returns the results on the current and future calls.
@@ -243,6 +250,8 @@ def generate_once(func):
 	
 class VertFragShader(Shader):
 	def __init__(self, vertex, frag):
+		Shader.init_testing_vao()
+
 		glBindVertexArray(Shader._test_vao)
 		self.vertex = ogl_shaders.compileShader(Shader.preprocess_shader(vertex), GL_VERTEX_SHADER)
 		self.fragment = ogl_shaders.compileShader(Shader.preprocess_shader(frag), GL_FRAGMENT_SHADER)

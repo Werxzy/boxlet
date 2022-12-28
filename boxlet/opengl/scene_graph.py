@@ -58,7 +58,6 @@ class SceneGraph:
 	@staticmethod
 	def generate_world_matricies(self):
 		pass
-		#todo, 
 
 	@staticmethod
 	def new_frame():

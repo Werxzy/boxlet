@@ -1,14 +1,8 @@
-import os
-os.environ['BOXLET_PIXEL_SCALE'] = '3'
-os.environ['BOXLET_FRAME_RATE'] = '120'
-os.environ['BOXLET_CANVAS_SIZE'] = '320,180'
-# Even though Player updates it's sprite on fixed update, 
-# it looks better when the manager's frame rate matches or exceedes the monitor's framerate
-
 from boxlet import *
 from math import floor
 import random
 
+manager.init(canvas_size = (320,180))
 
 # Sprite assets
 sprite_sheet = pygame.image.load('examples/normal_pygame_example/sprites.png')

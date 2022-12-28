@@ -1,11 +1,9 @@
-import os
-
-os.environ['BOXLET_RENDER_MODE'] = 'opengl'
-os.environ['BOXLET_OPENGL_VSYNC'] = '1'
-
 from boxlet import *
+from boxlet.opengl import *
 from boxlet.opengl.renderers.instanced_renderer import InstancedRenderer
 import random
+
+manager.init(render_mode='opengl', vsync=True)
 
 # render assets
 box_model = Model.load_obj("examples/opengl_example/cube.obj")
