@@ -43,7 +43,7 @@ def debug_callback(*args):
 	return 0
 
 class DebugMessenger:
-	def __init__(self, instance) -> None:
+	def __init__(self, instance:'VulkanInstance') -> None:
 		self.instance = instance
 
 		create_info = VkDebugReportCallbackCreateInfoEXT(
@@ -52,7 +52,7 @@ class DebugMessenger:
 		)
 
 		#fetch creation function
-		creation_function = vkGetInstanceProcAddr(instance, 'vkCreateDebugReportCallbackEXT')
+		creation_function = vkGetInstanceProcAddr(instance.vk_addr, 'vkCreateDebugReportCallbackEXT')
 
 		"""
 			def vkCreateDebugReportCallbackEXT(
@@ -62,11 +62,11 @@ class DebugMessenger:
 				,pCallback=None
 				,):
 		"""
-		self.messenger = creation_function(instance, create_info, None)
+		self.messenger = creation_function(instance.vk_addr, create_info, None)
 
 	def destroy(self):
-		destruction_function = vkGetInstanceProcAddr(self.instance, 'vkDestroyDebugReportCallbackEXT')
-		destruction_function(self.instance, self.messenger, None)
+		destruction_function = vkGetInstanceProcAddr(self.instance.vk_addr, 'vkDestroyDebugReportCallbackEXT')
+		destruction_function(self.instance.vk_addr, self.messenger, None)
 
 
 def log_device_properties(device):

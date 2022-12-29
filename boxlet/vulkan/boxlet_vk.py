@@ -18,12 +18,12 @@ class BoxletVK:
 		self.make_device()		
 
 	def make_pygame_instance(self, wm_info):
-		self.instance = vk_instance.make_instance('ID Tech 12')
+		self.instance = VulkanInstance('Boxlet Application')
 
 		if DEBUG_MODE:
 			self.debug_messenger = vk_logging.DebugMessenger(self.instance)
 
-		vkCreateWin32SurfaceKHR = vkGetInstanceProcAddr(self.instance, 'vkCreateWin32SurfaceKHR')
+		vkCreateWin32SurfaceKHR = vkGetInstanceProcAddr(self.instance.vk_addr, 'vkCreateWin32SurfaceKHR')
 
 		surface_create_info = VkWin32SurfaceCreateInfoKHR(
 			hwnd = wm_info['window'], 
@@ -31,7 +31,7 @@ class BoxletVK:
 		)
 
 		self.surface = vkCreateWin32SurfaceKHR(
-			instance = self.instance,
+			instance = self.instance.vk_addr,
 			pCreateInfo = surface_create_info, 
 			pAllocator = None, 
 			pSurface = ffi.new('VkSurfaceKHR*')
@@ -155,11 +155,11 @@ class BoxletVK:
 
 		BVKC.logical_device.destroy()
 
-		destruction_function = vkGetInstanceProcAddr(self.instance, 'vkDestroySurfaceKHR')
-		destruction_function(self.instance, self.surface, None)
+		destruction_function = vkGetInstanceProcAddr(self.instance.vk_addr, 'vkDestroySurfaceKHR')
+		destruction_function(self.instance.vk_addr, self.surface, None)
 
 		if DEBUG_MODE:
 			self.debug_messenger.destroy()
 
-		vkDestroyInstance(self.instance, None)
+		self.instance.destroy()
 

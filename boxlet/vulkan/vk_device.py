@@ -105,7 +105,7 @@ def is_suitable(device):
 
 	return False
 
-def choose_physical_device(instance):
+def choose_physical_device(instance:'VulkanInstance'):
 
 	"""
 		Choose a suitable physical device from a list of candidates.
@@ -120,7 +120,7 @@ def choose_physical_device(instance):
 	"""
 		vkEnumeratePhysicalDevices(instance) -> List(vkPhysicalDevice)
 	"""
-	availableDevices = vkEnumeratePhysicalDevices(instance)
+	availableDevices = vkEnumeratePhysicalDevices(instance.vk_addr)
 
 	if DEBUG_MODE:
 		print(f"There are {len(availableDevices)} physical devices available on this system")

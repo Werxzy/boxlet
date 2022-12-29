@@ -13,7 +13,7 @@ import numpy as np
 
 from ..util_3d import CameraBase, CameraController, Tmath, Transform
 
-from . import vk_instance
+from .vk_instance import VulkanInstance 
 from . import vk_logging
 from .vk_queue_families import QueueFamilyIndices
 from . import vk_device

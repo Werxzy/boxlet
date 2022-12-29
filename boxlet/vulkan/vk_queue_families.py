@@ -3,13 +3,13 @@ from . import *
 
 
 class QueueFamilyIndices:
-	def __init__(self, instance, surface) -> None:
+	def __init__(self, instance:'VulkanInstance', surface) -> None:
 		self.instance = instance
 		self.surface = surface
 
 		queue_families = vkGetPhysicalDeviceQueueFamilyProperties(BVKC.physical_device)
 
-		surface_support = vkGetInstanceProcAddr(instance, 'vkGetPhysicalDeviceSurfaceSupportKHR')
+		surface_support = vkGetInstanceProcAddr(instance.vk_addr, 'vkGetPhysicalDeviceSurfaceSupportKHR')
 
 		if DEBUG_MODE:
 			print(f'There are {len(queue_families)} queue families available on the system.')

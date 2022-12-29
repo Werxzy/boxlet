@@ -4,7 +4,7 @@ from .. import *
 
 class SwapChainSupportDetails:
 
-	def __init__(self, instance, physical_device, surface):
+	def __init__(self, instance:'VulkanInstance', physical_device, surface):
 		"""
 		typedef struct VkSurfaceCapabilitiesKHR {
 			uint32_t                         minImageCount;
@@ -20,7 +20,7 @@ class SwapChainSupportDetails:
 		} VkSurfaceCapabilitiesKHR;
 		"""
 		
-		vkGetPhysicalDeviceSurfaceCapabilitiesKHR = vkGetInstanceProcAddr(instance, 'vkGetPhysicalDeviceSurfaceCapabilitiesKHR')
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR = vkGetInstanceProcAddr(instance.vk_addr, 'vkGetPhysicalDeviceSurfaceCapabilitiesKHR')
 		self.capabilities = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface)
 		
 		if DEBUG_MODE:
@@ -71,7 +71,7 @@ class SwapChainSupportDetails:
 			for line in stringList:
 				print(f"\t\t{line}")
 
-		vkGetPhysicalDeviceSurfaceFormatsKHR = vkGetInstanceProcAddr(instance, 'vkGetPhysicalDeviceSurfaceFormatsKHR')
+		vkGetPhysicalDeviceSurfaceFormatsKHR = vkGetInstanceProcAddr(instance.vk_addr, 'vkGetPhysicalDeviceSurfaceFormatsKHR')
 		self.formats = vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface)
 
 		if DEBUG_MODE:
@@ -86,7 +86,7 @@ class SwapChainSupportDetails:
 				print(f"supported pixel format: {vk_logging.format_to_string(supportedFormat.format)}")
 				print(f"supported color space: {vk_logging.colorspace_to_string(supportedFormat.colorSpace)}")
 
-		vkGetPhysicalDeviceSurfacePresentModesKHR = vkGetInstanceProcAddr(instance, 'vkGetPhysicalDeviceSurfacePresentModesKHR')
+		vkGetPhysicalDeviceSurfacePresentModesKHR = vkGetInstanceProcAddr(instance.vk_addr, 'vkGetPhysicalDeviceSurfacePresentModesKHR')
 		self.presentModes = vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface)
 
 		if DEBUG_MODE:
