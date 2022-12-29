@@ -9,3 +9,4 @@ from vulkan import *
 from .vk_tracked_instances import TrackedInstances
 
 from .boxlet_vk_constants import BVKC
+from typing import TYPE_CHECKING

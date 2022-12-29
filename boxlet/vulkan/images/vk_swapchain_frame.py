@@ -1,5 +1,8 @@
+from .. import CommandBuffer, Fence, FrameBuffer, ImageView, Semaphore
 from ..vk_module import *
-from .. import *
+
+if TYPE_CHECKING:
+	from .. import CommandPool, SwapChainBundle
 
 
 class SwapChainFrame:

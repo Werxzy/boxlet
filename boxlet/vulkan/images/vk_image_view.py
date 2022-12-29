@@ -1,5 +1,4 @@
 from ..vk_module import *
-from .. import *
 
 
 class ImageView:
