@@ -37,7 +37,7 @@ class RenderPass(TrackedInstances, RenderingStep):
 		)
 
 		depth_attachment = VkAttachmentDescription(
-			format = vk_device.find_depth_format(BVKC.physical_device),
+			format = BVKC.physical_device.find_depth_format(),
 			samples = VK_SAMPLE_COUNT_1_BIT,
 
 			loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,

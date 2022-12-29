@@ -16,7 +16,7 @@ from ..util_3d import CameraBase, CameraController, Tmath, Transform
 from .vk_instance import VulkanInstance 
 from . import vk_logging
 from .vk_queue_families import QueueFamilyIndices
-from . import vk_device
+from .vk_device import PhysicalDevice, LogicalDevice
 from .vk_sync import Semaphore, Fence
 from .vk_commands import CommandPool, CommandBuffer
 

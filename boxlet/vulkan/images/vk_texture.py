@@ -179,7 +179,7 @@ class Texture(TrackedInstances):
 		temp_command_buffer.single_time_end()
 
 	def create_sampler(self):
-		properties = vkGetPhysicalDeviceProperties(BVKC.physical_device)
+		properties = vkGetPhysicalDeviceProperties(BVKC.physical_device.vk_addr)
 
 		sampler_create_info = VkSamplerCreateInfo(
 			magFilter = VK_FILTER_LINEAR,

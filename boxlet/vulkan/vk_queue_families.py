@@ -7,7 +7,7 @@ class QueueFamilyIndices:
 		self.instance = instance
 		self.surface = surface
 
-		queue_families = vkGetPhysicalDeviceQueueFamilyProperties(BVKC.physical_device)
+		queue_families = vkGetPhysicalDeviceQueueFamilyProperties(BVKC.physical_device.vk_addr)
 
 		surface_support = vkGetInstanceProcAddr(instance.vk_addr, 'vkGetPhysicalDeviceSurfaceSupportKHR')
 
@@ -44,7 +44,7 @@ class QueueFamilyIndices:
 			if fam.queueFlags & VK_QUEUE_GRAPHICS_BIT:
 				self.graphics_family = i
 
-			if surface_support(BVKC.physical_device, i, surface):
+			if surface_support(BVKC.physical_device.vk_addr, i, surface):
 				self.present_family = i
 
 			if self.is_complete():

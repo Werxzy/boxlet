@@ -38,9 +38,9 @@ class BoxletVK:
 		)[0]
 
 	def make_device(self):
-		BVKC.physical_device = vk_device.choose_physical_device(self.instance)
+		BVKC.physical_device = PhysicalDevice(self.instance)
 		self.queue_families = QueueFamilyIndices(self.instance, self.surface)
-		BVKC.logical_device = vk_device.LogicalDevice(self.queue_families)
+		BVKC.logical_device = LogicalDevice(self.queue_families)
 		[BVKC.graphics_queue, BVKC.present_queue] = self.queue_families.get_queue()
 
 		BVKC.command_pool = CommandPool(

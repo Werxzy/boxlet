@@ -4,7 +4,7 @@ from .. import *
 
 class SwapChainSupportDetails:
 
-	def __init__(self, instance:'VulkanInstance', physical_device, surface):
+	def __init__(self, instance:'VulkanInstance', physical_device:'PhysicalDevice', surface):
 		"""
 		typedef struct VkSurfaceCapabilitiesKHR {
 			uint32_t                         minImageCount;
@@ -21,7 +21,7 @@ class SwapChainSupportDetails:
 		"""
 		
 		vkGetPhysicalDeviceSurfaceCapabilitiesKHR = vkGetInstanceProcAddr(instance.vk_addr, 'vkGetPhysicalDeviceSurfaceCapabilitiesKHR')
-		self.capabilities = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface)
+		self.capabilities = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device.vk_addr, surface)
 		
 		if DEBUG_MODE:
 				
@@ -72,7 +72,7 @@ class SwapChainSupportDetails:
 				print(f"\t\t{line}")
 
 		vkGetPhysicalDeviceSurfaceFormatsKHR = vkGetInstanceProcAddr(instance.vk_addr, 'vkGetPhysicalDeviceSurfaceFormatsKHR')
-		self.formats = vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface)
+		self.formats = vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device.vk_addr, surface)
 
 		if DEBUG_MODE:
 			for supportedFormat in self.formats:
@@ -87,7 +87,7 @@ class SwapChainSupportDetails:
 				print(f"supported color space: {vk_logging.colorspace_to_string(supportedFormat.colorSpace)}")
 
 		vkGetPhysicalDeviceSurfacePresentModesKHR = vkGetInstanceProcAddr(instance.vk_addr, 'vkGetPhysicalDeviceSurfacePresentModesKHR')
-		self.presentModes = vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface)
+		self.presentModes = vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device.vk_addr, surface)
 
 		if DEBUG_MODE:
 			for presentMode in self.presentModes:
@@ -214,7 +214,7 @@ class SwapChainBundle(RenderTarget):
 		self.current_frame = -1
 
 		self.depth_image = Texture(
-			format = vk_device.find_depth_format(BVKC.physical_device),
+			format = BVKC.physical_device.find_depth_format(),
 			extent = [width, height],
 			tiling = VK_IMAGE_TILING_OPTIMAL,
 			usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,

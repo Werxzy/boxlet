@@ -10,9 +10,9 @@ class BVKC:
 
 	width:int = 0
 	height:int = 0
-	logical_device:'vk_device.LogicalDevice' = None
-	physical_device = None
-	swapchain:'vk_swapchain.SwapChainBundle' = None
+	logical_device:'LogicalDevice' = None
+	physical_device:'PhysicalDevice' = None
+	swapchain:'SwapChainBundle' = None
 	command_pool:'CommandPool' = None
 	graphics_queue = None
 	present_queue = None

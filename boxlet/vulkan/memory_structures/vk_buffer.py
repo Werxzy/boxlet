@@ -123,7 +123,7 @@ class Buffer:
 	@staticmethod
 	def find_memory_type_index(supported_memory_indices, requested_properties):
 		memory_properties = vkGetPhysicalDeviceMemoryProperties(
-			physicalDevice = BVKC.physical_device
+			physicalDevice = BVKC.physical_device.vk_addr
 		)
 
 		for i in range(memory_properties.memoryTypeCount):

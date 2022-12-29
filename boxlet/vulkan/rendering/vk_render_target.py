@@ -76,7 +76,7 @@ class SimpleRenderTarget(RenderTarget):
 		)
 		
 		self.depth_buffer = Texture(
-			format = vk_device.find_depth_format(BVKC.physical_device),
+			format = BVKC.physical_device.find_depth_format(),
 			extent = [width, height],
 			tiling = VK_IMAGE_TILING_OPTIMAL,
 			usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
