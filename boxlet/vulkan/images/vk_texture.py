@@ -81,7 +81,7 @@ class Texture(TrackedInstances):
 		self.image_view = ImageView(self.image, self.format, self.extent, self.aspect_mask)
 
 		if input_image:
-			staging_buffer = vk_memory.Buffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, pygame.image.tostring(input_image, "RGBA", True))
+			staging_buffer = Buffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, pygame.image.tostring(input_image, "RGBA", True))
 
 			self.transition_image_layout(
 				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -105,7 +105,7 @@ class Texture(TrackedInstances):
 		
 		alloc_info = VkMemoryAllocateInfo(
 			allocationSize = memory_requirements.size,
-			memoryTypeIndex = vk_memory.Buffer.find_memory_type_index(
+			memoryTypeIndex = Buffer.find_memory_type_index(
 				memory_requirements.memoryTypeBits,
 				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
 			)

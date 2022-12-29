@@ -43,7 +43,7 @@ class DescriptorSet:
 class UniformBufferDescriptorSet(DescriptorSet):
 	def __init__(self, binder:'RendererBindings', binding:int) -> None:
 		super().__init__(binder, binding)
-		self.buffer_group:vk_memory.UniformBufferGroup = None
+		self.buffer_group:UniformBufferGroup = None
 
 	def set_descriptor(self, data:np.ndarray) -> None:
 		self.destroy()
@@ -51,7 +51,7 @@ class UniformBufferDescriptorSet(DescriptorSet):
 		for i in self.set_range:
 			self.needs_update[i] = True
 
-		self.buffer_group = vk_memory.UniformBufferGroup(data, len(self.needs_update))
+		self.buffer_group = UniformBufferGroup(data, len(self.needs_update))
 		# TODO parameter to keep memory map?
 
 	def get_update(self, set_number) -> list[Any]:
@@ -129,7 +129,7 @@ class RendererBindings:
 
 		self.descriptor_sets = vkAllocateDescriptorSets(BVKC.logical_device.device, alloc_info)
 		self.pipeline_layout = pipeline.pipeline_layout
-		self.ubo_set:list[vk_memory.Buffer] = []
+		self.ubo_set:list[Buffer] = []
 
 		self.descriptors:dict[str, DescriptorSet] = {}
 		write = []
@@ -244,7 +244,7 @@ class IndirectRenderer(Renderer):
 		self.meshes = meshes
 		meshes.init_buffers()
 
-		self.buffer_set = vk_memory.InstanceBufferSet(
+		self.buffer_set = InstanceBufferSet(
 			meshes,
 			pipeline.shader_attribute.data_type
 		)

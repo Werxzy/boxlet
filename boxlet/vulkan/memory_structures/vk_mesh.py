@@ -66,12 +66,12 @@ class Mesh(TrackedInstances):
 
 		if self.vertex_buffer: return
 
-		self.vertex_buffer = vk_memory.Buffer(
+		self.vertex_buffer = Buffer(
 			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 			self._vertices_data
 		)
 
-		self.index_buffer = vk_memory.Buffer(
+		self.index_buffer = Buffer(
 			VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
 			self._indices_data 
 		)

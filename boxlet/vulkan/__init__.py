@@ -21,7 +21,8 @@ from . import vk_device
 from . import vk_sync
 from .vk_commands import CommandPool, CommandBuffer
 
-from .memory_structures import vk_memory
+from .memory_structures.vk_buffer import Buffer, UniformBufferGroup
+from .memory_structures.vk_instance_buffer import InstanceBufferSet
 from .memory_structures.vk_mesh import Mesh, MultiMesh
 
 from .images.vk_framebuffer import FrameBuffer
