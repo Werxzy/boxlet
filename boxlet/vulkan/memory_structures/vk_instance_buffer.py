@@ -1,5 +1,8 @@
+from .. import Buffer, np
 from ..vk_module import *
-from .. import *
+
+if TYPE_CHECKING:
+	from .. import MultiMesh
 
 
 class InstanceData:

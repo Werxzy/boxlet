@@ -1,5 +1,5 @@
+from .. import Buffer, np
 from ..vk_module import *
-from .. import *
 
 
 class Mesh(TrackedInstances):

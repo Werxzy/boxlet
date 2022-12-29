@@ -1,5 +1,5 @@
+from .. import np
 from ..vk_module import *
-from .. import *
 
 
 class Buffer:
