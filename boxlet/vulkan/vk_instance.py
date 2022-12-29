@@ -3,7 +3,10 @@ from .vk_module import *
 
 
 class VulkanInstance:
-	def __init__(self, application_name):
+	def __init__(self, application_name, driver):
+
+		self.driver = driver
+
 		if DEBUG_MODE:
 			print('Making an instance...')
 
@@ -43,8 +46,14 @@ class VulkanInstance:
 			Everything with Vulkan is "opt-in", so we need to query which extensions glfw needs
 			in order to interface with vulkan.
 		"""
-		# extensions = glfw.get_required_instance_extensions()
-		extensions = [VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_WIN32_SURFACE_EXTENSION_NAME]
+
+		match driver:
+			case 'windows':
+				extensions = [VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_WIN32_SURFACE_EXTENSION_NAME]
+			case 'x11':
+				extensions = [VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_XLIB_SURFACE_EXTENSION_NAME]
+			case _:
+				raise Exception(f'driver {driver} not supported yet.')
 		# TODO !!! this will need to be updated based on platform
 		# OR find a function that gets a list of these automatically.
 		# not sure if pygame has this easily available

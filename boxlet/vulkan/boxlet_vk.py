@@ -22,25 +22,47 @@ class BoxletVK:
 		self.make_device()		
 
 	def make_pygame_instance(self, wm_info):
-		self.instance = VulkanInstance('Boxlet Application')
+		driver = pg_display.get_driver()
+		self.instance = VulkanInstance('Boxlet Application', driver)
 
 		if DEBUG_MODE:
 			self.debug_messenger = DebugMessenger(self.instance)
 
-		vkCreateWin32SurfaceKHR = vkGetInstanceProcAddr(self.instance.vk_addr, 'vkCreateWin32SurfaceKHR')
+		match driver:
+			case 'windows':
+				vkCreateWin32SurfaceKHR = vkGetInstanceProcAddr(self.instance.vk_addr, 'vkCreateWin32SurfaceKHR')
 
-		surface_create_info = VkWin32SurfaceCreateInfoKHR(
-			hwnd = wm_info['window'], 
-			hinstance = wm_info['hinstance']
-		)
+				surface_create_info = VkWin32SurfaceCreateInfoKHR(
+					hwnd = wm_info['window'], 
+					hinstance = wm_info['hinstance']
+				)
 
-		self.surface = vkCreateWin32SurfaceKHR(
-			instance = self.instance.vk_addr,
-			pCreateInfo = surface_create_info, 
-			pAllocator = None, 
-			pSurface = ffi.new('VkSurfaceKHR*')
-		)[0]
+				self.surface = vkCreateWin32SurfaceKHR(
+					instance = self.instance.vk_addr,
+					pCreateInfo = surface_create_info, 
+					pAllocator = None, 
+					pSurface = ffi.new('VkSurfaceKHR*')
+				)[0]
 
+			case 'x11':
+				vkCreateXlibSurfaceKHR = vkGetInstanceProcAddr(self.instance.vk_addr, 'vkCreateXlibSurfaceKHR')
+
+				surface_create_info = VkXlibSurfaceCreateInfoKHR(
+					dpy = wm_info['display'],
+					window = wm_info['window']
+				)
+
+				self.surface = vkCreateXlibSurfaceKHR(
+					instance = self.instance.vk_addr,
+					pCreateInfo = surface_create_info,
+					pAllocator = None,
+					pSurface = ffi.new('VkSurfaceKHR*')
+				)[0]
+
+			case _:
+				print('TODO:', driver)
+				# VkMacOSSurfaceCreateInfoMVK
+		
 	def make_device(self):
 		BVKC.physical_device = PhysicalDevice(self.instance)
 		self.queue_families = QueueFamilyIndices(self.instance, self.surface)
