@@ -44,4 +44,3 @@ from .rendering.vk_camera import Camera3D
 
 from .boxlet_vk import BoxletVK
 
-# TODO replace all of the 'from . import' calls

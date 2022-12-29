@@ -1,5 +1,5 @@
+from . import DEBUG_MODE
 from .vk_module import *
-from . import *
 
 
 class VulkanInstance:

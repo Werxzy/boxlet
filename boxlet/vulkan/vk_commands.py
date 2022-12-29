@@ -1,10 +1,13 @@
+from . import DEBUG_MODE
 from .vk_module import *
-from . import *
+
+if TYPE_CHECKING:
+	from . import QueueFamilyIndices
 
 
 class CommandPool:
 
-	def __init__(self, queue_family:QueueFamilyIndices, surface, instance) -> None:
+	def __init__(self, queue_family:'QueueFamilyIndices', surface, instance) -> None:
 		self.surface = surface
 		self.instance = instance
 

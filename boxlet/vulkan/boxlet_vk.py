@@ -1,6 +1,10 @@
-from .vk_module import *
-from . import *
 from pygame import display as pg_display
+
+from . import (DEBUG_MODE, CommandPool, DebugMessenger, GraphicsPipeline,
+               LogicalDevice, Mesh, PhysicalDevice, PipelineLayout,
+               QueueFamilyIndices, Renderer, RenderingStep, RenderPass,
+               RenderTarget, SwapChainBundle, Texture, VulkanInstance)
+from .vk_module import *
 
 
 class BoxletVK:

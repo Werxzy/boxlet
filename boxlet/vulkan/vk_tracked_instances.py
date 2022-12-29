@@ -1,4 +1,4 @@
-from typing import Self, final, TypeVar
+from typing import Self, TypeVar, final
 
 
 I = TypeVar('I')

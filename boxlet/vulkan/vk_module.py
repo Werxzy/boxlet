@@ -1,4 +1,7 @@
+from typing import TYPE_CHECKING
+
 from vulkan import *
+
 # imports vulkan module ONCE
 # This is a big module that usually shouldn't be imported
 
@@ -6,7 +9,6 @@ from vulkan import *
 # 'from boxlet.vulkan._vk_module import *'
 # and can replace * with used variables/functions
 
+from .boxlet_vk_constants import BVKC
 from .vk_tracked_instances import TrackedInstances
 
-from .boxlet_vk_constants import BVKC
-from typing import TYPE_CHECKING

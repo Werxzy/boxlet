@@ -1,5 +1,8 @@
+from . import DEBUG_MODE
 from .vk_module import *
-from . import *
+
+if TYPE_CHECKING:
+	from . import VulkanInstance
 
 
 class QueueFamilyIndices:
