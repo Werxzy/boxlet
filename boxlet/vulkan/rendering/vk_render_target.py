@@ -1,6 +1,7 @@
 from math import floor
+
+from .. import FrameBuffer, Texture
 from ..vk_module import *
-from .. import *
 
 
 class RenderTarget(TrackedInstances):

@@ -1,5 +1,8 @@
+from .. import DEBUG_MODE, Logging, RenderTarget, SwapChainFrame, Texture
 from ..vk_module import *
-from .. import *
+
+if TYPE_CHECKING:
+	from .. import *
 
 
 class SwapChainSupportDetails:
@@ -133,7 +136,7 @@ class SwapChainBundle(RenderTarget):
 		self.queue_family = queue_family
 
 		self.vk_addr = None
-		self.frames:list[SwapChainFrame] = []
+		self.frames:list['SwapChainFrame'] = []
 
 		self.remake(width, height)
 
@@ -243,7 +246,7 @@ class SwapChainBundle(RenderTarget):
 		for frame in self.frames:
 			frame.init_buffers(self.recent_render_pass, BVKC.command_pool, self.depth_image.image_view)
 
-	def get_frame_buffer(self) -> FrameBuffer:
+	def get_frame_buffer(self) -> 'FrameBuffer':
 		'Used by BoxletVK to get the correct framebuffer to render to.'
 		return self.frames[self.current_frame].frame_buffer
 

@@ -1,10 +1,13 @@
+from .. import RenderingStep, Shader
 from ..vk_module import *
-from .. import *
+
+if TYPE_CHECKING:
+	from .. import *
 
 
 class PipelineLayout(TrackedInstances):
 
-	def __init__(self, shader_attribtues:ShaderAttributeLayout, shader_layout:dict):
+	def __init__(self, shader_attribtues:'ShaderAttributeLayout', shader_layout:dict):
 		
 		if consts := shader_layout['push constants']:
 			push_constant_info, self.push_constant_dtype = shader_attribtues.get_push_constant_range(
@@ -60,11 +63,11 @@ class ComputePipeline(VulkanPipeline):
 class GraphicsPipeline(VulkanPipeline):
 
 	def __init__(self, 
-			render_pass:RenderPass, 
-			shader_attribute:ShaderAttributeLayout, 
+			render_pass:'RenderPass', 
+			shader_attribute:'ShaderAttributeLayout', 
 			shader_layout:dict, vertex_filepath, 
 			fragment_filepath, 
-			binding_model:Mesh,
+			binding_model:'Mesh',
 			priority = 0):
 
 		super().__init__(priority)

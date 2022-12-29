@@ -1,5 +1,5 @@
+from .. import np
 from ..vk_module import *
-import numpy as np
 
 
 class ShaderAttributeLayout:

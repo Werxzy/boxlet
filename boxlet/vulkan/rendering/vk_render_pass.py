@@ -1,10 +1,13 @@
+from .. import RenderingStep
 from ..vk_module import *
-from .. import *
+
+if TYPE_CHECKING:
+	from .. import RenderTarget
 
 
 class RenderPass(TrackedInstances, RenderingStep):
 
-	def __init__(self, render_target:RenderTarget = None, priority = 0):
+	def __init__(self, render_target:'RenderTarget' = None, priority = 0):
 		'Render Target as none assumes it will render to the primary render target.'
 
 		super().__init__(priority)

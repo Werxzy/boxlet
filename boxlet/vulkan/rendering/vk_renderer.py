@@ -1,6 +1,10 @@
 from typing import Any
+
+from .. import InstanceBufferSet, Mesh, RenderingStep, UniformBufferGroup, np
 from ..vk_module import *
-from .. import *
+
+if TYPE_CHECKING:
+	from .. import *
 
 
 class Renderer(TrackedInstances, RenderingStep):
@@ -81,7 +85,7 @@ class UniformBufferDescriptorSet(DescriptorSet):
 
 
 class ImageDescriptorSet(DescriptorSet):
-	def set_descriptor(self, data:Texture) -> None:
+	def set_descriptor(self, data:'Texture') -> None:
 		for i in self.set_range:
 			self.needs_update[i] = True
 
@@ -117,7 +121,7 @@ class RendererBindings:
 	
 	# can also be considered a vulkan descriptor set
 
-	def __init__(self, pipeline:GraphicsPipeline, defaults:dict[int]) -> None:
+	def __init__(self, pipeline:'GraphicsPipeline', defaults:dict[int]) -> None:
 		bindings = pipeline.shader_layout['bindings']
 		self.descriptor_pool = pipeline.shader_attribute.create_descriptor_pool(bindings)
 
@@ -129,7 +133,7 @@ class RendererBindings:
 
 		self.descriptor_sets = vkAllocateDescriptorSets(BVKC.logical_device.device, alloc_info)
 		self.pipeline_layout = pipeline.pipeline_layout
-		self.ubo_set:list[Buffer] = []
+		self.ubo_set:list['Buffer'] = []
 
 		self.descriptors:dict[str, DescriptorSet] = {}
 		write = []
@@ -191,7 +195,7 @@ class PushConstantManager:
 
 	global_values:dict[str,np.ndarray] = {}
 
-	def __init__(self, pipeline_layout:PipelineLayout) -> None:
+	def __init__(self, pipeline_layout:'PipelineLayout') -> None:
 		self.pipeline_layout = pipeline_layout
 		self.data = np.array([0], pipeline_layout.push_constant_dtype)
 		self.itemsize = pipeline_layout.push_constant_dtype.itemsize
@@ -238,7 +242,7 @@ class PushConstantManager:
 
 
 class IndirectRenderer(Renderer):
-	def __init__(self, pipeline:GraphicsPipeline, meshes:'MultiMesh', defaults:dict[int], priority = 0):
+	def __init__(self, pipeline:'GraphicsPipeline', meshes:'MultiMesh', defaults:dict[int], priority = 0):
 		super().__init__(priority)
 		
 		self.meshes = meshes
@@ -300,7 +304,7 @@ class ScreenRenderer(Renderer):
 				dim = 2) 
 		return ScreenRenderer.default_mesh 
 
-	def __init__(self, pipeline:GraphicsPipeline, defaults:dict[int], priority=0):
+	def __init__(self, pipeline:'GraphicsPipeline', defaults:dict[int], priority=0):
 		super().__init__(priority)
 
 		ScreenRenderer.default_mesh.init_buffers()

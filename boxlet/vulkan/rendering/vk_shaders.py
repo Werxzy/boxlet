@@ -1,5 +1,5 @@
+from .. import DEBUG_MODE, get_path
 from ..vk_module import *
-from .. import *
 
 
 class Shader:
