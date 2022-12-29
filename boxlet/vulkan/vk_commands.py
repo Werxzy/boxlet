@@ -4,7 +4,7 @@ from . import *
 
 class CommandPool:
 
-	def __init__(self, queue_family:vk_queue_families.QueueFamilyIndices, surface, instance) -> None:
+	def __init__(self, queue_family:QueueFamilyIndices, surface, instance) -> None:
 		self.surface = surface
 		self.instance = instance
 

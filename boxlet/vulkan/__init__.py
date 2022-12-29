@@ -13,12 +13,11 @@ import numpy as np
 
 from ..util_3d import CameraBase, CameraController, Tmath, Transform
 
-from .rendering.vk_shader_attribute_layout import ShaderAttributeLayout
 from . import vk_instance
 from . import vk_logging
-from . import vk_queue_families
+from .vk_queue_families import QueueFamilyIndices
 from . import vk_device
-from . import vk_sync
+from .vk_sync import Semaphore, Fence
 from .vk_commands import CommandPool, CommandBuffer
 
 from .memory_structures.vk_buffer import Buffer, UniformBufferGroup
@@ -30,9 +29,10 @@ from .images.vk_image_view import ImageView
 from .images.vk_swapchain_frame import SwapChainFrame
 from .images.vk_texture import Texture
 
+from .rendering.vk_shader_attribute_layout import ShaderAttributeLayout
 from .rendering.vk_render_target import RenderTarget, SimpleRenderTarget
-from .rendering import vk_swapchain
-from .rendering import vk_shaders
+from .rendering.vk_swapchain import SwapChainBundle
+from .rendering.vk_shaders import Shader
 from .rendering.vk_rendering_step import RenderingStep, KeyedStep
 from .rendering.vk_render_pass import RenderPass
 from .rendering.vk_pipeline import PipelineLayout, GraphicsPipeline

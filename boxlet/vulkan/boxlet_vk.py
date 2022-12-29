@@ -39,17 +39,17 @@ class BoxletVK:
 
 	def make_device(self):
 		BVKC.physical_device = vk_device.choose_physical_device(self.instance)
-		self.queue_families = vk_queue_families.QueueFamilyIndices(self.instance, self.surface)
+		self.queue_families = QueueFamilyIndices(self.instance, self.surface)
 		BVKC.logical_device = vk_device.LogicalDevice(self.queue_families)
 		[BVKC.graphics_queue, BVKC.present_queue] = self.queue_families.get_queue()
 
-		BVKC.command_pool = vk_commands.CommandPool(
+		BVKC.command_pool = CommandPool(
 			self.queue_families,
 			self.surface,
 			self.instance
 		)
 		
-		BVKC.swapchain = vk_swapchain.SwapChainBundle(self.queue_families, BVKC.width, BVKC.height)
+		BVKC.swapchain = SwapChainBundle(self.queue_families, BVKC.width, BVKC.height)
 
 	def finalize_setup(self):
 		for target in RenderTarget.get_all_instances():
@@ -64,7 +64,7 @@ class BoxletVK:
 
 		BVKC.command_pool.destroy() 
 
-		BVKC.command_pool = vk_commands.CommandPool(
+		BVKC.command_pool = CommandPool(
 			self.queue_families,
 			self.surface,
 			self.instance

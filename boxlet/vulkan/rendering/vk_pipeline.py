@@ -91,7 +91,7 @@ class GraphicsPipeline(VulkanPipeline):
 			vertexAttributeDescriptionCount = len(attribute_desc), pVertexAttributeDescriptions = attribute_desc
 		)
 
-		vertex_shader = vk_shaders.Shader('vertex', vertex_filepath)
+		vertex_shader = Shader('vertex', vertex_filepath)
 
 		input_assembly = VkPipelineInputAssemblyStateCreateInfo(
 			topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
@@ -133,7 +133,7 @@ class GraphicsPipeline(VulkanPipeline):
 			rasterizationSamples = VK_SAMPLE_COUNT_1_BIT
 		)
 
-		fragment_shader = vk_shaders.Shader('fragment', fragment_filepath)
+		fragment_shader = Shader('fragment', fragment_filepath)
 
 		shader_stages = [vertex_shader.stage_create_info(), fragment_shader.stage_create_info()]
 

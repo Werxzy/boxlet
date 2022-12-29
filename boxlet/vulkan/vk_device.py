@@ -158,7 +158,7 @@ def find_supported_format(candidates:list, tiling, features, physical_device):
 	raise Exception('Failed to find suitable format.')
 
 class LogicalDevice:
-	def __init__(self, queue_family:'vk_queue_families.QueueFamilyIndices'):
+	def __init__(self, queue_family:'QueueFamilyIndices'):
 		unique_indices = list(set([queue_family.graphics_family, queue_family.present_family]))
 
 		queue_create_info = [

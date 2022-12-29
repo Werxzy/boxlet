@@ -3,15 +3,15 @@ from .. import *
 
 
 class SwapChainFrame:
-	def __init__(self, image, swapchain:'vk_swapchain.SwapChainBundle') -> None:
+	def __init__(self, image, swapchain:'SwapChainBundle') -> None:
 		self.image_view = ImageView(image, swapchain.format, swapchain.extent)
 
 		self.frame_buffer:FrameBuffer = None
 		self.command_buffer = None
 
-		self.in_flight = vk_sync.Fence()
-		self.image_available = vk_sync.Semaphore()
-		self.render_finished = vk_sync.Semaphore()
+		self.in_flight = Fence()
+		self.image_available = Semaphore()
+		self.render_finished = Semaphore()
 
 	def init_buffers(self, render_pass, command_pool:'CommandPool', depth_buffer:ImageView):
 		'''

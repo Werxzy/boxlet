@@ -129,7 +129,7 @@ def choose_swapchain_extent(width, height, capabilities):
 
 class SwapChainBundle(RenderTarget):
 
-	def __init__(self, queue_family:'vk_queue_families.QueueFamilyIndices', width, height):
+	def __init__(self, queue_family:'QueueFamilyIndices', width, height):
 		self.queue_family = queue_family
 
 		self.vk_addr = None
