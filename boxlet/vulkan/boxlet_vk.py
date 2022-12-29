@@ -21,7 +21,7 @@ class BoxletVK:
 		self.instance = VulkanInstance('Boxlet Application')
 
 		if DEBUG_MODE:
-			self.debug_messenger = vk_logging.DebugMessenger(self.instance)
+			self.debug_messenger = DebugMessenger(self.instance)
 
 		vkCreateWin32SurfaceKHR = vkGetInstanceProcAddr(self.instance.vk_addr, 'vkCreateWin32SurfaceKHR')
 

@@ -52,22 +52,22 @@ class SwapChainSupportDetails:
 
 				
 			print("\tsupported transforms:")
-			stringList = vk_logging.log_transform_bits(self.capabilities.supportedTransforms)
+			stringList = Logging.log_transform_bits(self.capabilities.supportedTransforms)
 			for line in stringList:
 				print(f"\t\t{line}")
 
 			print("\tcurrent transform:")
-			stringList = vk_logging.log_transform_bits(self.capabilities.currentTransform)
+			stringList = Logging.log_transform_bits(self.capabilities.currentTransform)
 			for line in stringList:
 				print(f"\t\t{line}")
 
 			print("\tsupported alpha operations:")
-			stringList = vk_logging.log_alpha_composite_bits(self.capabilities.supportedCompositeAlpha)
+			stringList = Logging.log_alpha_composite_bits(self.capabilities.supportedCompositeAlpha)
 			for line in stringList:
 				print(f"\t\t{line}")
 
 			print("\tsupported image usage:")
-			stringList = vk_logging.log_image_usage_bits(self.capabilities.supportedUsageFlags)
+			stringList = Logging.log_image_usage_bits(self.capabilities.supportedUsageFlags)
 			for line in stringList:
 				print(f"\t\t{line}")
 
@@ -83,15 +83,15 @@ class SwapChainSupportDetails:
 				} VkSurfaceFormatKHR;
 				"""
 
-				print(f"supported pixel format: {vk_logging.format_to_string(supportedFormat.format)}")
-				print(f"supported color space: {vk_logging.colorspace_to_string(supportedFormat.colorSpace)}")
+				print(f"supported pixel format: {Logging.format_to_string(supportedFormat.format)}")
+				print(f"supported color space: {Logging.colorspace_to_string(supportedFormat.colorSpace)}")
 
 		vkGetPhysicalDeviceSurfacePresentModesKHR = vkGetInstanceProcAddr(instance.vk_addr, 'vkGetPhysicalDeviceSurfacePresentModesKHR')
 		self.presentModes = vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device.vk_addr, surface)
 
 		if DEBUG_MODE:
 			for presentMode in self.presentModes:
-				print(f"\t{vk_logging.log_present_mode(presentMode)}")
+				print(f"\t{Logging.log_present_mode(presentMode)}")
 
 
 def choose_swapchain_surface_format(formats):

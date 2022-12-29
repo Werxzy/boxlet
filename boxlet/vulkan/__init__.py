@@ -1,6 +1,7 @@
 # A majority of this code is from the channel GetIntoGameDev.
 # https://www.youtube.com/watch?v=drregGzhgCA&list=PLn3eTxaOtL2M4qgHpHuxY821C_oX0GvM7
 # Though now it has been heavily modified to suit the needs of this engine.
+#	Also, to better match python's conventions.
 
 DEBUG_MODE = True
 
@@ -14,7 +15,7 @@ import numpy as np
 from ..util_3d import CameraBase, CameraController, Tmath, Transform
 
 from .vk_instance import VulkanInstance 
-from . import vk_logging
+from .vk_logging import DebugMessenger, Logging
 from .vk_queue_families import QueueFamilyIndices
 from .vk_device import PhysicalDevice, LogicalDevice
 from .vk_sync import Semaphore, Fence
