@@ -30,22 +30,16 @@ class BoxletVK:
 
 		match driver:
 			case 'windows':
-				vkCreateWin32SurfaceKHR = vkGetInstanceProcAddr(self.instance.vk_addr, 'vkCreateWin32SurfaceKHR')
+				create_surface = vkGetInstanceProcAddr(self.instance.vk_addr, 'vkCreateWin32SurfaceKHR')
 
 				surface_create_info = VkWin32SurfaceCreateInfoKHR(
 					hwnd = wm_info['window'], 
 					hinstance = wm_info['hinstance']
 				)
 
-				self.surface = vkCreateWin32SurfaceKHR(
-					instance = self.instance.vk_addr,
-					pCreateInfo = surface_create_info, 
-					pAllocator = None, 
-					pSurface = ffi.new('VkSurfaceKHR*')
-				)[0]
-
 			case 'x11':
-				vkCreateXlibSurfaceKHR = vkGetInstanceProcAddr(self.instance.vk_addr, 'vkCreateXlibSurfaceKHR')
+				print('Unsure if this is the correct implementation')
+				create_surface = vkGetInstanceProcAddr(self.instance.vk_addr, 'vkCreateXlibSurfaceKHR')
 
 				# TODO check this with a valid system
 				# (my virtual machine can't test this)
@@ -54,30 +48,25 @@ class BoxletVK:
 					window = wm_info['window']
 				)
 
-				self.surface = vkCreateXlibSurfaceKHR(
-					instance = self.instance.vk_addr,
-					pCreateInfo = surface_create_info,
-					pAllocator = None,
-					pSurface = ffi.new('VkSurfaceKHR*')
-				)[0]
-
 			case 'cocoa':
-				vkCreateMacOSSurfaceMVK = vkGetInstanceProcAddr(self.instance.vk_addr, 'vkCreateMacOSSurfaceMVK')
+				print('Unsure if this is the correct implementation')
+				create_surface = vkGetInstanceProcAddr(self.instance.vk_addr, 'vkCreateMacOSSurfaceMVK')
 
 				surface_create_info = VkMacOSSurfaceCreateInfoMVK(
-					pView = id(wm_info['display'])
+					pView = id(wm_info['window'])
 				)
 
-				self.surface = vkCreateMacOSSurfaceMVK(
-					instance = self.instance.vk_addr,
-					pCreateInfo = surface_create_info,
-					pAllocator = None,
-					pSurface = ffi.new('VkSurfaceKHR*')
-				)[0]
-
 			case _:
-				print('TODO:', driver)
-				# VkMacOSSurfaceCreateInfoMVK
+				raise Exception(f'Unsupported driver : {driver}')
+
+		self.surface = create_surface(
+			instance = self.instance.vk_addr,
+			pCreateInfo = surface_create_info, 
+			pAllocator = None, 
+			pSurface = ffi.new('VkSurfaceKHR*')
+		)[0]
+
+		# TODO ??? would SDL_Vulkan_CreateSurface create the surface with less trouble?
 		
 	def make_device(self):
 		BVKC.physical_device = PhysicalDevice(self.instance)

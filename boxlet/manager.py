@@ -104,6 +104,11 @@ class Manager:
 				for _ in pygame.event.get(eventtype=pygame.WINDOWEXPOSED):
 					self.system_time = time.time() # this still does not help every case it freezes, maybe have a maximum delta time.
 
+				if not pygame.display.get_active():
+					self.system_time = time.time()
+					self.clock.tick(60)
+					continue
+
 				new_system_time = time.time()
 				self.delta_time = clamp(new_system_time - self.system_time, 0, self.max_delta_time)
 				self.time += self.delta_time

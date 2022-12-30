@@ -37,7 +37,7 @@ class VulkanInstance:
 		appInfo = VkApplicationInfo(
 			pApplicationName = application_name,
 			applicationVersion = version,
-			pEngineName = "Doing it the hard way",
+			pEngineName = "Boxlet",
 			engineVersion = version,
 			apiVersion = version
 		)
@@ -59,7 +59,6 @@ class VulkanInstance:
 					VK_KHR_XLIB_SURFACE_EXTENSION_NAME, 
 					VK_KHR_DISPLAY_EXTENSION_NAME
 				]
-				print('Unsure if this is the correct implementation')
 			case 'cocoa':
 				extensions = [
 					VK_KHR_SURFACE_EXTENSION_NAME, 
