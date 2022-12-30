@@ -60,6 +60,12 @@ class VulkanInstance:
 					VK_KHR_DISPLAY_EXTENSION_NAME
 				]
 				print('Unsure if this is the correct implementation')
+			case 'cocoa':
+				extensions = [
+					VK_KHR_SURFACE_EXTENSION_NAME, 
+					VK_MVK_MACOS_SURFACE_EXTENSION_NAME,
+					VK_MVK_MOLTENVK_EXTENSION_NAME
+				]
 			case _:
 				raise Exception(f'driver {driver} not supported yet.')
 		# TODO !!! this will need to be updated based on platform

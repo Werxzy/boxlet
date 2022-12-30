@@ -48,13 +48,27 @@ class BoxletVK:
 				vkCreateXlibSurfaceKHR = vkGetInstanceProcAddr(self.instance.vk_addr, 'vkCreateXlibSurfaceKHR')
 
 				# TODO check this with a valid system
-				# (my virtual machine can't test vulkan)
+				# (my virtual machine can't test this)
 				surface_create_info = VkXlibSurfaceCreateInfoKHR(
 					dpy = id(wm_info['display']),
 					window = wm_info['window']
 				)
 
 				self.surface = vkCreateXlibSurfaceKHR(
+					instance = self.instance.vk_addr,
+					pCreateInfo = surface_create_info,
+					pAllocator = None,
+					pSurface = ffi.new('VkSurfaceKHR*')
+				)[0]
+
+			case 'cocoa':
+				vkCreateMacOSSurfaceMVK = vkGetInstanceProcAddr(self.instance.vk_addr, 'vkCreateMacOSSurfaceMVK')
+
+				surface_create_info = VkMacOSSurfaceCreateInfoMVK(
+					pView = id(wm_info['display'])
+				)
+
+				self.surface = vkCreateMacOSSurfaceMVK(
 					instance = self.instance.vk_addr,
 					pCreateInfo = surface_create_info,
 					pAllocator = None,
