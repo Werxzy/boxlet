@@ -33,4 +33,4 @@ Also, as a reminder, Mac is either limited to versions 3.3 or 4.1 of OpenGL.
 The vulkan classes requires the Vulkan SDK and the Python binding for Vulkan by realitix ( https://github.com/realitix/vulkan ).
 The current implementation only seems to work with Windows at the moment.
 A most of the code I started with came from the youtube channel GetIntoGameDev (https://www.youtube.com/watch?v=2NVlG9TFT1c&list=PLn3eTxaOtL2M4qgHpHuxY821C_oX0GvM7&index=2), 
-but it has been heavily modified to better fit the renderer's needs and normal python conventions.
+but it has been heavily modified and extended to better fit the renderer's needs and normal python conventions.
