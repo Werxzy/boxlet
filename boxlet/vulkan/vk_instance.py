@@ -49,9 +49,17 @@ class VulkanInstance:
 
 		match driver:
 			case 'windows':
-				extensions = [VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_WIN32_SURFACE_EXTENSION_NAME]
+				extensions = [
+					VK_KHR_SURFACE_EXTENSION_NAME, 
+					VK_KHR_WIN32_SURFACE_EXTENSION_NAME
+				]
 			case 'x11':
-				extensions = [VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_XLIB_SURFACE_EXTENSION_NAME]
+				extensions = [
+					VK_KHR_SURFACE_EXTENSION_NAME, 
+					VK_KHR_XLIB_SURFACE_EXTENSION_NAME, 
+					VK_KHR_DISPLAY_EXTENSION_NAME
+				]
+				print('Unsure if this is the correct implementation')
 			case _:
 				raise Exception(f'driver {driver} not supported yet.')
 		# TODO !!! this will need to be updated based on platform

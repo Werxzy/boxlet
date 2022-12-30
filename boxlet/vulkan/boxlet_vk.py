@@ -47,8 +47,10 @@ class BoxletVK:
 			case 'x11':
 				vkCreateXlibSurfaceKHR = vkGetInstanceProcAddr(self.instance.vk_addr, 'vkCreateXlibSurfaceKHR')
 
+				# TODO check this with a valid system
+				# (my virtual machine can't test vulkan)
 				surface_create_info = VkXlibSurfaceCreateInfoKHR(
-					dpy = wm_info['display'],
+					dpy = id(wm_info['display']),
 					window = wm_info['window']
 				)
 
