@@ -141,6 +141,53 @@ class Model:
 			dim = 3)
 
 	@staticmethod
+	def gen_sphere(size = 1, divisions = 3):
+		# can redistribute the segments to make the sphere look rounder
+		segments = np.linspace(-1, 1, divisions + 1)
+		segments = np.transpose(np.meshgrid(segments, segments))
+		segments = segments.reshape((-1,2))
+
+		axis_x = [
+			[1,0,0], [0,0,1], [-1,0,0], [0,0,-1], [1,0,0], [-1,0,0],
+		]
+		axis_y = [
+			[0,1,0], [0,1,0], [0,1,0], [0,1,0], [0,0,1], [0,0,1],
+		]
+		all_pos = []
+		for ax, ay in zip(axis_x, axis_y):
+			pos = np.matmul(segments, np.array([ax, ay]))
+			normal = np.cross(ax, ay)
+
+			pos += np.tile(normal, (pos.shape[0], 1))
+
+			pos = (pos.T / np.linalg.norm(pos, axis = 1)).T
+			all_pos.append(pos)
+			
+		positions = np.concatenate(all_pos).flatten() * size
+		texcoords = np.tile((segments + 1) * 0.5, (6, 1)).flatten()
+
+		ind_range = np.arange(divisions)
+		m = np.repeat(ind_range, divisions) * (divisions + 1) + np.tile(ind_range, divisions)
+		n = m + (divisions + 1)
+		m_1 = m + 1
+		n_1 = n + 1
+
+		point_count = (divisions + 1) ** 2
+		face_count = (divisions) ** 2
+		faces = np.repeat(np.arange(6) * point_count, face_count * 6)
+		indices = np.stack([m, n, n_1, m, n_1, m_1], axis = -1).flatten()
+		indices = faces + np.tile(indices, 6)
+
+		return Model(
+			{
+				'position' : positions,
+				'texcoord' : texcoords
+			},
+			indices,
+			dim = 3
+		)
+
+	@staticmethod
 	def gen_quad_2d(low = -1, high = 1):
 		return Model(
 			vertex = {
