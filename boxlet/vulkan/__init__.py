@@ -3,7 +3,7 @@
 # Though now it has been heavily modified to suit the needs of this engine.
 #	Also, to better match python's conventions.
 
-DEBUG_MODE = True
+DEBUG_MODE = False
 
 from pathlib import Path
 

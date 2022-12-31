@@ -21,19 +21,6 @@ class VulkanInstance:
 		#vulkan version
 		version = VK_MAKE_VERSION(1, 0, 0)
 
-		"""
-			from _vulkan.py:
-			def VkApplicationInfo(
-				sType=VK_STRUCTURE_TYPE_APPLICATION_INFO,
-				pNext=None,
-				pApplicationName=None,
-				applicationVersion=None,
-				pEngineName=None,
-				engineVersion=None,
-				apiVersion=None,
-		)
-		"""
-
 		appInfo = VkApplicationInfo(
 			pApplicationName = application_name,
 			applicationVersion = version,
@@ -70,7 +57,6 @@ class VulkanInstance:
 		# TODO !!! this will need to be updated based on platform
 		# OR find a function that gets a list of these automatically.
 		# not sure if pygame has this easily available
-		# SDL_VULKAN_GETINSTANCEEXTENSIONS
 
 		layers = []
 

@@ -8,20 +8,6 @@ if TYPE_CHECKING:
 class SwapChainSupportDetails:
 
 	def __init__(self, instance:'VulkanInstance', physical_device:'PhysicalDevice', surface):
-		"""
-		typedef struct VkSurfaceCapabilitiesKHR {
-			uint32_t                         minImageCount;
-			uint32_t                         maxImageCount;
-			VkExtent2D                       currentExtent;
-			VkExtent2D                       minImageExtent;
-			VkExtent2D                       maxImageExtent;
-			uint32_t                         maxImageArrayLayers;
-			VkSurfaceTransformFlagsKHR       supportedTransforms;
-			VkSurfaceTransformFlagBitsKHR    currentTransform;
-			VkCompositeAlphaFlagsKHR         supportedCompositeAlpha;
-			VkImageUsageFlags                supportedUsageFlags;
-		} VkSurfaceCapabilitiesKHR;
-		"""
 		
 		vkGetPhysicalDeviceSurfaceCapabilitiesKHR = vkGetInstanceProcAddr(instance.vk_addr, 'vkGetPhysicalDeviceSurfaceCapabilitiesKHR')
 		self.capabilities = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device.vk_addr, surface)
@@ -34,12 +20,7 @@ class SwapChainSupportDetails:
 			print(f"\tmaximum image count: {self.capabilities.maxImageCount}")
 
 			print("\tcurrent extent:")
-			"""
-			typedef struct VkExtent2D {
-				uint32_t    width;
-				uint32_t    height;
-			} VkExtent2D;
-			"""
+
 			print(f"\t\twidth: {self.capabilities.currentExtent.width}")
 			print(f"\t\theight: {self.capabilities.currentExtent.height}")
 
@@ -79,12 +60,6 @@ class SwapChainSupportDetails:
 
 		if DEBUG_MODE:
 			for supportedFormat in self.formats:
-				"""
-				* typedef struct VkSurfaceFormatKHR {
-					VkFormat           format;
-					VkColorSpaceKHR    colorSpace;
-				} VkSurfaceFormatKHR;
-				"""
 
 				print(f"supported pixel format: {Logging.format_to_string(supportedFormat.format)}")
 				print(f"supported color space: {Logging.colorspace_to_string(supportedFormat.colorSpace)}")
@@ -152,35 +127,11 @@ class SwapChainBundle(RenderTarget):
 		presentMode = choose_swapchain_present_mode(support.presentModes)
 		extent = choose_swapchain_extent(width, height, support.capabilities)
 		super().__init__(format.format, extent)
-		print(self.format, self.extent)
 
 		image_count = min(
 			support.capabilities.maxImageCount,
 			support.capabilities.minImageCount + 1
 		)
-
-		"""
-			* VULKAN_HPP_CONSTEXPR SwapchainCreateInfoKHR(
-				VULKAN_HPP_NAMESPACE::SwapchainCreateFlagsKHR flags_         = {},
-				VULKAN_HPP_NAMESPACE::SurfaceKHR              surface_       = {},
-				uint32_t                                      minImageCount_ = {},
-				VULKAN_HPP_NAMESPACE::Format                  imageFormat_   = VULKAN_HPP_NAMESPACE::Format::eUndefined,
-				VULKAN_HPP_NAMESPACE::ColorSpaceKHR   imageColorSpace_  = VULKAN_HPP_NAMESPACE::ColorSpaceKHR::eSrgbNonlinear,
-				VULKAN_HPP_NAMESPACE::Extent2D        imageExtent_      = {},
-				uint32_t                              imageArrayLayers_ = {},
-				VULKAN_HPP_NAMESPACE::ImageUsageFlags imageUsage_       = {},
-				VULKAN_HPP_NAMESPACE::SharingMode     imageSharingMode_ = VULKAN_HPP_NAMESPACE::SharingMode::eExclusive,
-				uint32_t                              queueFamilyIndexCount_ = {},
-				const uint32_t *                      pQueueFamilyIndices_   = {},
-				VULKAN_HPP_NAMESPACE::SurfaceTransformFlagBitsKHR preTransform_ =
-				VULKAN_HPP_NAMESPACE::SurfaceTransformFlagBitsKHR::eIdentity,
-				VULKAN_HPP_NAMESPACE::CompositeAlphaFlagBitsKHR compositeAlpha_ =
-				VULKAN_HPP_NAMESPACE::CompositeAlphaFlagBitsKHR::eOpaque,
-				VULKAN_HPP_NAMESPACE::PresentModeKHR presentMode_  = VULKAN_HPP_NAMESPACE::PresentModeKHR::eImmediate,
-				VULKAN_HPP_NAMESPACE::Bool32         clipped_      = {},
-				VULKAN_HPP_NAMESPACE::SwapchainKHR   oldSwapchain_ = {} 
-			) VULKAN_HPP_NOEXCEPT
-		"""
 
 		if self.queue_family.graphics_family != self.queue_family.present_family:
 			imageSharingMode = VK_SHARING_MODE_CONCURRENT

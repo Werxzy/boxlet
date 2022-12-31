@@ -1,5 +1,8 @@
-from typing import Self, TypeVar, final
-
+try:
+	from typing import Self
+except ImportError:
+	pass
+from typing import TypeVar, final
 
 I = TypeVar('I')
 
@@ -16,7 +19,7 @@ class TrackedInstances:
 		if cls.__base__ is TrackedInstances:
 			cls._all_instances = []
 
-	def __new__(cls: type[Self], *args, **kwargs) -> Self:
+	def __new__(cls: type['Self'], *args, **kwargs) -> 'Self':
 		ob = super().__new__(cls)
 		cls._all_instances.append(ob)
 		return ob

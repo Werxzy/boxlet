@@ -16,14 +16,6 @@ class DebugMessenger:
 		#fetch creation function
 		creation_function = vkGetInstanceProcAddr(instance.vk_addr, 'vkCreateDebugReportCallbackEXT')
 
-		"""
-			def vkCreateDebugReportCallbackEXT(
-				instance
-				,pCreateInfo
-				,pAllocator
-				,pCallback=None
-				,):
-		"""
 		self.messenger = creation_function(instance.vk_addr, create_info, None)
 
 	@staticmethod

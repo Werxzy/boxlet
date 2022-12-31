@@ -16,7 +16,6 @@ class BoxletVK:
 		if DEBUG_MODE:
 			print("Making a graphics engine")
 		
-		# self.make_instance()
 		self.make_pygame_instance(wm_info)
 
 		self.make_device()		
@@ -129,7 +128,6 @@ class BoxletVK:
 		prev_frame = BVKC.swapchain.frames[BVKC.swapchain.current_frame]
 		prev_frame.in_flight.wait_for()
 		prev_frame.in_flight.reset()
-		# These semaphores and fences are probably used in a bad way, even though it works
 
 		image_index = vkAcquireNextImageKHR(
 			device = BVKC.logical_device.device, swapchain = BVKC.swapchain.vk_addr, timeout = 1000000000,
