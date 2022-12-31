@@ -28,12 +28,6 @@ camera_step = Camera3D(priority = -1)
 camera_controller = CameraController(camera_step)
 camera_controller.pos[2] -= 1
 
-mat = np.identity(4, np.float32)
-mat[0][0] = 9/16
-mat[2][0] = 0.5
-mat[2][1] = 0.5
-PushConstantManager.set_global('box_viewProj', mat)
-
 # - - render pass for normal rendering to texture - -
 shader_layout = ShaderAttributeLayout(
 	attributes = [
