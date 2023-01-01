@@ -3,7 +3,7 @@ from pygame import display as pg_display
 from . import (DEBUG_MODE, CommandPool, DebugMessenger, GraphicsPipeline,
                LogicalDevice, Mesh, PhysicalDevice, PipelineLayout,
                QueueFamilyIndices, Renderer, RenderingStep, RenderPass,
-               RenderTarget, SwapChainBundle, Texture, VulkanInstance)
+               RenderTarget, Shader, SwapChainBundle, Texture, VulkanInstance)
 from .vk_module import *
 
 
@@ -177,6 +177,8 @@ class BoxletVK:
 		GraphicsPipeline._destroy_all()
 		PipelineLayout._destroy_all()
 		RenderPass._destroy_all()
+		
+		Shader._destroy_all()
 
 		RenderTarget._destroy_all()
 

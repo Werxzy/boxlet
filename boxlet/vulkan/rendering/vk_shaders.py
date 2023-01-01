@@ -2,7 +2,7 @@ from .. import DEBUG_MODE, get_path
 from ..vk_module import *
 
 
-class Shader:
+class Shader(TrackedInstances):
 	TYPES = {
 		'vertex': VK_SHADER_STAGE_VERTEX_BIT,
 		'fragment': VK_SHADER_STAGE_FRAGMENT_BIT
@@ -17,7 +17,7 @@ class Shader:
 
 		self.shader_type = shader_type
 
-		with open(get_path(filename), 'rb') as file:
+		with open(filename, 'rb') as file:
 			code = file.read()
 
 		create_info = VkShaderModuleCreateInfo(
@@ -36,6 +36,6 @@ class Shader:
 			pName = 'main'
 		)
 
-	def destroy(self):
+	def on_destroy(self):
 		vkDestroyShaderModule(BVKC.logical_device.device, self.module, None)
 

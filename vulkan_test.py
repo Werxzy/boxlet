@@ -19,6 +19,11 @@ mesh_list.clear()
 
 texture = Texture(pygame.image.load("examples/opengl_example/box.png"))
 
+base_vert = Shader('vertex', 'examples/vulkan_example/shaders/test_shader/vert.spv')
+base_frag = Shader('fragment', 'examples/vulkan_example/shaders/test_shader/frag.spv')
+vignette_vert = Shader('vertex', 'examples/vulkan_example/shaders/vignette_shader/vert.spv')
+vignette_frag = Shader('fragment', 'examples/vulkan_example/shaders/vignette_shader/frag.spv')
+
 # - - - - - - - - - - - - - - - - - - - - - - -
 #	render pipeline creation
 # - - - - - - - - - - - - - - - - - - - - - - -
@@ -56,8 +61,8 @@ graphics_pipeline = GraphicsPipeline(
 			('texture', 1, 'fragment')
 		]
 	},
-	'shaders/test_shader/vert.spv',
-	'shaders/test_shader/frag.spv',
+	base_vert,
+	base_frag,
 	meshes
 )
 renderer = IndirectRenderer(graphics_pipeline, meshes, {
@@ -83,8 +88,8 @@ graphics_pipeline_screen = GraphicsPipeline(
 			('texture', 0, 'fragment')
 		]
 	},
-	'shaders/vignette_shader/vert.spv',
-	'shaders/vignette_shader/frag.spv',
+	vignette_vert,
+	vignette_frag,
 	ScreenRenderer.get_screen_mesh()
 )
 renderer_screen = ScreenRenderer(graphics_pipeline_screen, {

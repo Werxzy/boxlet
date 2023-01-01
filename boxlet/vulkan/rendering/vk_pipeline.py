@@ -65,8 +65,9 @@ class GraphicsPipeline(VulkanPipeline):
 	def __init__(self, 
 			render_pass:'RenderPass', 
 			shader_attribute:'ShaderAttributeLayout', 
-			shader_layout:dict, vertex_filepath, 
-			fragment_filepath, 
+			shader_layout:dict, 
+			vertex_shader:Shader, 
+			fragment_shader:Shader, 
 			binding_model:'Mesh',
 			priority = 0):
 
@@ -93,8 +94,6 @@ class GraphicsPipeline(VulkanPipeline):
 			vertexBindingDescriptionCount = len(binding_desc), pVertexBindingDescriptions = binding_desc,
 			vertexAttributeDescriptionCount = len(attribute_desc), pVertexAttributeDescriptions = attribute_desc
 		)
-
-		vertex_shader = Shader('vertex', vertex_filepath)
 
 		input_assembly = VkPipelineInputAssemblyStateCreateInfo(
 			topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
@@ -135,8 +134,6 @@ class GraphicsPipeline(VulkanPipeline):
 			sampleShadingEnable = VK_FALSE,
 			rasterizationSamples = VK_SAMPLE_COUNT_1_BIT
 		)
-
-		fragment_shader = Shader('fragment', fragment_filepath)
 
 		shader_stages = [vertex_shader.stage_create_info(), fragment_shader.stage_create_info()]
 
@@ -186,9 +183,6 @@ class GraphicsPipeline(VulkanPipeline):
 		)
 
 		self.pipeline = vkCreateGraphicsPipelines(BVKC.logical_device.device, VK_NULL_HANDLE, 1, pipeline_info, None)[0]
-
-		vertex_shader.destroy()
-		fragment_shader.destroy()
 
 		render_pass.attach(self)
 

@@ -26,6 +26,10 @@ texture = Texture(pygame.image.load("examples/opengl_example/box.png"))
 # Updates/manages the values for the camera matrix that is passed to the shader.
 camera_step = Camera3D(priority = -1)
 
+# Shaders used in the pipeline
+base_vert = Shader('vertex', 'examples/vulkan_example/shaders/test_shader/vert.spv')
+base_frag = Shader('fragment', 'examples/vulkan_example/shaders/test_shader/frag.spv')
+
 # Prepares what kinds of data will be used for the renderer(s).
 # objects that are used between multiple renderers will have all their 
 # 	information layed out here.
@@ -59,8 +63,8 @@ graphics_pipeline = GraphicsPipeline(
 			('texture', 1, 'fragment')
 		]
 	},
-	'shaders/test_shader/vert.spv',
-	'shaders/test_shader/frag.spv',
+	base_vert,
+	base_frag,
 	meshes
 )
 
