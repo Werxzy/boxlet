@@ -35,7 +35,14 @@ class ShaderAttributeLayout:
 			name = t[0]
 			attr_type = t[1]
 
-			if attr_type == 'vec4':
+			if attr_type == 'float':
+				dtype_format.append((name, '(1,)f4'))
+				self.attribute_format[name] = [
+					(offset, 0, VK_FORMAT_R32_SFLOAT)
+				]
+				offset += 4
+
+			elif attr_type == 'vec4':
 				dtype_format.append((name, '(4,)f4'))
 				self.attribute_format[name] = [
 					(offset, 0, VK_FORMAT_R32G32B32A32_SFLOAT)

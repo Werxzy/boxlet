@@ -5,7 +5,7 @@ from ..vk_module import *
 
 
 class Texture(TrackedInstances):
-	def __init__(self, input_image:pygame.Surface = None,
+	def __init__(self, input_image:pygame.Surface|list[pygame.Surface] = None,
 			format = VK_FORMAT_R8G8B8A8_UNORM,
 			extent:list|tuple|None = None,
 			image_layout = VK_IMAGE_LAYOUT_UNDEFINED,
@@ -13,13 +13,19 @@ class Texture(TrackedInstances):
 			usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT,
 			access_mask = 0,
-			stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
+			stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+			layer_count = 1
 		) -> None:
 
 		if input_image:
 			image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 			access_mask = VK_ACCESS_SHADER_READ_BIT
 			stage_mask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+			
+			self.layer_count = len(input_image) if isinstance(input_image, list) else 1
+
+		else:
+			self.layer_count = layer_count
 		
 		self.format = format
 		self.image_layout = image_layout
@@ -27,12 +33,22 @@ class Texture(TrackedInstances):
 		self.usage = usage
 		self.image = None
 		self.aspect_mask = aspect_mask
+		
 
 		self.access_mask = access_mask
 		self.stage_mask = stage_mask
 
 		if input_image:
-			extent = [input_image.get_width(), input_image.get_height(), 1]
+			if isinstance(input_image, list):
+				self.tiling = VK_IMAGE_TILING_OPTIMAL
+				extent = [input_image[0].get_width(), input_image[0].get_height(), 1]
+
+				for image in input_image:
+					if image.get_size() != input_image[0].get_size():
+						raise Exception(f'Images must be the same size : {image.get_size() } != {input_image[0].get_size()}')
+			else:
+				extent = [input_image.get_width(), input_image.get_height(), 1]
+		
 		elif not extent:
 			raise Exception('No valid extent provided.')
 
@@ -65,7 +81,7 @@ class Texture(TrackedInstances):
 			format = self.format,
 			extent = self.extent,
 			mipLevels = 1,
-			arrayLayers = 1,
+			arrayLayers = self.layer_count,
 			samples = VK_SAMPLE_COUNT_1_BIT,
 			tiling = self.tiling,
 			usage = self.usage,
@@ -79,18 +95,20 @@ class Texture(TrackedInstances):
 
 		self.allocate()
 
-		self.image_view = ImageView(self.image, self.format, self.extent, self.aspect_mask)
+		self.image_view = ImageView(self.image, self.format, self.extent, self.layer_count, self.aspect_mask)
 
 		if input_image:
-			staging_buffer = Buffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, pygame.image.tostring(input_image, "RGBA", True))
-
 			self.transition_image_layout(
 				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 				VK_ACCESS_TRANSFER_WRITE_BIT,
 				VK_PIPELINE_STAGE_TRANSFER_BIT
 			)
-			self.copy_buffer_to_image(staging_buffer.buffer)
-			staging_buffer.destroy()
+
+			if self.layer_count > 1:
+				for i, image in enumerate(input_image):
+					self.copy_buffer_to_image(image, i)
+			else:
+				self.copy_buffer_to_image(input_image, 0)
 
 		if access_mask:
 			self.transition_image_layout(
@@ -135,7 +153,7 @@ class Texture(TrackedInstances):
 		else:
 			command_buffer_addr = command_buffer
 
-		subresource = VkImageSubresourceRange(self.aspect_mask, 0, 1, 0, 1)
+		subresource = VkImageSubresourceRange(self.aspect_mask, 0, 1, 0, self.layer_count)
 
 		barrier = VkImageMemoryBarrier(
 			srcAccessMask = self.access_mask,
@@ -161,23 +179,25 @@ class Texture(TrackedInstances):
 		self.access_mask = new_access
 		self.stage_mask = new_stage
 
-	def copy_buffer_to_image(self, buffer):
+	def copy_buffer_to_image(self, image:pygame.Surface, layer_number):
+		staging_buffer = Buffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, pygame.image.tostring(image, "RGBA", True))
 		temp_command_buffer = CommandBuffer(BVKC.command_pool)
 		temp_command_buffer.single_time_begin()
 
-		subresource = VkImageSubresourceLayers(self.aspect_mask, 0, 0, 1)
+		subresource = VkImageSubresourceLayers(self.aspect_mask, 0, layer_number, 1)
 
 		region = VkBufferImageCopy(0, 0, 0, subresource, [0, 0, 0], self.extent)
 
 		vkCmdCopyBufferToImage(
 			temp_command_buffer.vk_addr,
-			buffer,
+			staging_buffer.buffer,
 			self.image,
 			self.image_layout,
 			1, [region]
 		)
 
 		temp_command_buffer.single_time_end()
+		staging_buffer.destroy()
 
 	def create_sampler(self):
 		properties = vkGetPhysicalDeviceProperties(BVKC.physical_device.vk_addr)
