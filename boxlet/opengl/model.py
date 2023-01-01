@@ -4,6 +4,8 @@ from OpenGL.GL import *
 
 from .. import *
 
+from ..util_3d.extra import load_obj_data
+
 
 class Model:
 	def __init__(self, vertex = None, index = [], dim = 2) -> None:
@@ -84,37 +86,8 @@ class Model:
 
 	@classmethod
 	def load_obj(cls, file):
-		def try_int(s):
-			try:
-				return int(s)-1
-			except ValueError:
-				return -1
-
-		with open(file, 'r') as file:
-
-			data = {'v':[], 'vt':[], 'vn':[]}
-			vertex = {'position' : [], 'texcoord' : [], 'normal' : []}
-			index:list[int] = []
-			index_dict = {}
-
-			for line in file:
-				l = line.split(' ')
-				if l[0] in {'v', 'vn', 'vt'}:
-					data[l[0]].append([float(f) for f in l[1:]])
-				
-				if l[0] == 'f':
-					for index_data in l[1:]:
-						ind = tuple(try_int(vd) for vd in index_data.split('/'))
-
-						# if the pairing doesn't already exist in the list of vertices
-						if ind not in index_dict:
-							index_dict[ind] = len(index_dict)
-							for ind_2, (name, obj_name) in zip(ind, [('position', 'v'), ('texcoord', 'vt'), ('normal', 'vn')]):
-								vertex[name].extend(data[obj_name][ind_2])
-
-						index.append(index_dict[ind])
-
-			return cls(vertex = vertex, index = index, dim = len(data['v'][0]))
+		vertex, index, dim = load_obj_data(file)
+		return cls(vertex = vertex, index = index, dim = dim)
 
 	@staticmethod
 	def gen_cube(size = 1):

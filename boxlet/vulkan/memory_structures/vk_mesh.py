@@ -1,3 +1,4 @@
+from ...util_3d.extra import load_obj_data
 from .. import Buffer, np
 from ..vk_module import *
 
@@ -113,6 +114,11 @@ class Mesh(TrackedInstances):
 		]
 
 		return bind_desc, attr_desc
+
+	@classmethod
+	def load_obj(cls, file):
+		vertices, indices, dim = load_obj_data(file)
+		return cls(vertices = vertices, indices = indices, dim = dim)
 
 	@staticmethod
 	def gen_cube(size = 1):
