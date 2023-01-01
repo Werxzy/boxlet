@@ -226,19 +226,67 @@ class Mesh(TrackedInstances):
 
 class MultiMesh(Mesh):
 	def __init__(self, meshes:list[Mesh]) -> None:	
-		assert all(m.vertex_dtype == meshes[0].vertex_dtype for m in meshes)
-		# all data types need to match
-		# TODO find gaps and fill data with 0s
-		#	then probably notify that there were gaps
+		if not all(m.vertex_dtype == meshes[0].vertex_dtype for m in meshes):
+			
+			# merges all of the dtypes together
+			# if a name only exists in one dtype, 
+			# 	all other meshes will set it to 0
+			# if a name exists in multiple, 
+			# 	the selected dtype will be the longest one
+			new_data_format:dict[str, np.dtype] = {}
+			for m in meshes:
+				for name in m.vertex_dtype.names:
+					dt = m.vertex_dtype[name]
+					if (name not in new_data_format 
+						or new_data_format[name].itemsize < dt.itemsize
+						):
+						new_data_format[name] = dt
 
-		self.vertex_dtype = meshes[0].vertex_dtype
-		self.stride = meshes[0].stride
-		self.offset_data = meshes[0].offset_data
+			self.vertex_dtype = np.dtype(list(new_data_format.items()))
+			self.stride = 0
+			self.offset_data = {}
+
+			# creates the new offset and stride data
+			for name in self.vertex_dtype.names:
+				size = self.vertex_dtype[name].itemsize
+
+				if size == 4:
+					vk_format = VK_FORMAT_R32_SFLOAT
+				elif size == 8:
+					vk_format = VK_FORMAT_R32G32_SFLOAT
+				elif size == 12:
+					vk_format = VK_FORMAT_R32G32B32_SFLOAT
+				elif size == 16:
+					vk_format = VK_FORMAT_R32G32B32A32_SFLOAT
+
+				self.offset_data[name] = (vk_format, self.stride)
+				self.stride += size
+
+			# creates numpy arrays in the new dtype format
+			vertices = []
+			for m in meshes:
+				old_dtype = m._vertices_data.dtype
+				new_vert = np.zeros(m._vertices_data.shape, self.vertex_dtype)
+
+				# for each subtype that overlaps between the old and new
+				for t in old_dtype.names:
+					if t in self.vertex_dtype.names:
+						# fit in the old data
+						new_vert[t][:, 0:old_dtype[t].shape[0]] = m._vertices_data[t]
+
+				vertices.append(new_vert)
+
+		else:
+			self.vertex_dtype = meshes[0].vertex_dtype
+			self.stride = meshes[0].stride
+			self.offset_data = meshes[0].offset_data
+
+			vertices = [m._vertices_data for m in meshes]
+
+		indices = [m._indices_data for m in meshes]
+
 		self.vertex_buffer = None
 		self.index_buffer = None
-
-		vertices = [m._vertices_data for m in meshes]
-		indices = [m._indices_data for m in meshes]
 
 		final_vertices = np.concatenate(vertices)
 		final_indices = np.concatenate(indices, dtype = np.int32)
