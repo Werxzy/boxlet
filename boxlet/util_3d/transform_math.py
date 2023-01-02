@@ -41,6 +41,18 @@ def clip_vector(v):
 	m = magnitude(v)
 	return v if m <= 1 else v / m
 
+def move_towards(a, b, amount):
+	'''
+	Moves from vector a to vector b by a given amount.
+	
+	Also returns a bool on if the target is reached.
+	'''
+	d = b - a
+	m = magnitude(d)
+	if m <= amount:
+		return b, True
+	return a + d * (amount / m), False
+
 def translate(xyz):
 	x, y, z = xyz
 	return np.array([[1,0,0,0],
