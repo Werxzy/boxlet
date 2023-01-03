@@ -8,10 +8,10 @@ def normalize_x0z(vec):
 	vec[1] = 0
 	return normalize(vec)
 
-def magnitude(v): 
+def magnitude(v) -> float:
 	return sum(v ** 2) ** 0.5
 
-def square_magnitude(v): 
+def square_magnitude(v) -> float: 
 	return sum(v ** 2)
 
 def normalize(v):
@@ -41,17 +41,27 @@ def clip_vector(v):
 	m = magnitude(v)
 	return v if m <= 1 else v / m
 
-def move_towards(a, b, amount):
+def move_towards(a, b, amount:float) -> tuple['Any', bool, float]:
 	'''
 	Moves from vector a to vector b by a given amount.
 	
-	Also returns a bool on if the target is reached.
+	Also returns a bool on if the target is reached and how much movement is left.
 	'''
 	d = b - a
 	m = magnitude(d)
 	if m <= amount:
-		return b, True
-	return a + d * (amount / m), False
+		return b, True, amount - m
+	return a + d * (amount / m), False, 0
+
+def move_towards_1D(a:float, b:float, amount:float) -> tuple[float, bool, float]:
+	'''
+	Same as move_towards, but for single floats
+	'''
+	d = b - a
+	m = abs(d)
+	if m <= amount:
+		return b, True, amount - m
+	return a + math.copysign(amount, d), False, 0
 
 def translate(xyz):
 	x, y, z = xyz

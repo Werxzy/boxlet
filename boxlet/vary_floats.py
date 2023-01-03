@@ -17,6 +17,17 @@ class VaryFloats:
 		self.previous[:] = self.current
 		self.current[:] = values
 
+	def set_current(self, values):
+		'''
+		Only updates the current values.  You may be looking for set()
+		
+		Usually used with push_current() in order to alter the current value.
+		'''
+		self.current[:] = values
+
+	def push_current(self):
+		self.previous[:] = self.current
+
 	def set_full_range(self, values, ran):
 		self.current[ran] = values
 		self.previous[ran] = values
