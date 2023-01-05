@@ -23,6 +23,24 @@ class InstanceData:
 		self.owner._destroy_instance(self.indirect_id, self.instance_id)
 		self.owner = None
 
+	def get_model_id(self):
+		'''
+		Return the id of the model used in the renderer.
+		
+		Recommended not to use too often.
+		'''
+
+		meshes = self.owner._meshes
+		i_count, _, i_off, v_off, _ = self.owner.indirect_buffer.data[self.indirect_id]
+		
+		for i, (m_i_count, m_i_off, m_v_off) in enumerate(zip(meshes.index_counts, meshes.index_offsets, meshes.vertex_offsets)):
+			if (i_count == m_i_count 
+					and i_off == m_i_off
+					and v_off == m_v_off):
+				return i
+
+		return -1
+
 
 class InstanceBufferSet:
 	def __init__(self, meshes:'MultiMesh', data_type: np.dtype) -> None:
