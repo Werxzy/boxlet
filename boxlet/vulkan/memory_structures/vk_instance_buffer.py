@@ -16,6 +16,7 @@ class InstanceData:
 		return self.owner.instance_buffer.data[self.instance_id][attribute]
 
 	def set(self, attribute, value):
+		self.owner.instance_buffer.needs_update = True
 		self.owner.instance_buffer.data[self.instance_id][attribute] = value
 
 	def destroy(self):

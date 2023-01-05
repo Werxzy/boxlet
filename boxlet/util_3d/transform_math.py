@@ -110,3 +110,14 @@ def fps_look(pos, x, y):
 	matrix = np.matmul(matrix, rotate(y, matrix[0,:3]))
 	matrix[3,:3] = pos
 	return matrix
+
+def raycast_plane(ray_pos, ray_dir, plane_normal, plane_center = (0,0,0)):
+	den = dot3(plane_normal, ray_dir)
+	if abs(den) < 0.00001:
+		return None
+		
+	den = dot3(plane_center - ray_pos, plane_normal) / den
+	if den < 0:
+		return None
+
+	return ray_pos + ray_dir * den
