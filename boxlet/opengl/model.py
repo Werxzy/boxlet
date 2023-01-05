@@ -1,10 +1,13 @@
 from ctypes import c_float, c_int, c_void_p, sizeof
+from typing import TYPE_CHECKING
 
 from OpenGL.GL import *
 
 from .. import *
-
 from ..util_3d.extra import load_obj_data
+
+if TYPE_CHECKING:
+	from . import Shader
 
 
 class Model:
@@ -86,8 +89,14 @@ class Model:
 
 	@classmethod
 	def load_obj(cls, file):
-		vertex, index, dim = load_obj_data(file)
-		return cls(vertex = vertex, index = index, dim = dim)
+		models = [
+			cls(vertex = vertex, index = index, dim = dim)
+			for name, vertex, index, dim
+			in load_obj_data(file)
+		]
+		if len(models) == 1:
+			return models[0]
+		return models
 
 	@staticmethod
 	def gen_cube(size = 1):

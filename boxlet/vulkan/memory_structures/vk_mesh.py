@@ -4,7 +4,7 @@ from ..vk_module import *
 
 
 class Mesh(TrackedInstances):
-	def __init__(self, vertices:dict[str, list[float]] = None, indices:list[int] = None, dim = 2, component_counts = {}) -> None:
+	def __init__(self, vertices:dict[str, list[float]] = None, indices:list[int] = None, dim = 2, component_counts = {}, name = '') -> None:
 		if vertices is None:
 			vertices = {
 				'position' : [-0.5,-0.5, -0.5,0.5, 0.5,0.5, 0.5,-0.5],
@@ -17,6 +17,7 @@ class Mesh(TrackedInstances):
 
 		self.stride = 0
 		self.offset_data = {}
+		self.name = name
 
 		data_format = []
 		component_counts = {
@@ -117,8 +118,14 @@ class Mesh(TrackedInstances):
 
 	@classmethod
 	def load_obj(cls, file):
-		vertices, indices, dim = load_obj_data(file)
-		return cls(vertices = vertices, indices = indices, dim = dim)
+		models = [
+			cls(vertices = vertices, indices = indices, dim = dim, name = name)
+			for name, vertices, indices, dim
+			in load_obj_data(file)
+		]
+		if len(models) == 1:
+			return models[0]
+		return models
 
 	@staticmethod
 	def gen_cube(size = 1):
@@ -145,7 +152,9 @@ class Mesh(TrackedInstances):
 				0,1,2, 1,3,2, 4,5,6, 5,7,6, 
 				8,9,10, 9,11,10, 12,13,14, 13,15,14, 
 				16,17,18, 17,19,18, 20,21,22, 21,23,22],
-			dim = 3)
+			dim = 3, 
+			name = 'cube'
+		)
 
 	@staticmethod
 	def gen_sphere(size = 1, divisions = 3):
@@ -191,7 +200,8 @@ class Mesh(TrackedInstances):
 				'texcoord' : texcoords
 			},
 			indices,
-			dim = 3
+			dim = 3,
+			name = 'sphere'
 		)
 
 
@@ -207,7 +217,9 @@ class Mesh(TrackedInstances):
 				],
 			},
 			indices = [0,1,2, 0,2,3],
-			dim = 2) 
+			dim = 2,
+			name = 'quad'
+		) 
 
 	@staticmethod
 	def gen_quad_3d(low = -1, high = 1):
@@ -221,7 +233,9 @@ class Mesh(TrackedInstances):
 				],
 			},
 			indices = [0,1,2, 0,2,3],
-			dim = 3) 
+			dim = 3,
+			name = 'quad'
+		) 
 
 
 class MultiMesh(Mesh):
@@ -305,4 +319,10 @@ class MultiMesh(Mesh):
 		# vertex_buffer[index_buffer[i + index_offsets[m]] + vertex_offets[m]]
 		# i = range(index_counts[m])
 		# m = model id
+
+		self.name = 'multi'
+
+		self.names = {
+			model.name : i for i, model in enumerate(meshes)
+		}
 

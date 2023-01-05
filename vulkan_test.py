@@ -12,8 +12,6 @@ mesh_list = [
 
 meshes = MultiMesh(mesh_list)
 
-for m in mesh_list:
-	m.destroy()
 mesh_list.clear()
 # clears out extra meshes that aren't needed after initializing the multimeshh
 

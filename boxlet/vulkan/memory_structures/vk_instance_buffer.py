@@ -75,6 +75,9 @@ class InstanceBufferSet:
 
 	def create_instance(self, model_id):
 		# TODO, add function for creating multiple instances
+		if isinstance(model_id, str):
+			model_id = self._meshes.names[model_id]
+
 		if not self._indirect_unfilled[model_id]:
 			self.create_indirect_group(model_id)
 
