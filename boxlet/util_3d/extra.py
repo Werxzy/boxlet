@@ -31,7 +31,7 @@ def load_obj_data(file):
 			l = line.split(' ')
 			if l[0] == 'o':
 				append_data()
-				name = l[1]
+				name = l[1].replace('\n', '')
 
 			elif l[0] in {'v', 'vn', 'vt'}:
 				data[l[0]].append([float(f) for f in l[1:]])
