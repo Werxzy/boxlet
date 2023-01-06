@@ -49,6 +49,6 @@ class CameraController(Entity):
 		pygame.mouse.set_visible(not on)
 		pygame.event.set_grab(on)
 		if not on:
-			pygame.mouse.set_pos(manager.display_size * 0.5)
+			pygame.mouse.set_pos(np.array(pygame.display.get_window_size()) * 0.5)
 		# set_grab is important to speed up pygame.mouse.set_pos
 			

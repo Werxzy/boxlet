@@ -3,7 +3,7 @@ import math
 import numpy as np
 
 from . import Tmath, Transform
-from .. import manager
+from .. import pygame
 
 
 class CameraBase(Transform):
@@ -86,7 +86,7 @@ class CameraBase(Transform):
 	def get_mouse_ray(self, pos):
 		'Returns the ray of the given mouse coordinate from screen space to world space.\n\nreturns (pos, direction)'
 
-		coord = pos / manager.display_size * 2 - 1
+		coord = pos / np.array(pygame.display.get_window_size()) * 2 - 1
 
 		if self.proj_type_perspective:
 			ray_eye = np.matmul(self.inv_proj_matrix, np.array([coord[0],-coord[1],-1,1]))		

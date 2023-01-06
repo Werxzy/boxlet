@@ -1,7 +1,7 @@
 from OpenGL.GL import *
 
 from .. import BoxletGL, Model, RenderTarget, Shader, VertFragShader
-from ... import manager
+from ... import manager, pygame
 
 
 class FrameBufferStep(RenderTarget):
@@ -61,8 +61,9 @@ class FrameBufferStep(RenderTarget):
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT)
 
 	def get_size(self):
-		return [self.size_settings[0] or round(self.size_settings[2] * manager.display_size[0]),
-				self.size_settings[1] or round(self.size_settings[3] * manager.display_size[1])]
+		display_size = pygame.display.get_window_size()
+		return [self.size_settings[0] or round(self.size_settings[2] * display_size[0]),
+				self.size_settings[1] or round(self.size_settings[3] * display_size[1])]
 
 
 class ApplyShaderToFrame(RenderTarget):
@@ -118,7 +119,7 @@ class ApplyShaderToFrame(RenderTarget):
 		glBindVertexArray(0)
 
 	def prepare(self):
-		BoxletGL.viewport(0, 0, *manager.display_size)
+		BoxletGL.viewport(0, 0, *pygame.display.get_window_size())
 
 		glBindFramebuffer(GL_FRAMEBUFFER, self.to_frame)
 		glDisable(GL_DEPTH_TEST)
@@ -169,7 +170,7 @@ class ApplyDitherToFrame(RenderTarget):
 		self.to_frame = to_frame
 		
 	def prepare(self):
-		BoxletGL.viewport(0, 0, *manager.display_size)
+		BoxletGL.viewport(0, 0, *pygame.display.get_window_size())
 
 		glBindFramebuffer(GL_FRAMEBUFFER, self.to_frame)
 		glDisable(GL_DEPTH_TEST)
@@ -187,5 +188,5 @@ class SimpleClearStep(RenderTarget):
 	def prepare(self):
 		glEnable(GL_DEPTH_TEST)
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT)
-		Shader.set_global_uniform('frameSize', manager.display_size)
+		Shader.set_global_uniform('frameSize', pygame.display.get_window_size())
 

@@ -21,8 +21,6 @@ class Manager:
 			):
 
 		self.fullscreen = fullscreen
-		if not self.fullscreen:
-			self.display_size = np.array(display_size, dtype=int)
 		
 		self.render_mode = render_mode
 		if self.render_mode == 'sdl2':
@@ -30,9 +28,8 @@ class Manager:
 			self.screen_pos = np.zeros(2)
 			if self.fullscreen:
 				self.display = pygame.display.set_mode(flags = pygame.DOUBLEBUF | pygame.FULLSCREEN)
-				self.display_size = np.array(self.display.get_size(), dtype=int)
 			else:
-				self.display = pygame.display.set_mode(self.display_size, flags = pygame.DOUBLEBUF)
+				self.display = pygame.display.set_mode(display_size, flags = pygame.DOUBLEBUF)
 
 			self.fill_color = kwargs.get('fill_color', 'black')
 			if self.fill_color.count(',') > 0: # instead create a list
@@ -40,7 +37,7 @@ class Manager:
 
 			self.canvas_size = np.array(kwargs.get('canvas_size', (0,0)), dtype=int)
 			if 0 in self.canvas_size:
-				self.canvas_size = np.array(self.display_size, dtype=int)
+				self.canvas_size = np.array(display_size, dtype=int)
 			self.canvas = pygame.surface.Surface(self.canvas_size)
 		
 		elif self.render_mode == 'opengl':
@@ -52,9 +49,8 @@ class Manager:
 				pygame.display.gl_set_attribute(pygame.GL_CONTEXT_PROFILE_MASK, pygame.GL_CONTEXT_PROFILE_CORE)
 			if self.fullscreen:
 				self.display = pygame.display.set_mode(flags = pygame.OPENGL | pygame.FULLSCREEN | pygame.DOUBLEBUF, vsync = self.vsync)
-				self.display_size = np.array(self.display.get_size())
 			else:
-				self.display = pygame.display.set_mode(self.display_size, flags = pygame.OPENGL | pygame.DOUBLEBUF, vsync = self.vsync)
+				self.display = pygame.display.set_mode(display_size, flags = pygame.OPENGL | pygame.DOUBLEBUF, vsync = self.vsync)
 
 			from .opengl import BoxletGL
 			self.boxlet_gl = BoxletGL
@@ -63,10 +59,10 @@ class Manager:
 			# TODO fullscreen
 			self.vsync = True
 
-			self.display = pygame.display.set_mode(self.display_size, flags = pygame.DOUBLEBUF | pygame.RESIZABLE, vsync = self.vsync)
+			self.display = pygame.display.set_mode(display_size, flags = pygame.DOUBLEBUF | pygame.RESIZABLE, vsync = self.vsync)
 			wm_info = pygame.display.get_wm_info()
 			from .vulkan.boxlet_vk import BoxletVK
-			self.vulkan_graphics_engine = BoxletVK(*self.display_size, wm_info)
+			self.vulkan_graphics_engine = BoxletVK(*display_size, wm_info)
 
 		else:
 			raise Exception('Unrecognized render mode.')
@@ -167,28 +163,26 @@ class Manager:
 	def set_display(self, display_size = None, canvas_size = None, fullscreen = None, vsync = None):
 		self.fullscreen = fullscreen
 		if not self.fullscreen and not display_size:
-			self.display_size = np.array([960, 540])
+			display_size = (960, 540)
 		
 		if self.render_mode == 'sdl2':
 			if self.fullscreen:
 				self.display = pygame.display.set_mode(flags = pygame.DOUBLEBUF | pygame.FULLSCREEN)
-				self.display_size = np.array(self.display.get_size(), dtype=int)
 			else:
-				self.display = pygame.display.set_mode(self.display_size, flags = pygame.DOUBLEBUF)
+				self.display = pygame.display.set_mode(display_size, flags = pygame.DOUBLEBUF)
 
 			if canvas_size is not None:
 				self.canvas_size = np.array(canvas_size, dtype=int)
 			if 0 in self.canvas_size:
-				self.canvas_size = np.array(self.display_size, dtype=int)
+				self.canvas_size = np.array(display_size, dtype=int)
 			self.canvas = pygame.surface.Surface(self.canvas_size)
 
 		elif self.render_mode == 'opengl':
 			self.vsync = vsync or self.vsync
 			if self.fullscreen:
 				self.display = pygame.display.set_mode(flags = pygame.OPENGL | pygame.FULLSCREEN, vsync = self.vsync)
-				self.display_size = np.array(self.display.get_size(), dtype=int)
 			else:
-				self.display = pygame.display.set_mode(self.display_size, flags = pygame.OPENGL | pygame.DOUBLEBUF, vsync = self.vsync)
+				self.display = pygame.display.set_mode(display_size, flags = pygame.OPENGL | pygame.DOUBLEBUF, vsync = self.vsync)
 
 		elif self.render_mode == 'vulkan':
 			...
