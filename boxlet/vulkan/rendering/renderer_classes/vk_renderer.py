@@ -1,10 +1,10 @@
 from typing import Any
 
-from .. import InstanceBufferSet, Mesh, RenderingStep, UniformBufferGroup, np
-from ..vk_module import *
+from ... import InstanceBufferSet, Mesh, RenderingStep, UniformBufferGroup, np
+from ...vk_module import *
 
 if TYPE_CHECKING:
-	from .. import *
+	from ... import *
 
 
 class Renderer(TrackedInstances, RenderingStep):
@@ -239,102 +239,3 @@ class PushConstantManager:
 	@staticmethod
 	def get_global(key:str):
 		return PushConstantManager.global_values[key]
-
-
-class IndirectRenderer(Renderer):
-	def __init__(self, pipeline:'GraphicsPipeline', meshes:'MultiMesh', defaults:dict[int], priority = 0):
-		super().__init__(priority)
-		
-		self.meshes = meshes
-		meshes.init_buffers()
-
-		self.buffer_set = InstanceBufferSet(
-			meshes,
-			pipeline.shader_attribute.data_type
-		)
-		
-		pipeline.attach(self)
-		self.pipeline = pipeline
-		self.attributes = RendererBindings(pipeline, defaults)
-		self.push_constants = PushConstantManager(pipeline.pipeline_layout)
-
-	def create_instance(self, model_id):
-		return self.buffer_set.create_instance(model_id)
-
-	def begin(self, command_buffer):
-		if self.buffer_set.indirect_count == 0:
-			return
-
-		self.meshes.bind(command_buffer)
-
-		self.push_constants.push(command_buffer)
-		self.buffer_set.update_memory()
-		self.buffer_set.bind_to_vertex(command_buffer)
-		self.attributes.bind(command_buffer)
-
-		vkCmdDrawIndexedIndirect(
-			commandBuffer = command_buffer, 
-			buffer = self.buffer_set.indirect_buffer.buffer,
-			offset = 0,
-			drawCount = self.buffer_set.indirect_count,
-			stride = 20
-		)
-
-	def on_destroy(self):
-		self.buffer_set.destroy()
-		self.attributes.destroy()
-
-
-class ScreenRenderer(Renderer):
-
-	default_mesh:Mesh = None
-
-	def get_screen_mesh():
-		if not ScreenRenderer.default_mesh:
-			ScreenRenderer.default_mesh = Mesh(
-				vertices = {
-					'position':[
-						-1,-1, 1,-1,  1,1, -1,1,
-					], 
-					'texcoord':[
-						0,0, 1,0, 1,1, 0,1
-					],
-				},
-				indices = [0,1,2, 0,2,3],
-				dim = 2) 
-		return ScreenRenderer.default_mesh 
-
-	def __init__(self, pipeline:'GraphicsPipeline', defaults:dict[int], priority=0):
-		super().__init__(priority)
-
-		ScreenRenderer.default_mesh.init_buffers()
-
-		pipeline.attach(self)
-		self.pipeline = pipeline
-		self.attributes = RendererBindings(pipeline, defaults)
-		if pipeline.pipeline_layout.push_constant_dtype:
-			self.push_constants = PushConstantManager(pipeline.pipeline_layout)
-		else:
-			self.push_constants = None
-
-		
-
-	def begin(self, command_buffer):
-
-		ScreenRenderer.default_mesh.bind(command_buffer)
-
-		if self.push_constants:
-			self.push_constants.push(command_buffer)
-		self.attributes.bind(command_buffer)
-
-		vkCmdDrawIndexed(
-			commandBuffer = command_buffer, 
-			indexCount = 6,
-			instanceCount = 1,
-			firstIndex = 0,
-			vertexOffset = 0,
-			firstInstance = 0
-		)
-
-	def on_destroy(self):
-		self.attributes.destroy()

@@ -38,7 +38,7 @@ from .rendering.vk_rendering_step import RenderingStep, KeyedStep
 from .rendering.vk_render_pass import RenderPass
 from .rendering.vk_pipeline import PipelineLayout, GraphicsPipeline
 
-from .rendering.vk_renderer import Renderer, IndirectRenderer, PushConstantManager, ScreenRenderer
+from .rendering.renderer_classes import Renderer, IndirectRenderer, ScreenRenderer, PushConstantManager
 
 from .rendering.vk_camera import Camera3D
 
