@@ -25,15 +25,7 @@ class ScreenRenderer(Renderer):
 		return ScreenRenderer.default_mesh 
 
 	def __init__(self, pipeline:'GraphicsPipeline', defaults:dict[int], priority=0):
-		super().__init__(priority)
-		
-		ScreenRenderer.default_mesh.init_buffers()
-		self.mesh = ScreenRenderer.default_mesh
-
-		pipeline.attach(self)
-		self.pipeline = pipeline
-		self.attributes = RendererBindings(pipeline, defaults)
-		self.push_constants = PushConstantManager(pipeline.pipeline_layout)
+		super().__init__(pipeline, ScreenRenderer.default_mesh, defaults, priority)
 
 	def begin(self, command_buffer):
 		super().begin(command_buffer)

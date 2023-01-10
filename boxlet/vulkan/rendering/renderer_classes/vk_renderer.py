@@ -8,13 +8,17 @@ if TYPE_CHECKING:
 
 
 class Renderer(TrackedInstances, RenderingStep):
-	def __init__(self, priority = 0) -> None:
+	def __init__(self, pipeline:'GraphicsPipeline', mesh:'Mesh|MultiMesh', defaults:dict[int], priority = 0) -> None:
 		super().__init__(priority)
 
-		self.mesh:'Mesh|MultiMesh' = None
-		self.pipeline:'GraphicsPipeline' = None
-		self.attributes:'RendererBindings' = None
-		self.push_constants:'PushConstantManager' = None
+		self.mesh:'Mesh|MultiMesh' = mesh
+		if mesh:
+			mesh.init_buffers()
+
+		pipeline.attach(self)
+		self.pipeline = pipeline
+		self.attributes = RendererBindings(pipeline, defaults)
+		self.push_constants = PushConstantManager(pipeline.pipeline_layout)
 		self.buffer_set:'IndirectBufferSet|InstancedBufferSet' = None
 	
 	def begin(self, command_buffer):
