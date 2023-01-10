@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Self
 
 from ... import RenderingStep, UniformBufferGroup, np
 from ...vk_module import *
@@ -8,9 +8,35 @@ if TYPE_CHECKING:
 
 
 class Renderer(TrackedInstances, RenderingStep):
-	...
-	# no real use in having renderer as an extended class?
-	# only reason is for the order of deallocation of vulkan memory
+	def __init__(self, priority = 0) -> None:
+		super().__init__(priority)
+
+		self.mesh:'Mesh|MultiMesh' = None
+		self.pipeline:'GraphicsPipeline' = None
+		self.attributes:'RendererBindings' = None
+		self.push_constants:'PushConstantManager' = None
+		self.buffer_set:'IndirectBufferSet|InstancedBufferSet' = None
+	
+	def begin(self, command_buffer):
+		if self.mesh:
+			self.mesh.bind(command_buffer)
+
+		if self.push_constants:
+			self.push_constants.push(command_buffer)
+		
+		if self.buffer_set:
+			self.buffer_set.update_memory()
+			self.buffer_set.bind_to_vertex(command_buffer)
+		
+		if self.attributes:
+			self.attributes.bind(command_buffer)
+
+	def on_destroy(self):
+		if self.buffer_set:
+			self.buffer_set.destroy()
+
+		if self.attributes:
+			self.attributes.destroy()
 
 
 class DescriptorSet:
@@ -121,6 +147,12 @@ class RendererBindings:
 	
 	# can also be considered a vulkan descriptor set
 
+	def __new__(cls: type[Self], pipeline:'GraphicsPipeline', defaults) -> Self|None:
+		# Checks if the arguments are valid.
+		if len(pipeline.shader_layout['bindings']):
+			return super().__new__(cls)
+		return None
+
 	def __init__(self, pipeline:'GraphicsPipeline', defaults:dict[int]) -> None:
 		bindings = pipeline.shader_layout['bindings']
 		self.descriptor_pool = pipeline.shader_attribute.create_descriptor_pool(bindings)
@@ -194,6 +226,12 @@ class RendererBindings:
 class PushConstantManager:
 
 	global_values:dict[str,np.ndarray] = {}
+
+	def __new__(cls: type[Self], pipeline_layout:'PipelineLayout') -> Self|None:
+		# Checks if the arguments are valid.
+		if pipeline_layout.push_constant_dtype is not None:
+			return super().__new__(cls)
+		return None
 
 	def __init__(self, pipeline_layout:'PipelineLayout') -> None:
 		self.pipeline_layout = pipeline_layout

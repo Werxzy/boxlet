@@ -62,6 +62,8 @@ class Mesh(TrackedInstances):
 		self.vertex_buffer = None
 		self.index_buffer = None
 
+		self.index_count = len(indices)
+
 	def init_buffers(self):
 		# initializes the buffers only when they are actually used
 		# this is so that things like MultiMesh can use them beforehand

@@ -10,7 +10,7 @@ class IndirectRenderer(Renderer):
 	def __init__(self, pipeline:'GraphicsPipeline', meshes:'MultiMesh', defaults:dict[int], priority = 0):
 		super().__init__(priority)
 		
-		self.meshes = meshes
+		self.mesh = meshes
 		meshes.init_buffers()
 
 		self.buffer_set = IndirectBufferSet(
@@ -30,12 +30,7 @@ class IndirectRenderer(Renderer):
 		if self.buffer_set.indirect_count == 0:
 			return
 
-		self.meshes.bind(command_buffer)
-
-		self.push_constants.push(command_buffer)
-		self.buffer_set.update_memory()
-		self.buffer_set.bind_to_vertex(command_buffer)
-		self.attributes.bind(command_buffer)
+		super().begin(command_buffer)
 
 		vkCmdDrawIndexedIndirect(
 			commandBuffer = command_buffer, 
@@ -44,7 +39,3 @@ class IndirectRenderer(Renderer):
 			drawCount = self.buffer_set.indirect_count,
 			stride = 20
 		)
-
-	def on_destroy(self):
-		self.buffer_set.destroy()
-		self.attributes.destroy()

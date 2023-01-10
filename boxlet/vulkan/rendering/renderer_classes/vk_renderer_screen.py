@@ -26,26 +26,17 @@ class ScreenRenderer(Renderer):
 
 	def __init__(self, pipeline:'GraphicsPipeline', defaults:dict[int], priority=0):
 		super().__init__(priority)
-
+		
 		ScreenRenderer.default_mesh.init_buffers()
+		self.mesh = ScreenRenderer.default_mesh
 
 		pipeline.attach(self)
 		self.pipeline = pipeline
 		self.attributes = RendererBindings(pipeline, defaults)
-		if pipeline.pipeline_layout.push_constant_dtype:
-			self.push_constants = PushConstantManager(pipeline.pipeline_layout)
-		else:
-			self.push_constants = None
-
-		
+		self.push_constants = PushConstantManager(pipeline.pipeline_layout)
 
 	def begin(self, command_buffer):
-
-		ScreenRenderer.default_mesh.bind(command_buffer)
-
-		if self.push_constants:
-			self.push_constants.push(command_buffer)
-		self.attributes.bind(command_buffer)
+		super().begin(command_buffer)
 
 		vkCmdDrawIndexed(
 			commandBuffer = command_buffer, 
@@ -55,6 +46,3 @@ class ScreenRenderer(Renderer):
 			vertexOffset = 0,
 			firstInstance = 0
 		)
-
-	def on_destroy(self):
-		self.attributes.destroy()
