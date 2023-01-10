@@ -5,8 +5,8 @@ if TYPE_CHECKING:
 	from .. import MultiMesh
 
 
-class InstanceData:
-	def __init__(self, owner:'InstanceBufferSet', indirect_id, instance_id) -> None:
+class IndirectData:
+	def __init__(self, owner:'IndirectBufferSet', indirect_id, instance_id) -> None:
 		self.owner = owner
 		self.indirect_id = indirect_id
 		self.instance_id = instance_id
@@ -42,12 +42,12 @@ class InstanceData:
 		return -1
 
 
-class InstanceBufferSet:
-	def __init__(self, meshes:'MultiMesh', data_type: np.dtype) -> None:
+class IndirectBufferSet:
+	def __init__(self, meshes:'MultiMesh', data_type:np.dtype) -> None:
 		
 		# TODO more control over the buffer size increase, indirect buffer size, etc
 
-		self._instances:list[InstanceData] = []
+		self._instances:list[IndirectData] = []
 		
 		self.instance_buffer = Buffer(
 			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
@@ -113,7 +113,7 @@ class InstanceBufferSet:
 		self.instance_buffer.needs_update = True
 		self.indirect_buffer.needs_update = True
 		
-		self._instances[id] = new_instance = InstanceData(self, ind_id, id)
+		self._instances[id] = new_instance = IndirectData(self, ind_id, id)
 		return new_instance
 
 	def _destroy_instance(self, indirect_id, instance_id):

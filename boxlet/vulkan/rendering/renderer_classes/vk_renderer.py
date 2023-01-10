@@ -1,6 +1,6 @@
 from typing import Any
 
-from ... import InstanceBufferSet, Mesh, RenderingStep, UniformBufferGroup, np
+from ... import RenderingStep, UniformBufferGroup, np
 from ...vk_module import *
 
 if TYPE_CHECKING:

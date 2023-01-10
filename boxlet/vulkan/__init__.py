@@ -22,7 +22,8 @@ from .vk_sync import Semaphore, Fence
 from .vk_commands import CommandPool, CommandBuffer
 
 from .memory_structures.vk_buffer import Buffer, UniformBufferGroup
-from .memory_structures.vk_instance_buffer import InstanceBufferSet
+from .memory_structures.vk_indirect_buffer import IndirectBufferSet
+from .memory_structures.vk_instanced_buffer import InstancedBufferSet
 from .memory_structures.vk_mesh import Mesh, MultiMesh
 
 from .images.vk_framebuffer import FrameBuffer

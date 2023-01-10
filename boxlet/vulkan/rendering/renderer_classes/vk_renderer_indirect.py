@@ -1,6 +1,6 @@
+from ... import IndirectBufferSet
 from ...vk_module import *
-from . import (InstanceBufferSet, PushConstantManager, Renderer,
-               RendererBindings)
+from . import PushConstantManager, Renderer, RendererBindings
 
 if TYPE_CHECKING:
 	from ... import GraphicsPipeline, MultiMesh
@@ -13,7 +13,7 @@ class IndirectRenderer(Renderer):
 		self.meshes = meshes
 		meshes.init_buffers()
 
-		self.buffer_set = InstanceBufferSet(
+		self.buffer_set = IndirectBufferSet(
 			meshes,
 			pipeline.shader_attribute.data_type
 		)
