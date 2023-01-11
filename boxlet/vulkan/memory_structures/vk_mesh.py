@@ -108,7 +108,7 @@ class Mesh(TrackedInstances):
 		]
 
 		attr_desc = [
-			VkVertexInputAttributeDescription( # rgb color
+			VkVertexInputAttributeDescription(
 				binding = binding, location = loc,
 				format = self.offset_data[name][0],
 				offset = self.offset_data[name][1]

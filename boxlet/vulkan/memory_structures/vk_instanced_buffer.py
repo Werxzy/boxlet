@@ -70,8 +70,9 @@ class InstancedBufferSet:
 		This can be an expensive operation and is meant to be done sparingly.
 		'''
 
-		sorted_index = np.argsort(self.instance_buffer.data[:self.instance_count][attribute])
-		self.instance_buffer.data[:self.instance_count] = self.instance_buffer.data[:self.instance_count][sorted_index]
+		sorted_index = np.argsort(self.instance_buffer.data[:self.instance_count][attribute], axis = 0).flatten()
+		self.instance_buffer.data[:self.instance_count] = np.take_along_axis(
+			self.instance_buffer.data[:self.instance_count], sorted_index, axis = 0)
 		
 		self._instances:list[InstancedData] = [self._instances[i] for i in sorted_index] + [None for _ in range(len(self._instances) - self.instance_count)]
 		for i, inst in enumerate(self._instances):

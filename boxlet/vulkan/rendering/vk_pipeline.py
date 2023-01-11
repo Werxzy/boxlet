@@ -69,7 +69,9 @@ class GraphicsPipeline(VulkanPipeline):
 			vertex_shader:Shader, 
 			fragment_shader:Shader, 
 			binding_model:'Mesh',
-			priority = 0):
+			priority = 0,
+			**kwargs):
+		# TODO find a better method than kwargs
 
 		super().__init__(priority)
 
@@ -136,11 +138,15 @@ class GraphicsPipeline(VulkanPipeline):
 		)
 
 		shader_stages = [vertex_shader.stage_create_info(), fragment_shader.stage_create_info()]
-
-		color_blend_attachment = VkPipelineColorBlendAttachmentState(
-			colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-			blendEnable = VK_FALSE
-		)
+		
+		if 'blend' in kwargs:
+			match kwargs['blend']:
+				case 'transparent':
+					color_blend_attachment = self._gen_blend_transparent()
+				case _:
+					color_blend_attachment = self._gen_blend_opaque()
+		else:
+			color_blend_attachment = self._gen_blend_opaque()
 
 		color_blending = VkPipelineColorBlendStateCreateInfo(
 			logicOpEnable = VK_FALSE,
@@ -149,14 +155,21 @@ class GraphicsPipeline(VulkanPipeline):
 			blendConstants = [0.0, 0.0, 0.0, 0.0]
 		)
 
-		depth_stencil = VkPipelineDepthStencilStateCreateInfo(
-			depthTestEnable = True,
-			depthWriteEnable = True,
-			depthCompareOp = VK_COMPARE_OP_LESS,
-			depthBoundsTestEnable = False,
-			minDepthBounds = 0.0,
-			maxDepthBounds = 1.0,
-		)
+		if 'depth' not in kwargs or kwargs['depth']:
+			depth_stencil = VkPipelineDepthStencilStateCreateInfo(
+				depthTestEnable = True,
+				depthWriteEnable = True,
+				depthCompareOp = VK_COMPARE_OP_LESS,
+				depthBoundsTestEnable = False,
+				minDepthBounds = 0.0,
+				maxDepthBounds = 1.0,
+			)
+
+		else:
+			depth_stencil = VkPipelineDepthStencilStateCreateInfo(
+				depthTestEnable = False,
+				depthWriteEnable = False,
+			)
 
 		dynamic_state = VkPipelineDynamicStateCreateInfo(
 			dynamicStateCount = 2,
@@ -185,6 +198,26 @@ class GraphicsPipeline(VulkanPipeline):
 		self.pipeline = vkCreateGraphicsPipelines(BVKC.logical_device.device, VK_NULL_HANDLE, 1, pipeline_info, None)[0]
 
 		render_pass.attach(self)
+
+	@staticmethod
+	def _gen_blend_opaque():
+		return VkPipelineColorBlendAttachmentState(
+			blendEnable = VK_FALSE,
+			colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
+		)
+
+	@staticmethod
+	def _gen_blend_transparent():
+		return VkPipelineColorBlendAttachmentState(
+			blendEnable = VK_TRUE,
+			srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
+			dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+			colorBlendOp = VK_BLEND_OP_ADD,
+			srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+			dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
+			alphaBlendOp = VK_BLEND_OP_ADD,
+			colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
+		)
 
 	def begin(self, command_buffer):
 		if self.viewport_needs_update:
