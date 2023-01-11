@@ -208,15 +208,16 @@ class Mesh(TrackedInstances):
 
 
 	@staticmethod
-	def gen_quad_2d(low = -1, high = 1, flip = False):
+	def gen_quad_2d(low = -1, high = 1, flip = False, uv_flip = False):
 		return Mesh(
 			vertices = {
 				'position':[
 					low,low, low,high, high,high, high,low
 				], 
-				'texcoord':[
-					0,0, 0,1, 1,1, 1,0
-				],
+				'texcoord':
+				[0,1, 0,0, 1,0, 1,1]
+				if uv_flip else 
+				[0,0, 0,1, 1,1, 1,0],
 			},
 			indices = [0,2,1, 0,3,2] if flip else [0,1,2, 0,2,3],
 			dim = 2,
