@@ -1,31 +1,22 @@
 from ... import Mesh
 from ...vk_module import *
-from . import PushConstantManager, Renderer, RendererBindings
+from . import Renderer
 
 if TYPE_CHECKING:
 	from ... import GraphicsPipeline
 
 class ScreenRenderer(Renderer):
 
-	default_mesh:Mesh = None
+	_default_mesh:Mesh = None
 
+	@staticmethod
 	def get_screen_mesh():
-		if not ScreenRenderer.default_mesh:
-			ScreenRenderer.default_mesh = Mesh(
-				vertices = {
-					'position':[
-						-1,-1, 1,-1,  1,1, -1,1,
-					], 
-					'texcoord':[
-						0,0, 1,0, 1,1, 0,1
-					],
-				},
-				indices = [0,1,2, 0,2,3],
-				dim = 2) 
-		return ScreenRenderer.default_mesh 
+		if not ScreenRenderer._default_mesh:
+			ScreenRenderer._default_mesh = Mesh.gen_quad_2d(flip = True)
+		return ScreenRenderer._default_mesh 
 
 	def __init__(self, pipeline:'GraphicsPipeline', defaults:dict[int], priority=0):
-		super().__init__(pipeline, ScreenRenderer.default_mesh, defaults, priority)
+		super().__init__(pipeline, self.get_screen_mesh(), defaults, priority)
 
 	def begin(self, command_buffer):
 		super().begin(command_buffer)

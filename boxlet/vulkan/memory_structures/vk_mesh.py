@@ -208,7 +208,7 @@ class Mesh(TrackedInstances):
 
 
 	@staticmethod
-	def gen_quad_2d(low = -1, high = 1):
+	def gen_quad_2d(low = -1, high = 1, flip = False):
 		return Mesh(
 			vertices = {
 				'position':[
@@ -218,13 +218,13 @@ class Mesh(TrackedInstances):
 					0,0, 0,1, 1,1, 1,0
 				],
 			},
-			indices = [0,1,2, 0,2,3],
+			indices = [0,2,1, 0,3,2] if flip else [0,1,2, 0,2,3],
 			dim = 2,
 			name = 'quad'
 		) 
 
 	@staticmethod
-	def gen_quad_3d(low = -1, high = 1):
+	def gen_quad_3d(low = -1, high = 1, flip = False):
 		return Mesh(
 			vertices = {
 				'position':[
@@ -234,7 +234,7 @@ class Mesh(TrackedInstances):
 					0,0, 0,1, 1,1, 1,0
 				],
 			},
-			indices = [0,1,2, 0,2,3],
+			indices = [0,2,1, 0,3,2] if flip else [0,1,2, 0,2,3],
 			dim = 3,
 			name = 'quad'
 		) 
