@@ -18,7 +18,7 @@ class InstancedRenderer(Renderer):
 		return self.buffer_set.create_instance()
 
 	def begin(self, command_buffer):
-		if (count := len(self.buffer_set.instance_buffer.data)) == 0:
+		if self.buffer_set.instance_count == 0:
 			return
 
 		super().begin(command_buffer)
@@ -26,7 +26,7 @@ class InstancedRenderer(Renderer):
 		vkCmdDrawIndexed(
 			commandBuffer = command_buffer, 
 			indexCount = self.mesh.index_count,
-			instanceCount = count,
+			instanceCount = self.buffer_set.instance_count,
 			firstIndex = 0,
 			vertexOffset = 0,
 			firstInstance = 0

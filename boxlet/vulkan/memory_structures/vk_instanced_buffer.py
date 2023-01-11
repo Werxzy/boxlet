@@ -29,8 +29,12 @@ class InstancedBufferSet:
 			np.array([], data_type)
 		)	
 
+		self.instance_count = 0
+
 	def create_instance(self):
-		id = len(self._instances)
+		id = self.instance_count
+		self.instance_count += 1
+		
 		if id == len(self.instance_buffer.data):
 			self.instance_buffer.expand_memory(64)
 			self._instances.extend(None for _ in range(64))
@@ -40,7 +44,8 @@ class InstancedBufferSet:
 
 	def _destroy_instance(self, instance_id):
 		'removes an instance while moving the end of the indirect group into its place'
-		end_id = len(self._instances) - 1
+		self.instance_count -= 1
+		end_id = self.instance_count
 
 		if instance_id < end_id: # if the destroyed instance wasn't at the end
 			self.instance_buffer.data[instance_id] = self.instance_buffer.data[end_id]
@@ -57,6 +62,25 @@ class InstancedBufferSet:
 			pBuffers = [self.instance_buffer.buffer],
 			pOffsets = (0,)
 		)
+
+	def sort_instances(self, attribute):
+		'''
+		Reorders the instances and data based on the given attribute.
+
+		This can be an expensive operation and is meant to be done sparingly.
+		'''
+
+		sorted_index = np.argsort(self.instance_buffer.data[:self.instance_count][attribute])
+		self.instance_buffer.data[:self.instance_count] = self.instance_buffer.data[:self.instance_count][sorted_index]
+		
+		self._instances:list[InstancedData] = [self._instances[i] for i in sorted_index] + [None for _ in range(len(self._instances) - self.instance_count)]
+		for i, inst in enumerate(self._instances):
+			if inst:
+				inst.instance_id = i
+			else:
+				break
+
+		self.instance_buffer.needs_update = True
 
 	def update_memory(self):
 		self.instance_buffer.update_memory()
