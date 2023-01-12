@@ -36,10 +36,12 @@ class InstancedBufferSet:
 		self.instance_count += 1
 		
 		if id == len(self.instance_buffer.data):
-			self.instance_buffer.expand_memory(64)
-			self._instances.extend(None for _ in range(64))
+			extend_amount = max(64, id)
+			self.instance_buffer.expand_memory(extend_amount)
+			self._instances.extend([None] * extend_amount)
 
 		self._instances[id] = new_instance = InstancedData(self, id)
+		self.instance_buffer.data[id] = 0
 		return new_instance
 
 	def _destroy_instance(self, instance_id):
