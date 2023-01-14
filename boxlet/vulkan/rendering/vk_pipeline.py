@@ -71,7 +71,6 @@ class GraphicsPipeline(VulkanPipeline):
 			binding_model:'Mesh',
 			priority = 0,
 			**kwargs):
-		# TODO find a better method than kwargs
 
 		super().__init__(priority)
 
@@ -97,8 +96,38 @@ class GraphicsPipeline(VulkanPipeline):
 			vertexAttributeDescriptionCount = len(attribute_desc), pVertexAttributeDescriptions = attribute_desc
 		)
 
+		match kwargs.get('topology', 'triangle'):
+			case 'point':
+				topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST 
+
+			case 'line':
+				topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST  
+			case 'line strip':
+				topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP   
+			case 'line adjacency':
+				topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY  
+			case 'line strip adjacency':
+				topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY  
+
+			case 'triangle':
+				topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+			case 'triangle strip':
+				topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP 
+			case 'triangle fan':
+				topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN 
+			case 'triangle adjacency':
+				topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY  
+			case 'triangle strip adjacency':
+				topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY  
+
+			case 'patch':
+				topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST   
+
+			case _:
+				topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+
 		input_assembly = VkPipelineInputAssemblyStateCreateInfo(
-			topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+			topology = topology
 		)
 
 		extent = render_pass.render_target.extent
@@ -121,14 +150,42 @@ class GraphicsPipeline(VulkanPipeline):
 			scissorCount = 1,
 			pScissors = scissor
 		)
+		
+		match kwargs.get('polygon_mode', 'triangle'):
+			case 'point':
+				polygon_mode = VK_POLYGON_MODE_POINT
+			case 'line':
+				polygon_mode = VK_POLYGON_MODE_LINE
+			case 'triangle' | _:
+				polygon_mode = VK_POLYGON_MODE_FILL
+
+		line_width = kwargs.get('line_width', 1.0)
+
+		rasterizer_discard_enable = VK_TRUE if kwargs.get('rasterizer_discard_enable', False) else VK_FALSE
+
+		match kwargs.get('cull_mode', 'back'):
+			case 'none':
+				cull_mode = VK_CULL_MODE_NONE
+			case 'both':
+				cull_mode = VK_CULL_MODE_FRONT_AND_BACK
+			case 'front':
+				cull_mode = VK_CULL_MODE_FRONT_BIT
+			case 'back' | _:
+				cull_mode = VK_CULL_MODE_BACK_BIT
+
+		match kwargs.get('cull_mode', 'clockwise'):
+			case 'counter clockwise' | 'counter':
+				front_face = VK_FRONT_FACE_CLOCKWISE
+			case 'clockwise' | _:
+				front_face = VK_FRONT_FACE_CLOCKWISE
 
 		rasterizer = VkPipelineRasterizationStateCreateInfo(
 			depthClampEnable = VK_FALSE,
-			rasterizerDiscardEnable = VK_FALSE,
-			polygonMode = VK_POLYGON_MODE_FILL,
-			lineWidth = 1.0,
-			cullMode = VK_CULL_MODE_BACK_BIT,
-			frontFace = VK_FRONT_FACE_CLOCKWISE,
+			rasterizerDiscardEnable = rasterizer_discard_enable,
+			polygonMode = polygon_mode,
+			lineWidth = line_width,
+			cullMode = cull_mode,
+			frontFace = front_face,
 			depthBiasEnable = VK_FALSE
 		)
 
@@ -139,14 +196,11 @@ class GraphicsPipeline(VulkanPipeline):
 
 		shader_stages = [vertex_shader.stage_create_info(), fragment_shader.stage_create_info()]
 		
-		if 'blend' in kwargs:
-			match kwargs['blend']:
-				case 'transparent':
-					color_blend_attachment = self._gen_blend_transparent()
-				case _:
-					color_blend_attachment = self._gen_blend_opaque()
-		else:
-			color_blend_attachment = self._gen_blend_opaque()
+		match kwargs.get('blend', 'opaque'):
+			case 'transparent':
+				color_blend_attachment = self._gen_blend_transparent()
+			case 'opaque' | _:
+				color_blend_attachment = self._gen_blend_opaque()
 
 		color_blending = VkPipelineColorBlendStateCreateInfo(
 			logicOpEnable = VK_FALSE,
@@ -155,7 +209,7 @@ class GraphicsPipeline(VulkanPipeline):
 			blendConstants = [0.0, 0.0, 0.0, 0.0]
 		)
 
-		if 'depth' not in kwargs or kwargs['depth']:
+		if kwargs.get('depth', True):
 			depth_stencil = VkPipelineDepthStencilStateCreateInfo(
 				depthTestEnable = True,
 				depthWriteEnable = True,
