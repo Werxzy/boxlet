@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 
 class Renderer(TrackedInstances, RenderingStep):
-	def __init__(self, pipeline:'GraphicsPipeline', mesh:'Mesh|MultiMesh', defaults:dict[int], priority = 0) -> None:
+	def __init__(self, pipeline:'GraphicsPipeline', mesh:'Mesh|MultiMesh', defaults:dict[int] = {}, priority = 0) -> None:
 		super().__init__(priority)
 
 		self.mesh:'Mesh|MultiMesh' = mesh

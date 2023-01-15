@@ -15,7 +15,7 @@ class ScreenRenderer(Renderer):
 			ScreenRenderer._default_mesh = Mesh.gen_quad_2d(flip = True)
 		return ScreenRenderer._default_mesh 
 
-	def __init__(self, pipeline:'GraphicsPipeline', defaults:dict[int], priority=0):
+	def __init__(self, pipeline:'GraphicsPipeline', defaults:dict[int] = {}, priority=0):
 		super().__init__(pipeline, self.get_screen_mesh(), defaults, priority)
 
 	def begin(self, command_buffer):

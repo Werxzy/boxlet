@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 
 
 class IndirectRenderer(Renderer):
-	def __init__(self, pipeline:'GraphicsPipeline', meshes:'MultiMesh', defaults:dict[int], priority = 0):
+	def __init__(self, pipeline:'GraphicsPipeline', meshes:'MultiMesh', defaults:dict[int] = {}, priority = 0):
 		super().__init__(pipeline, meshes, defaults, priority)
 
 		self.buffer_set = IndirectBufferSet(
