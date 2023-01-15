@@ -23,6 +23,9 @@ class CameraController(Entity):
 
 		self.pos[:] += mov * manager.delta_time * (30 if b[pygame.K_LSHIFT] else 10) * self.speed
 		self.camera.fps_look(self.pos, self.x_rot, self.y_rot)
+
+		if np.any(mov != 0):
+			self.has_moved()
 	
 	@Entity.watch_event(pygame.MOUSEMOTION)
 	def mouse_movement(self, event):
@@ -51,4 +54,7 @@ class CameraController(Entity):
 		if not on:
 			pygame.mouse.set_pos(np.array(pygame.display.get_window_size()) * 0.5)
 		# set_grab is important to speed up pygame.mouse.set_pos
+
+	def has_moved(self):
+		...
 			
