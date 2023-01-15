@@ -182,6 +182,7 @@ class ShaderAttributeLayout:
 		# this is a little silly
 		return {
 			'vec4': 16,
+			'vec3': 12,
 			'mat4': 64
 		}[t]
 
@@ -190,6 +191,7 @@ class ShaderAttributeLayout:
 		# this is a little silly
 		return {
 			'vec4': '(4,)f4',
+			'vec3': '(3,)f4',
 			'mat4': '(4,4)f4'
 		}[t]
 				
