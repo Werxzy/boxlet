@@ -226,3 +226,54 @@ class Texture(TrackedInstances):
 		vkDestroySampler(BVKC.logical_device.device, self.sampler, None)
 		vkDestroyImage(BVKC.logical_device.device, self.image, None)
 		vkFreeMemory(BVKC.logical_device.device, self.image_memory, None)
+
+
+class RenderAttachment:
+	def __init__(self, 
+			format = VK_FORMAT_R8G8B8A8_UNORM, 
+			samples = VK_SAMPLE_COUNT_1_BIT,
+			loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+			storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+			stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+			stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+			initial_layout = VK_IMAGE_LAYOUT_UNDEFINED, 
+			final_layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+			attachment_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+			image:'Texture' = None
+		) -> None:
+
+		self.format = format
+		self.samples = samples
+		self.loadOp = loadOp
+		self.storeOp = storeOp
+		self.stencilLoadOp = stencilLoadOp
+		self.stencilStoreOp = stencilStoreOp
+		self.initial_layout = initial_layout
+		self.final_layout = final_layout
+		self.attachment_layout = attachment_layout
+
+		# pulls info from image if provided
+		if image:
+			self.format = image.format
+			self.initial_layout = image.image_layout
+
+	def get_description(self):
+		return VkAttachmentDescription(
+			format = self.format,
+			samples = self.samples,
+
+			loadOp = self.loadOp,
+			storeOp = self.storeOp,
+			
+			stencilLoadOp = self.stencilLoadOp,
+			stencilStoreOp = self.stencilStoreOp,
+
+			initialLayout = self.initial_layout,
+			finalLayout = self.final_layout
+		)
+		
+	def get_reference(self, attach_number):
+		return VkAttachmentReference(
+			attachment = attach_number,
+			layout = self.attachment_layout
+		)

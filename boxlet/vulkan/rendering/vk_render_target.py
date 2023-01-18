@@ -1,6 +1,6 @@
 from math import floor
 
-from .. import FrameBuffer, Texture
+from .. import FrameBuffer, Texture, RenderAttachment
 from ..vk_module import *
 
 
@@ -10,6 +10,8 @@ class RenderTarget(TrackedInstances):
 	def __init__(self, format, extent) -> None:
 		self.format = format
 		self.extent = extent
+		self.color_attachments:list[RenderAttachment] = []
+		self.depth_attachment:RenderAttachment = None
 
 	def remake(self, width, height):
 		'''
@@ -20,15 +22,6 @@ class RenderTarget(TrackedInstances):
 
 	def get_image(self):
 		'Used by BoxletVK to get the correct image to sample from?'
-
-	def get_image_initial_layouts(self) -> list:
-		...
-
-	def get_image_final_layouts(self) -> list:
-		...
-
-	def get_image_attachment_layouts(self) -> list:
-		...
 
 	def get_frame_buffer(self) -> FrameBuffer:
 		'Used by BoxletVK to get the correct framebuffer to render to.'
@@ -71,7 +64,7 @@ class SimpleRenderTarget(RenderTarget):
 			tiling = VK_IMAGE_TILING_OPTIMAL,
 			usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 
-			image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+			# image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			access_mask = VK_ACCESS_SHADER_READ_BIT,
 			stage_mask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
 		)
@@ -82,6 +75,19 @@ class SimpleRenderTarget(RenderTarget):
 			tiling = VK_IMAGE_TILING_OPTIMAL,
 			usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT,
+		)
+
+		self.color_attachments = [
+			RenderAttachment(
+				image = self.image,
+				final_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+				attachment_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+			)
+		]
+		self.depth_attachment = RenderAttachment(
+			image = self.depth_buffer,
+			final_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+			attachment_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
 		)
 
 	def gen_size(self, width, height):

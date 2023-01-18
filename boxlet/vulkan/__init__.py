@@ -29,7 +29,7 @@ from .memory_structures.vk_mesh import Mesh, MultiMesh
 from .images.vk_framebuffer import FrameBuffer
 from .images.vk_image_view import ImageView
 from .images.vk_swapchain_frame import SwapChainFrame
-from .images.vk_texture import Texture
+from .images.vk_texture import Texture, RenderAttachment
 
 from .rendering.vk_shader_attribute_layout import ShaderAttributeLayout
 from .rendering.vk_render_target import RenderTarget, SimpleRenderTarget

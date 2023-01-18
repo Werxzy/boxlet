@@ -16,55 +16,28 @@ class RenderPass(TrackedInstances, RenderingStep):
 		self.render_target = render_target if render_target else BVKC.swapchain
 		self.render_target.set_recent_render_pass(self)
 
-		initial_layouts = self.render_target.get_image_initial_layouts()
-		final_layouts = self.render_target.get_image_final_layouts()
-		attach_layouts = self.render_target.get_image_attachment_layouts()
+		attachment_count = 0
+		attachments = []
+		color_attachment_refs = []
+		depth_attachment_ref = []
 
-		color_attachment = VkAttachmentDescription(
-			format = self.render_target.format,
-			samples = VK_SAMPLE_COUNT_1_BIT,
+		for attach in self.render_target.color_attachments:
+			attachments.append(attach.get_description())
+			color_attachment_refs.append(attach.get_reference(attachment_count))
 
-			loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-			storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-			
-			stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-			stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+			attachment_count += 1
 
-			initialLayout = initial_layouts[0],
-			finalLayout = final_layouts[0]
-		)
+		if attach := self.render_target.depth_attachment:
+			attachments.append(attach.get_description())
+			depth_attachment_ref = [attach.get_reference(attachment_count)]
 
-		color_attachment_ref = VkAttachmentReference(
-			attachment = 0,
-			layout = attach_layouts[0]
-		)
-
-		depth_attachment = VkAttachmentDescription(
-			format = BVKC.physical_device.find_depth_format(),
-			samples = VK_SAMPLE_COUNT_1_BIT,
-
-			loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-			storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-			
-			stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-			stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-
-			initialLayout = initial_layouts[1],
-			finalLayout = final_layouts[1]
-		)
-
-		depth_attachment_ref = VkAttachmentReference(
-			attachment = 1,
-			layout = attach_layouts[1]
-		)
-
-		attachments = [color_attachment, depth_attachment]
+			attachment_count += 1
 
 		subpass = VkSubpassDescription(
 			pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-			colorAttachmentCount = 1,
-			pColorAttachments = [color_attachment_ref],
-			pDepthStencilAttachment = [depth_attachment_ref]
+			colorAttachmentCount = len(color_attachment_refs),
+			pColorAttachments = color_attachment_refs,
+			pDepthStencilAttachment = depth_attachment_ref
 		)
 
 		render_pass_info = VkRenderPassCreateInfo(
@@ -76,6 +49,8 @@ class RenderPass(TrackedInstances, RenderingStep):
 
 		self.vk_addr = vkCreateRenderPass(BVKC.logical_device.device, render_pass_info, None)
 
+		self.clear_values = [VkClearValue([[1.0, 0.5, 0.25, 1.0]]), VkClearValue([[1.0, 0.0]])]
+
 	def begin(self, command_buffer):
 		self.render_target.begin(command_buffer)
 
@@ -84,7 +59,7 @@ class RenderPass(TrackedInstances, RenderingStep):
 			framebuffer = self.render_target.get_frame_buffer().vk_addr,
 			renderArea = [[0,0], self.render_target.extent],
 			clearValueCount = 2,
-			pClearValues = [VkClearValue([[1.0, 0.5, 0.25, 1.0]]), VkClearValue([[1.0, 0.0]])]
+			pClearValues = self.clear_values
 		)
 
 		vkCmdBeginRenderPass(command_buffer, render_pass_info, VK_SUBPASS_CONTENTS_INLINE)

@@ -1,4 +1,4 @@
-from .. import DEBUG_MODE, Logging, RenderTarget, SwapChainFrame, Texture
+from .. import DEBUG_MODE, Logging, RenderTarget, SwapChainFrame, Texture, RenderAttachment
 from ..vk_module import *
 
 if TYPE_CHECKING:
@@ -175,23 +175,17 @@ class SwapChainBundle(RenderTarget):
 			aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT
 		)
 
-	def get_image_initial_layouts(self):
-		return [
-			VK_IMAGE_LAYOUT_UNDEFINED, 
-			VK_IMAGE_LAYOUT_UNDEFINED
+		self.color_attachments = [
+			RenderAttachment(
+				format = self.format
+			)
 		]
 
-	def get_image_final_layouts(self):
-		return [
-			VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 
-			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-		]
-
-	def get_image_attachment_layouts(self):
-		return [
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 
-			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-		]
+		self.depth_attachment = RenderAttachment(
+			image = self.depth_image,
+			final_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+			attachment_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+		)
 
 	def init_frame_buffer(self):
 		for frame in self.frames:
