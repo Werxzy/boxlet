@@ -7,8 +7,7 @@ from ..vk_module import *
 class RenderTarget(TrackedInstances):
 	'Encapsulates everything about the object that is being rendered to.'
 
-	def __init__(self, format, extent) -> None:
-		self.format = format
+	def __init__(self, extent) -> None:
 		self.extent = extent
 
 	def remake(self, width, height):
@@ -53,14 +52,15 @@ class SimpleRenderTarget(RenderTarget):
 		width, height = self.gen_size(BVKC.width, BVKC.height)
 		# Regenerates the width and height based on the given parameters.
 
-		super().__init__(VK_FORMAT_R16G16B16A16_SFLOAT, VkExtent2D(width, height))
+		# super().__init__(VK_FORMAT_R16G16B16A16_SFLOAT, VkExtent2D(width, height))
+		super().__init__(VkExtent2D(width, height))
 
 		self.image = None
 		self.depth_buffer = None
 		self.frame_buffer = None
 
 		self.image = Texture(
-			format = self.format,
+			format = VK_FORMAT_R16G16B16A16_SFLOAT,
 			extent = [width, height],
 			tiling = VK_IMAGE_TILING_OPTIMAL,
 			usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -86,7 +86,6 @@ class SimpleRenderTarget(RenderTarget):
 		)
 
 	def remake(self, width, height):
-
 		if self.frame_buffer:
 			self.frame_buffer.destroy()
 

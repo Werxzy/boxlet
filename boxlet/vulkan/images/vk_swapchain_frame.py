@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 
 class SwapChainFrame:
 	def __init__(self, image, swapchain:'SwapChainBundle') -> None:
-		self.image_view = ImageView(image, swapchain.format, swapchain.extent)
+		self.image_view = ImageView(image, swapchain.get_color_images()[0].format, swapchain.extent)
 
 		self.frame_buffer:FrameBuffer = None
 		self.command_buffer = None

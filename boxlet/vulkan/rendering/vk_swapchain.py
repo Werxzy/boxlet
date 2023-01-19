@@ -127,7 +127,7 @@ class SwapChainBundle(RenderTarget):
 		format = choose_swapchain_surface_format(support.formats)
 		presentMode = choose_swapchain_present_mode(support.presentModes)
 		extent = choose_swapchain_extent(width, height, support.capabilities)
-		super().__init__(format.format, extent)
+		super().__init__(extent)
 
 		image_count = min(
 			support.capabilities.maxImageCount,
@@ -159,6 +159,7 @@ class SwapChainBundle(RenderTarget):
 
 		vkGetSwapchainImagesKHR = vkGetDeviceProcAddr(BVKC.logical_device.device, 'vkGetSwapchainImagesKHR')
 		images = vkGetSwapchainImagesKHR(BVKC.logical_device.device, self.vk_addr)
+		self.faux_image = FauxTexture(format.format)
 
 		self.frames = [
 			SwapChainFrame(image, self)
@@ -175,9 +176,7 @@ class SwapChainBundle(RenderTarget):
 			usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
 			aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT
 		)
-
-		self.faux_image = FauxTexture(self.format)
-
+		
 	def get_color_images(self) -> list[Texture|FauxTexture]:
 		return [self.faux_image]
 		
