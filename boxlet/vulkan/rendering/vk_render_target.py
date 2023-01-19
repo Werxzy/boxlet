@@ -44,7 +44,7 @@ class RenderTarget(TrackedInstances):
 
 
 class SimpleRenderTarget(RenderTarget):
-	def __init__(self, width = 0, height = 0, width_mult = 1, height_mult = 1) -> None:
+	def __init__(self, width = 0, height = 0, width_mult = 1, height_mult = 1, layers = 1) -> None:
 		# Setting width and/or height to a non-zero value with set the corresponding component.
 		# Otherwise, multiply the display's resoultion by the 'mult' value and round down.
 
@@ -52,23 +52,22 @@ class SimpleRenderTarget(RenderTarget):
 		width, height = self.gen_size(BVKC.width, BVKC.height)
 		# Regenerates the width and height based on the given parameters.
 
-		# super().__init__(VK_FORMAT_R16G16B16A16_SFLOAT, VkExtent2D(width, height))
 		super().__init__(VkExtent2D(width, height))
 
-		self.image = None
-		self.depth_buffer = None
-		self.frame_buffer = None
+		self.images:list[Texture] = []
+		
+		for _ in range(layers):
+			image = Texture(
+				format = VK_FORMAT_R16G16B16A16_SFLOAT,
+				extent = [width, height],
+				tiling = VK_IMAGE_TILING_OPTIMAL,
+				usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 
-		self.image = Texture(
-			format = VK_FORMAT_R16G16B16A16_SFLOAT,
-			extent = [width, height],
-			tiling = VK_IMAGE_TILING_OPTIMAL,
-			usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-
-			# image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-			access_mask = VK_ACCESS_SHADER_READ_BIT,
-			stage_mask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-		)
+				# image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+				access_mask = VK_ACCESS_SHADER_READ_BIT,
+				stage_mask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+			)
+			self.images.append(image)
 		
 		self.depth_buffer = Texture(
 			format = BVKC.physical_device.find_depth_format(),
@@ -77,6 +76,8 @@ class SimpleRenderTarget(RenderTarget):
 			usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT,
 		)
+
+		self.frame_buffer = None
 
 	def gen_size(self, width, height):
 		(w, h, wm, hm) = self.size_data
@@ -92,12 +93,13 @@ class SimpleRenderTarget(RenderTarget):
 		width, height = self.gen_size(width, height)
 		self.extent = VkExtent2D(width, height)
 
-		self.image.remake([width, height, 1])
+		for i in self.images:
+			i.remake([width, height, 1])
 		self.depth_buffer.remake([width, height, 1])
 
 
 	def get_color_images(self) -> list[Texture|FauxTexture]:
-		return [self.image]
+		return self.images
 
 	def get_depth_image(self) -> Texture|FauxTexture:
 		return self.depth_buffer
@@ -107,7 +109,7 @@ class SimpleRenderTarget(RenderTarget):
 			self.recent_render_pass, 
 			self.extent.width, self.extent.height, 
 			[
-				self.image.image_view.vk_addr, 
+				*[i.image_view.vk_addr for i in self.images], 
 				self.depth_buffer.image_view.vk_addr
 			])
 
@@ -115,7 +117,8 @@ class SimpleRenderTarget(RenderTarget):
 		return self.frame_buffer
 
 	def on_destroy(self):
-		self.image.destroy()
+		for i in self.images:
+			i.destroy()
 		self.depth_buffer.destroy()
 
 		if self.frame_buffer:

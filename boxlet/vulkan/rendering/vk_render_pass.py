@@ -67,7 +67,7 @@ class RenderPass(TrackedInstances, RenderingStep):
 				)
 			]
 
-			self.clear_values.append(VkClearValue([[1.0, 0.0]]))
+			self.clear_values.append(VkClearValue(None, [1.0, 0]))
 		
 		# currently, we are assuming that all subpasses will be using all attachments
 		# even though there's only one subpass
@@ -87,6 +87,9 @@ class RenderPass(TrackedInstances, RenderingStep):
 		)
 
 		self.vk_addr = vkCreateRenderPass(BVKC.logical_device.device, render_pass_info, None)
+
+	def get_color_attachment_count(self):
+		return len(self.render_target.get_color_images())
 
 	def create_description(self, image:'Texture|FauxTexture', final_layout):
 		return VkAttachmentDescription(
@@ -111,7 +114,7 @@ class RenderPass(TrackedInstances, RenderingStep):
 			renderPass = self.vk_addr,
 			framebuffer = self.render_target.get_frame_buffer().vk_addr,
 			renderArea = [[0,0], self.render_target.extent],
-			clearValueCount = 2,
+			clearValueCount = len(self.clear_values),
 			pClearValues = self.clear_values
 		)
 

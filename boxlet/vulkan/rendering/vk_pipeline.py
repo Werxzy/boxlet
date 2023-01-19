@@ -196,16 +196,25 @@ class GraphicsPipeline(VulkanPipeline):
 
 		shader_stages = [vertex_shader.stage_create_info(), fragment_shader.stage_create_info()]
 		
-		match kwargs.get('blend', 'opaque'):
-			case 'transparent':
-				color_blend_attachment = self._gen_blend_transparent()
-			case 'opaque' | _:
-				color_blend_attachment = self._gen_blend_opaque()
+		blend = kwargs.get('blend', 'opaque')
+		blend_count = self.render_pass.get_color_attachment_count()
+		if isinstance(blend, str):
+			blend = [blend] * blend_count
+		elif (extra := blend_count - len(blend)) > 0:
+			blend += ['opaque'] * extra
+
+		color_blend_attachments = []
+		for blend_op in blend:
+			match blend_op:
+				case 'transparent':
+					color_blend_attachments.append(self._gen_blend_transparent())
+				case 'opaque' | _:
+					color_blend_attachments.append(self._gen_blend_opaque())
 
 		color_blending = VkPipelineColorBlendStateCreateInfo(
 			logicOpEnable = VK_FALSE,
-			attachmentCount = 1,
-			pAttachments = color_blend_attachment,
+			attachmentCount = len(color_blend_attachments),
+			pAttachments = color_blend_attachments,
 			blendConstants = [0.0, 0.0, 0.0, 0.0]
 		)
 
