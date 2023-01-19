@@ -1,4 +1,5 @@
-from .. import DEBUG_MODE, Logging, RenderTarget, SwapChainFrame, Texture, RenderAttachment
+from .. import (DEBUG_MODE, FauxTexture, Logging, RenderTarget, SwapChainFrame,
+                Texture)
 from ..vk_module import *
 
 if TYPE_CHECKING:
@@ -175,17 +176,13 @@ class SwapChainBundle(RenderTarget):
 			aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT
 		)
 
-		self.color_attachments = [
-			RenderAttachment(
-				format = self.format
-			)
-		]
+		self.faux_image = FauxTexture(self.format)
 
-		self.depth_attachment = RenderAttachment(
-			image = self.depth_image,
-			final_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-			attachment_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-		)
+	def get_color_images(self) -> list[Texture|FauxTexture]:
+		return [self.faux_image]
+		
+	def get_depth_image(self) -> Texture|FauxTexture:
+		return self.depth_image
 
 	def init_frame_buffer(self):
 		for frame in self.frames:

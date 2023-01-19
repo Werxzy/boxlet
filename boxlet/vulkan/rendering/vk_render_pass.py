@@ -2,12 +2,17 @@ from .. import RenderingStep
 from ..vk_module import *
 
 if TYPE_CHECKING:
-	from .. import RenderTarget
+	from .. import FauxTexture, RenderTarget, Texture
 
 
 class RenderPass(TrackedInstances, RenderingStep):
 
-	def __init__(self, render_target:'RenderTarget' = None, priority = 0):
+	def __init__(self, 
+			render_target:'RenderTarget' = None, 
+			*,
+			priority = 0,
+			clear_colors = []
+		):
 		'Render Target as none assumes it will render to the primary render target.'
 
 		super().__init__(priority)
@@ -16,22 +21,56 @@ class RenderPass(TrackedInstances, RenderingStep):
 		self.render_target = render_target if render_target else BVKC.swapchain
 		self.render_target.set_recent_render_pass(self)
 
-		attachment_count = 0
+		self.sample_count = VK_SAMPLE_COUNT_1_BIT
+
 		attachments = []
 		color_attachment_refs = []
 		depth_attachment_ref = []
+		self.clear_values = []
 
-		for attach in self.render_target.color_attachments:
-			attachments.append(attach.get_description())
-			color_attachment_refs.append(attach.get_reference(attachment_count))
+		# Currently, if the swapchain is the render target
+		# we assume that the final layout is always preseting.
+		# Otherwise, we assume it's read by a shader 
+		if render_target:
+			final_layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+		else:
+			final_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 
-			attachment_count += 1
+		for i, image in enumerate(self.render_target.get_color_images()):
+			attachments.append(self.create_description(image, final_layout))
 
-		if attach := self.render_target.depth_attachment:
-			attachments.append(attach.get_description())
-			depth_attachment_ref = [attach.get_reference(attachment_count)]
+			color_attachment_refs.append(
+				VkAttachmentReference(
+					attachment = i,
+					layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+				)
+			)
 
-			attachment_count += 1
+			if i < len(clear_colors):
+				self.clear_values.append(VkClearValue([clear_colors[i]]))
+			else:
+				self.clear_values.append(VkClearValue([[0.0, 0.0, 0.0, 1.0]]))
+
+
+		if image := self.render_target.get_depth_image():
+			if render_target:
+				final_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+			else:
+				final_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+
+			attachments.append(self.create_description(image, final_layout))
+
+			depth_attachment_ref = [
+				VkAttachmentReference(
+					attachment = len(attachments) - 1,
+					layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+				)
+			]
+
+			self.clear_values.append(VkClearValue([[1.0, 0.0]]))
+		
+		# currently, we are assuming that all subpasses will be using all attachments
+		# even though there's only one subpass
 
 		subpass = VkSubpassDescription(
 			pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -49,7 +88,21 @@ class RenderPass(TrackedInstances, RenderingStep):
 
 		self.vk_addr = vkCreateRenderPass(BVKC.logical_device.device, render_pass_info, None)
 
-		self.clear_values = [VkClearValue([[1.0, 0.5, 0.25, 1.0]]), VkClearValue([[1.0, 0.0]])]
+	def create_description(self, image:'Texture|FauxTexture', final_layout):
+		return VkAttachmentDescription(
+			format = image.format,
+			samples = image.sample_count,
+
+			loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+			storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+			
+			#TODO check for stencil on texture
+			stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+			stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+
+			initialLayout = image.image_layout,
+			finalLayout = final_layout
+		)
 
 	def begin(self, command_buffer):
 		self.render_target.begin(command_buffer)

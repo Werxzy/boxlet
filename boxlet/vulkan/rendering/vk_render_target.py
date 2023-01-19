@@ -1,6 +1,6 @@
 from math import floor
 
-from .. import FrameBuffer, Texture, RenderAttachment
+from .. import FauxTexture, FrameBuffer, Texture
 from ..vk_module import *
 
 
@@ -10,8 +10,6 @@ class RenderTarget(TrackedInstances):
 	def __init__(self, format, extent) -> None:
 		self.format = format
 		self.extent = extent
-		self.color_attachments:list[RenderAttachment] = []
-		self.depth_attachment:RenderAttachment = None
 
 	def remake(self, width, height):
 		'''
@@ -20,8 +18,11 @@ class RenderTarget(TrackedInstances):
 		This is usually used to remake the framebuffers.
 		'''
 
-	def get_image(self):
-		'Used by BoxletVK to get the correct image to sample from?'
+	def get_color_images(self) -> list[Texture|FauxTexture]:
+		...
+
+	def get_depth_image(self) -> Texture|FauxTexture:
+		...
 
 	def get_frame_buffer(self) -> FrameBuffer:
 		'Used by BoxletVK to get the correct framebuffer to render to.'
@@ -77,19 +78,6 @@ class SimpleRenderTarget(RenderTarget):
 			aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT,
 		)
 
-		self.color_attachments = [
-			RenderAttachment(
-				image = self.image,
-				final_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-				attachment_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-			)
-		]
-		self.depth_attachment = RenderAttachment(
-			image = self.depth_buffer,
-			final_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-			attachment_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-		)
-
 	def gen_size(self, width, height):
 		(w, h, wm, hm) = self.size_data
 		return (
@@ -108,26 +96,12 @@ class SimpleRenderTarget(RenderTarget):
 		self.image.remake([width, height, 1])
 		self.depth_buffer.remake([width, height, 1])
 
-	def get_image(self):
-		return self.image
 
-	def get_image_initial_layouts(self):
-		return [
-			self.image.image_layout,
-			self.depth_buffer.image_layout
-		]
+	def get_color_images(self) -> list[Texture|FauxTexture]:
+		return [self.image]
 
-	def get_image_final_layouts(self):
-		return [
-			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 
-			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-		]
-
-	def get_image_attachment_layouts(self):
-		return [
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 
-			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-		]
+	def get_depth_image(self) -> Texture|FauxTexture:
+		return self.depth_buffer
 
 	def init_frame_buffer(self):
 		self.frame_buffer = FrameBuffer(

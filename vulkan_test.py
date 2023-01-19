@@ -46,7 +46,7 @@ shader_layout = ShaderAttributeLayout(
 )
 
 srt = SimpleRenderTarget()
-render_pass = RenderPass(srt)
+render_pass = RenderPass(srt, clear_colors = [[1.0, 0.5, 0.25, 1.0]])
 graphics_pipeline = GraphicsPipeline(
 	render_pass,
 	shader_layout,
@@ -91,7 +91,7 @@ graphics_pipeline_screen = GraphicsPipeline(
 	ScreenRenderer.get_screen_mesh()
 )
 renderer_screen = ScreenRenderer(graphics_pipeline_screen, {
-	0 : srt.get_image()
+	0 : srt.get_color_images()[0]
 })
 
 # - - - - - - - - - - - - - - - - - - - - - - -
