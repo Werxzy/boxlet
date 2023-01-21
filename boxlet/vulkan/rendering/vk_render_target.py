@@ -58,6 +58,7 @@ class SimpleRenderTarget(RenderTarget):
 		
 		for _ in range(layers):
 			image = Texture(
+				# TODO add control over the formats
 				format = VK_FORMAT_R16G16B16A16_SFLOAT,
 				extent = [width, height],
 				tiling = VK_IMAGE_TILING_OPTIMAL,

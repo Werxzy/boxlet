@@ -43,7 +43,7 @@ class Renderer(TrackedInstances, RenderingStep):
 			self.attributes.destroy()
 
 
-class DescriptorSet:
+class Descriptor:
 	def __init__(self, binder:'RendererBindings', binding:int) -> None:
 		self.binder = binder
 		self.binding = binding
@@ -74,7 +74,7 @@ class DescriptorSet:
 	def destroy(self): ...
 
 
-class UniformBufferDescriptorSet(DescriptorSet):
+class UniformBufferDescriptor(Descriptor):
 	def __init__(self, binder:'RendererBindings', binding:int) -> None:
 		super().__init__(binder, binding)
 		self.buffer_group:UniformBufferGroup = None
@@ -114,7 +114,7 @@ class UniformBufferDescriptorSet(DescriptorSet):
 			self.buffer_group.destroy()
 
 
-class ImageDescriptorSet(DescriptorSet):
+class ImageDescriptor(Descriptor):
 	def set_descriptor(self, data:'Texture') -> None:
 		for i in self.set_range:
 			self.needs_update[i] = True
@@ -169,21 +169,24 @@ class RendererBindings:
 
 		self.descriptor_sets = vkAllocateDescriptorSets(BVKC.logical_device.device, alloc_info)
 		self.pipeline_layout = pipeline.pipeline_layout
-		self.ubo_set:list['Buffer'] = []
 
-		self.descriptors:dict[str, DescriptorSet] = {}
+		self.descriptors:dict[str, Descriptor] = {}
 		write = []
 		for name, binding, _ in bindings:
 			desc_type = pipeline.shader_attribute.descriptor_types[name]
 
 			if desc_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-				desc = UniformBufferDescriptorSet(self, binding)
+				desc = UniformBufferDescriptor(self, binding)
 			elif desc_type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-				desc = ImageDescriptorSet(self, binding)
+				desc = ImageDescriptor(self, binding)
 			else:
 				raise Exception('Unsupported descriptor type.')
 
 			# TODO add more functionality for other possible types
+
+			# if binding in defaults:
+			# TODO get this to be fine
+			# probably need to set the values initially to zero with the known data type
 
 			desc.set_descriptor(defaults[binding])
 			self.descriptors[name] = desc
@@ -222,9 +225,6 @@ class RendererBindings:
 		# Might be unnecessary.
 
 		vkDestroyDescriptorPool(BVKC.logical_device.device, self.descriptor_pool, None)
-			
-		for b in self.ubo_set:
-			b.destroy()
 
 
 class PushConstantManager:
