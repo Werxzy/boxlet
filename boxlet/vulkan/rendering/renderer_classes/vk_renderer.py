@@ -234,8 +234,8 @@ class RendererBindings:
 
 		self.descriptors:dict[str, Descriptor] = {}
 		write = []
-		for name, binding, _ in bindings:
-			desc_type = pipeline.shader_attribute.descriptor_types[name]
+		for name, _ in bindings:
+			desc_type, binding = pipeline.shader_attribute.descriptor_types[name]
 
 			if desc_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
 				desc = UniformBufferDescriptor(self, binding)

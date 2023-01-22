@@ -42,8 +42,8 @@ shader_layout = ShaderAttributeLayout(
 		'box_viewProj': 'mat4', 
 	},
 	bindings = {
-		'ubo' : [('color1', 'vec3'), ('color2', 'vec3'), ('color3', 'vec3')],
-		'texture': ('sampler2D',),
+		'ubo' : ('uniform buffer', 0, [('color1', 'vec3'), ('color2', 'vec3'), ('color3', 'vec3')]),
+		'texture': ('sampler2D', 1, None),
 	},
 )
 
@@ -57,8 +57,8 @@ graphics_pipeline = GraphicsPipeline(
 		'instance attributes' : [('model', 2)],
 		'push constants' : ['box_viewProj'],
 		'bindings' : [
-			('ubo', 0, 'vertex'),
-			('texture', 1, 'fragment')
+			('ubo', 'vertex'),
+			('texture', 'fragment')
 		]
 	},
 	base_vert,
@@ -74,7 +74,7 @@ renderer = IndirectRenderer(graphics_pipeline, meshes, {
 # - - render pass for presenting - -
 shader_layout_screen = ShaderAttributeLayout(
 	bindings = {
-		'texture': ('sampler2D',),
+		'texture': ('sampler2D', 0, None),
 	},
 )
 
@@ -85,7 +85,7 @@ graphics_pipeline_screen = GraphicsPipeline(
 	{
 		'vertex attributes' : [('position', 0), ('texcoord', 1)],
 		'bindings' : [
-			('texture', 0, 'fragment')
+			('texture', 'fragment')
 		]
 	},
 	vignette_vert,

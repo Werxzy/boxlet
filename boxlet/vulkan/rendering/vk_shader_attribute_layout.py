@@ -97,23 +97,23 @@ class ShaderAttributeLayout:
 		return binding_desc, attribute_desc
 
 	def _prepare_desc_set_layout_bindings(self):
-		self.descriptor_types = {}
-		for name, b in self.bindings.items():
-			if isinstance(b, list):
-				desc_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
-				#TODO build numpy data type
-
-			elif b[0] == 'sampler2D':
-				desc_type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+		self.descriptor_types:dict[int, int] = {}
+		for name, (t, bind, data_layout) in self.bindings.items():
+			match t:
+				case 'uniform buffer':
+					desc_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+					#TODO build numpy data type
+				case 'sampler2D':
+					desc_type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
 			# TODO fill this out
 
-			self.descriptor_types[name] = desc_type 
+			self.descriptor_types[name] = (desc_type, bind)
 			# potentially gather more info together
 
-	def get_desc_set_layout_bindings(self, bindings:list[tuple[str, int, str]]):
+	def get_desc_set_layout_bindings(self, bindings:list[tuple[str, str]]):
 		all_bindings = []
 		
-		for name, bind, stages in bindings:
+		for name, stages in bindings:
 			stage_flags = 0
 			if 'vertex' in stages: 
 				stage_flags |= VK_SHADER_STAGE_VERTEX_BIT
@@ -126,8 +126,8 @@ class ShaderAttributeLayout:
 
 			all_bindings.append(
 				VkDescriptorSetLayoutBinding(
-					binding = bind, descriptorCount = 1,
-					descriptorType = self.descriptor_types[name],
+					binding = self.descriptor_types[name][1], descriptorCount = 1,
+					descriptorType = self.descriptor_types[name][0],
 					stageFlags = stage_flags,
 					pImmutableSamplers = VK_NULL_HANDLE 
 				)
@@ -158,13 +158,13 @@ class ShaderAttributeLayout:
 
 		return pc_range, pc_dtype
 
-	def create_descriptor_pool(self, bindings:list[tuple[str,int,str]]):
+	def create_descriptor_pool(self, bindings:list[tuple[str,str]]):
 		pool_sizes = [
 			VkDescriptorPoolSize(
-				self.descriptor_types[name],
+				self.descriptor_types[name][0],
 				BVKC.swapchain.max_frames
 			)
-			for name, _, _ in bindings
+			for name, _ in bindings
 		]
 
 		descriptor_pool_info = VkDescriptorPoolCreateInfo(
