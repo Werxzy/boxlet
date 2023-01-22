@@ -8,18 +8,42 @@ if TYPE_CHECKING:
 
 
 class Renderer(TrackedInstances, RenderingStep):
-	def __init__(self, pipeline:'GraphicsPipeline', mesh:'Mesh|MultiMesh', defaults:dict[int] = {}, priority = 0) -> None:
+	def __init__(self, pipeline:'GraphicsPipeline|list[GraphicsPipeline]', mesh:'Mesh|MultiMesh', defaults:dict[int] = {}, priority = 0) -> None:
 		super().__init__(priority)
 
 		self.mesh:'Mesh|MultiMesh' = mesh
 		if mesh:
 			mesh.init_buffers()
 
-		pipeline.attach(self)
-		self.pipeline = pipeline
-		self.attributes = RendererBindings(pipeline, defaults)
-		self.push_constants = PushConstantManager(pipeline.pipeline_layout)
+		if isinstance(pipeline, list):
+			self.pipeline = pipeline[0]
+			self.child_renderers = [
+				ChildRenderer(self, pipe, priority)
+				for pipe in pipeline[1:]
+			]
+		else:
+			self.pipeline = pipeline
+			self.child_renderers = []
+
+		self.pipeline.attach(self)
+		self.attributes = RendererBindings(self.pipeline, defaults)
+		self._push_constants = PushConstantManager(self.pipeline.pipeline_layout)
 		self.buffer_set:'IndirectBufferSet|InstancedBufferSet' = None
+
+	def set_constant(self, key, value):
+		self._push_constants[key] = value
+		for renderer in self.child_renderers:
+			renderer._push_constants[key] = value
+		
+	def get_constant(self, key):
+		if (value := self._push_constants[key]) is not None:
+			return value
+		
+		for renderer in self.child_renderers:
+			if (value := renderer._push_constants[key]) is not None:
+				return value
+
+		raise Exception(f'Constant {key} does not exist on this renderer')
 	
 	def begin(self, command_buffer):
 		if not self.is_enabled():
@@ -28,8 +52,8 @@ class Renderer(TrackedInstances, RenderingStep):
 		if self.mesh:
 			self.mesh.bind(command_buffer)
 
-		if self.push_constants:
-			self.push_constants.push(command_buffer)
+		if self._push_constants:
+			self._push_constants.push(command_buffer)
 		
 		if self.buffer_set:
 			self.buffer_set.update_memory()
@@ -61,7 +85,7 @@ class ChildRenderer(RenderingStep):
 		self.parent_renderer = parent_renderer
 		pipeline.attach(self)
 		self.pipeline = pipeline
-		self.push_constants = PushConstantManager(pipeline.pipeline_layout)
+		self._push_constants = PushConstantManager(pipeline.pipeline_layout)
 
 	def begin(self, command_buffer):
 		parent = self.parent_renderer
@@ -72,8 +96,8 @@ class ChildRenderer(RenderingStep):
 		if parent.mesh:
 			parent.mesh.bind(command_buffer)
 			
-		if self.push_constants: # push constants can be different between renderers
-			self.push_constants.push(command_buffer)
+		if self._push_constants: # push constants can be different between renderers
+			self._push_constants.push(command_buffer)
 
 		if parent.buffer_set:
 			parent.buffer_set.update_memory()
@@ -279,16 +303,20 @@ class PushConstantManager:
 		self.pipeline_layout = pipeline_layout
 		self.data = np.array([0], pipeline_layout.push_constant_dtype)
 		self.itemsize = pipeline_layout.push_constant_dtype.itemsize
+		self.names = pipeline_layout.push_constant_dtype.names
 		self.globals_to_update = [
-			n for n in pipeline_layout.push_constant_dtype.names
+			n for n in self.names
 			if n.lower().startswith('box_') 
 		]
 
 	def __setitem__(self, key, value):
-		self.data[0][key] = value
+		if key in self.names:
+			self.data[0][key] = value
 
 	def __getitem__(self, key):
-		return self.data[0][key]
+		if key in self.names:
+			return self.data[0][key]
+		return None
 
 	def push(self, command_buffer):
 		for key in self.globals_to_update:
