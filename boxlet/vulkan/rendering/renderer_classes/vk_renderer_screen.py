@@ -18,9 +18,7 @@ class ScreenRenderer(Renderer):
 	def __init__(self, pipeline:'GraphicsPipeline', defaults:dict[int] = {}, priority=0):
 		super().__init__(pipeline, self.get_screen_mesh(), defaults, priority)
 
-	def begin(self, command_buffer):
-		super().begin(command_buffer)
-
+	def draw_command(self, command_buffer):
 		vkCmdDrawIndexed(
 			commandBuffer = command_buffer, 
 			indexCount = 6,

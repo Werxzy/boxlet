@@ -17,12 +17,10 @@ class InstancedRenderer(Renderer):
 	def create_instance(self):
 		return self.buffer_set.create_instance()
 
-	def begin(self, command_buffer):
-		if self.buffer_set.instance_count == 0:
-			return
+	def is_enabled(self):
+		return self.buffer_set.instance_count > 0
 
-		super().begin(command_buffer)
-
+	def draw_command(self, command_buffer):
 		vkCmdDrawIndexed(
 			commandBuffer = command_buffer, 
 			indexCount = self.mesh.index_count,

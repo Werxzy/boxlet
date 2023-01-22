@@ -18,12 +18,10 @@ class IndirectRenderer(Renderer):
 	def create_instance(self, model_id):
 		return self.buffer_set.create_instance(model_id)
 
-	def begin(self, command_buffer):
-		if self.buffer_set.indirect_count == 0:
-			return
+	def is_enabled(self):
+		return self.buffer_set.indirect_count > 0
 
-		super().begin(command_buffer)
-
+	def draw_command(self, command_buffer):
 		vkCmdDrawIndexedIndirect(
 			commandBuffer = command_buffer, 
 			buffer = self.buffer_set.indirect_buffer.buffer,

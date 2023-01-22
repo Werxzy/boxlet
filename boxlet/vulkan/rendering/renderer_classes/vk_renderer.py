@@ -22,6 +22,9 @@ class Renderer(TrackedInstances, RenderingStep):
 		self.buffer_set:'IndirectBufferSet|InstancedBufferSet' = None
 	
 	def begin(self, command_buffer):
+		if not self.is_enabled():
+			return
+
 		if self.mesh:
 			self.mesh.bind(command_buffer)
 
@@ -35,12 +38,51 @@ class Renderer(TrackedInstances, RenderingStep):
 		if self.attributes:
 			self.attributes.bind(command_buffer)
 
+		self.draw_command(command_buffer)
+
+	def is_enabled(self):
+		return True
+
+	def draw_command(self, command_buffer):
+		...
+
 	def on_destroy(self):
 		if self.buffer_set:
 			self.buffer_set.destroy()
 
 		if self.attributes:
 			self.attributes.destroy()
+
+
+class ChildRenderer(RenderingStep):
+	def __init__(self, parent_renderer:'Renderer', pipeline:'GraphicsPipeline', priority = 0) -> None:
+		super().__init__(priority)
+
+		self.parent_renderer = parent_renderer
+		pipeline.attach(self)
+		self.pipeline = pipeline
+		self.push_constants = PushConstantManager(pipeline.pipeline_layout)
+
+	def begin(self, command_buffer):
+		parent = self.parent_renderer
+
+		if not parent.is_enabled():
+			return
+
+		if parent.mesh:
+			parent.mesh.bind(command_buffer)
+			
+		if self.push_constants: # push constants can be different between renderers
+			self.push_constants.push(command_buffer)
+
+		if parent.buffer_set:
+			parent.buffer_set.update_memory()
+			parent.buffer_set.bind_to_vertex(command_buffer)
+
+		if parent.attributes:
+			parent.attributes.bind(command_buffer)
+
+		parent.draw_command(command_buffer)
 
 
 class Descriptor:
@@ -75,10 +117,6 @@ class Descriptor:
 
 
 class UniformBufferDescriptor(Descriptor):
-	def __init__(self, binder:'RendererBindings', binding:int) -> None:
-		super().__init__(binder, binding)
-		self.buffer_group:UniformBufferGroup = None
-
 	def set_descriptor(self, data:np.ndarray) -> None:
 		self.destroy()
 
@@ -110,7 +148,7 @@ class UniformBufferDescriptor(Descriptor):
 		)
 
 	def destroy(self):
-		if self.buffer_group:
+		if hasattr(self, 'buffer_group'):
 			self.buffer_group.destroy()
 
 
