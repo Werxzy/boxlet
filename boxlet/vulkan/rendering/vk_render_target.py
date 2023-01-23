@@ -83,8 +83,8 @@ class SimpleRenderTarget(RenderTarget):
 	def gen_size(self, width, height):
 		(w, h, wm, hm) = self.size_data
 		return (
-			max(width if w else floor(wm * width), 1),
-			max(height if h else floor(hm * height), 1)
+			max(w if w else floor(wm * width), 1),
+			max(h if h else floor(hm * height), 1)
 		)
 
 	def remake(self, width, height):
