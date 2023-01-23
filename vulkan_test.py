@@ -46,7 +46,6 @@ shader_layout = ShaderAttributeLayout(
 	bindings = {
 		'ubo' : ('uniform buffer', 0, [('color1', 'vec3'), ('color2', 'vec3'), ('color3', 'vec3')]),
 		'texture': ('sampler2D', 1, None),
-		'ubo2' : ('uniform buffer', 2, [('color1', 'vec3'), ('color2', 'vec3'), ('color3', 'vec3')]),
 	},
 )
 
@@ -68,26 +67,9 @@ graphics_pipeline = GraphicsPipeline(
 	mrt_frag,
 	meshes
 )
-graphics_pipeline2 = GraphicsPipeline(
-	render_pass,
-	shader_layout,
-	{
-		'vertex attributes' : [('position', 0), ('texcoord', 1)],
-		'instance attributes' : [('model', 2)],
-		'push constants' : ['box_viewProj'],
-		'bindings' : [
-			('texture', 'fragment'),
-			('ubo2', 'vertex')
-		]
-	},
-	mrt_2_vert,
-	mrt_2_frag,
-	meshes
-)
-renderer = IndirectRenderer([graphics_pipeline, graphics_pipeline2], meshes, {
+renderer = IndirectRenderer(graphics_pipeline, meshes, {
 	0 : np.array([[1,0,0,0], [1,0,1,0], [0,1,1,0]], np.float32), # they are vec3s don't forget about padding
 	1 : texture,
-	2 : np.array([[0.03,0.03,0.03,0], [1,0,1,0], [0,1,1,0]], np.float32),
 })
 
 

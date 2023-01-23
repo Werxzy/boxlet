@@ -237,7 +237,6 @@ class RendererBindings:
 			bindings = [s for s, _ in pipeline.shader_layout['bindings']]
 
 		bindings.sort(key = lambda name: pipeline.shader_attribute.bindings[name][1])
-		print(bindings)
 
 		self.descriptor_pool = pipeline.shader_attribute.create_descriptor_pool(bindings)
 
@@ -309,7 +308,7 @@ class RendererBindings:
 
 class ChildRendererBindings:
 	# needed because the layout is different between pipelines
-	
+
 	def __new__(cls: type[Self], parent:RendererBindings, pipeline:'GraphicsPipeline') -> Self|None:
 		# Checks if the arguments are valid.
 		if parent is not None:
