@@ -19,8 +19,10 @@ texture = Texture(pygame.image.load("examples/opengl_example/box.png"))
 
 # base_vert = Shader('vertex', 'examples/vulkan_example/shaders/test_shader/vert.spv')
 # base_frag = Shader('fragment', 'examples/vulkan_example/shaders/test_shader/frag.spv')
-base_vert = Shader('vertex', 'examples/vulkan_example/shaders/mrt_test_shader/vert.spv')
-base_frag = Shader('fragment', 'examples/vulkan_example/shaders/mrt_test_shader/frag.spv')
+mrt_vert = Shader('vertex', 'examples/vulkan_example/shaders/mrt_test_shader/vert.spv')
+mrt_frag = Shader('fragment', 'examples/vulkan_example/shaders/mrt_test_shader/frag.spv')
+mrt_2_vert = Shader('vertex', 'examples/vulkan_example/shaders/mrt_secondary_test_shader/vert.spv')
+mrt_2_frag = Shader('fragment', 'examples/vulkan_example/shaders/mrt_secondary_test_shader/frag.spv')
 vignette_vert = Shader('vertex', 'examples/vulkan_example/shaders/vignette_shader/vert.spv')
 vignette_frag = Shader('fragment', 'examples/vulkan_example/shaders/vignette_shader/frag.spv')
 
@@ -44,6 +46,7 @@ shader_layout = ShaderAttributeLayout(
 	bindings = {
 		'ubo' : ('uniform buffer', 0, [('color1', 'vec3'), ('color2', 'vec3'), ('color3', 'vec3')]),
 		'texture': ('sampler2D', 1, None),
+		'ubo2' : ('uniform buffer', 2, [('color1', 'vec3'), ('color2', 'vec3'), ('color3', 'vec3')]),
 	},
 )
 
@@ -61,13 +64,30 @@ graphics_pipeline = GraphicsPipeline(
 			('texture', 'fragment')
 		]
 	},
-	base_vert,
-	base_frag,
+	mrt_vert,
+	mrt_frag,
 	meshes
 )
-renderer = IndirectRenderer(graphics_pipeline, meshes, {
-	0 : np.array([[1,1,0,0], [1,0,1,0], [0,1,1,0]], np.float32), # they are vec3s don't forget about padding
-	1 : texture
+graphics_pipeline2 = GraphicsPipeline(
+	render_pass,
+	shader_layout,
+	{
+		'vertex attributes' : [('position', 0), ('texcoord', 1)],
+		'instance attributes' : [('model', 2)],
+		'push constants' : ['box_viewProj'],
+		'bindings' : [
+			('texture', 'fragment'),
+			('ubo2', 'vertex')
+		]
+	},
+	mrt_2_vert,
+	mrt_2_frag,
+	meshes
+)
+renderer = IndirectRenderer([graphics_pipeline, graphics_pipeline2], meshes, {
+	0 : np.array([[1,0,0,0], [1,0,1,0], [0,1,1,0]], np.float32), # they are vec3s don't forget about padding
+	1 : texture,
+	2 : np.array([[0.03,0.03,0.03,0], [1,0,1,0], [0,1,1,0]], np.float32),
 })
 
 
@@ -93,8 +113,8 @@ graphics_pipeline_screen = GraphicsPipeline(
 	ScreenRenderer.get_screen_mesh()
 )
 renderer_screen = ScreenRenderer(graphics_pipeline_screen, {
-	# 0 : srt.get_color_images()[0]
-	0 : srt.get_color_images()[1]
+	0 : srt.get_color_images()[0]
+	# 0 : srt.get_color_images()[1]
 })
 
 # - - - - - - - - - - - - - - - - - - - - - - -

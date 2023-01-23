@@ -158,13 +158,13 @@ class ShaderAttributeLayout:
 
 		return pc_range, pc_dtype
 
-	def create_descriptor_pool(self, bindings:list[tuple[str,str]]):
+	def create_descriptor_pool(self, bindings:list[str]):
 		pool_sizes = [
 			VkDescriptorPoolSize(
 				self.descriptor_types[name][0],
 				BVKC.swapchain.max_frames
 			)
-			for name, _ in bindings
+			for name in bindings
 		]
 
 		descriptor_pool_info = VkDescriptorPoolCreateInfo(

@@ -15,6 +15,8 @@ class Renderer(TrackedInstances, RenderingStep):
 		if mesh:
 			mesh.init_buffers()
 
+		self.attributes = RendererBindings(pipeline, defaults)
+
 		if isinstance(pipeline, list):
 			self.pipeline = pipeline[0]
 			self.child_renderers = [
@@ -26,7 +28,6 @@ class Renderer(TrackedInstances, RenderingStep):
 			self.child_renderers = []
 
 		self.pipeline.attach(self)
-		self.attributes = RendererBindings(self.pipeline, defaults)
 		self._push_constants = PushConstantManager(self.pipeline.pipeline_layout)
 		self.buffer_set:'IndirectBufferSet|InstancedBufferSet' = None
 
@@ -85,6 +86,7 @@ class ChildRenderer(RenderingStep):
 		self.parent_renderer = parent_renderer
 		pipeline.attach(self)
 		self.pipeline = pipeline
+		self.attributes = ChildRendererBindings(parent_renderer, pipeline)
 		self._push_constants = PushConstantManager(pipeline.pipeline_layout)
 
 	def begin(self, command_buffer):
@@ -213,14 +215,30 @@ class RendererBindings:
 	
 	# can also be considered a vulkan descriptor set
 
-	def __new__(cls: type[Self], pipeline:'GraphicsPipeline', defaults) -> Self|None:
+	def __new__(cls: type[Self], pipeline:'GraphicsPipeline|list[GraphicsPipeline]', defaults) -> Self|None:
 		# Checks if the arguments are valid.
-		if len(pipeline.shader_layout['bindings']):
-			return super().__new__(cls)
+		if isinstance(pipeline, list):
+			if any(len(pipe.shader_layout['bindings']) > 0 for pipe in pipeline):
+				return super().__new__(cls)
+		else:
+			if len(pipeline.shader_layout['bindings']):
+				return super().__new__(cls)
 		return None
 
-	def __init__(self, pipeline:'GraphicsPipeline', defaults:dict[int]) -> None:
-		bindings = pipeline.shader_layout['bindings']
+	def __init__(self, pipeline:'GraphicsPipeline|list[GraphicsPipeline]', defaults:dict[int]) -> None:
+		if isinstance(pipeline, list):
+			bindings = list(set([
+				name 
+				for pipe in pipeline
+				for name, _ in pipe.shader_layout['bindings']
+			]))
+			pipeline = pipeline[0]
+		else:
+			bindings = [s for s, _ in pipeline.shader_layout['bindings']]
+
+		bindings.sort(key = lambda name: pipeline.shader_attribute.bindings[name][1])
+		print(bindings)
+
 		self.descriptor_pool = pipeline.shader_attribute.create_descriptor_pool(bindings)
 
 		alloc_info = VkDescriptorSetAllocateInfo(
@@ -234,7 +252,7 @@ class RendererBindings:
 
 		self.descriptors:dict[str, Descriptor] = {}
 		write = []
-		for name, _ in bindings:
+		for name in bindings:
 			desc_type, binding = pipeline.shader_attribute.descriptor_types[name]
 
 			if desc_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
@@ -287,6 +305,30 @@ class RendererBindings:
 		# Might be unnecessary.
 
 		vkDestroyDescriptorPool(BVKC.logical_device.device, self.descriptor_pool, None)
+
+
+class ChildRendererBindings:
+	# needed because the layout is different between pipelines
+	
+	def __new__(cls: type[Self], parent:RendererBindings, pipeline:'GraphicsPipeline') -> Self|None:
+		# Checks if the arguments are valid.
+		if parent is not None:
+			return super().__new__(cls)
+		return None
+		
+	def __init__(self, parent:RendererBindings, pipeline:'GraphicsPipeline') -> None:
+		self.parent = parent
+		self.pipeline_layout = pipeline.pipeline_layout
+
+	def bind(self, command_buffer):
+		self.parent._update_descriptors(BVKC.swapchain.current_frame)
+
+		vkCmdBindDescriptorSets(
+			command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, 
+			self.pipeline_layout.layout,
+			0, 1, [self.parent.descriptor_sets[BVKC.swapchain.current_frame]],
+			0, None
+		)
 
 
 class PushConstantManager:
