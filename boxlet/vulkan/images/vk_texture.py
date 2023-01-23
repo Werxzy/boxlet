@@ -15,7 +15,8 @@ class Texture(TrackedInstances):
 			access_mask = 0,
 			stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
 			sample_count = VK_SAMPLE_COUNT_1_BIT,
-			layer_count = 1
+			layer_count = 1,
+			filter = 'repeat'
 		) -> None:
 
 		if input_image:
@@ -35,6 +36,7 @@ class Texture(TrackedInstances):
 		self.image = None
 		self.aspect_mask = aspect_mask
 		self.sample_count = sample_count
+		self.filter = filter
 
 		self.access_mask = access_mask
 		self.stage_mask = stage_mask
@@ -203,18 +205,30 @@ class Texture(TrackedInstances):
 	def create_sampler(self):
 		properties = vkGetPhysicalDeviceProperties(BVKC.physical_device.vk_addr)
 
+		match self.filter:
+			case 'mirror':
+				address_mode = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT
+			case 'mirror clamp':
+				address_mode = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE
+			case 'clamp border':
+				address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER
+			case 'clamp edge':
+				address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
+			case 'repeat' | _:
+				address_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT
+
 		sampler_create_info = VkSamplerCreateInfo(
 			magFilter = VK_FILTER_LINEAR,
 			minFilter = VK_FILTER_LINEAR,
 			mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
-			addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-			addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-			addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+			addressModeU = address_mode,
+			addressModeV = address_mode,
+			addressModeW = address_mode,
 			anisotropyEnable = VK_TRUE,
 			maxAnisotropy = properties.limits.maxSamplerAnisotropy,
 			compareEnable = VK_FALSE,
 			compareOp = VK_COMPARE_OP_ALWAYS,
-			borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+			borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE,
 			unnormalizedCoordinates = VK_FALSE
 		)
 

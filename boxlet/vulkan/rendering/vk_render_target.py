@@ -44,7 +44,7 @@ class RenderTarget(TrackedInstances):
 
 
 class SimpleRenderTarget(RenderTarget):
-	def __init__(self, width = 0, height = 0, width_mult = 1, height_mult = 1, layers = 1) -> None:
+	def __init__(self, width = 0, height = 0, width_mult = 1, height_mult = 1, layers = 1, filter = 'clamp edge') -> None:
 		# Setting width and/or height to a non-zero value with set the corresponding component.
 		# Otherwise, multiply the display's resoultion by the 'mult' value and round down.
 
@@ -66,7 +66,8 @@ class SimpleRenderTarget(RenderTarget):
 
 				# image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 				access_mask = VK_ACCESS_SHADER_READ_BIT,
-				stage_mask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+				stage_mask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+				filter = filter
 			)
 			self.images.append(image)
 		
@@ -76,6 +77,7 @@ class SimpleRenderTarget(RenderTarget):
 			tiling = VK_IMAGE_TILING_OPTIMAL,
 			usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT,
+			filter = filter
 		)
 
 		self.frame_buffer = None

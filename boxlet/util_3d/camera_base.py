@@ -68,7 +68,7 @@ class CameraBase(Transform):
 		ry = -(top + bottom) * dy
 		rz = -(far + near) * dz
 
-		self.proj_matrix = np.array([[2*dx, 0, 0, rx], [0, 2*dy, 0, ry], [0, 0, 2*dz, rz], [0, 0, 0, 1]]).T
+		self.proj_matrix = np.array([[2*dx, 0, 0, rx], [0, 2*dy, 0, ry], [0, 0, 2*dz, -rz], [0, 0, 0, 1]]).T
 		self.inv_proj_matrix = np.linalg.inv(self.proj_matrix)
 		self.proj_type_perspective = False
 
