@@ -72,15 +72,16 @@ class CameraBase(Transform):
 		self.inv_proj_matrix = np.linalg.inv(self.proj_matrix)
 		self.proj_type_perspective = False
 
-	# def orthographic_simple(self, width:float, height:float, depth:float):
-	# 	# 0,0 is the center of the screen
+	def orthographic_simple(self, width:float, height:float, depth:float):
+		# 0,0 is the center of the screen
 
-	# 	dx = 4 / width
-	# 	dy = 4 / height
-	# 	dz = -2 / depth
+		dx = 2 / width
+		dy = -2 / height
+		dz = 2 / depth
 		
-		# self.proj_matrix = return np.array([[dx, 0, 0, 0], [0, dy, 0, 0], [0, 0, dz, -1], [0, 0, 0, 1]])
-		# self.inv_proj_matrix = np.linalg.inv(self.proj_matrix)
+		self.proj_matrix = np.array([[dx, 0, 0, 0], [0, dy, 0, 0], [0, 0, dz, 1], [0, 0, 0, 1]]).T
+		self.inv_proj_matrix = np.linalg.inv(self.proj_matrix)
+		self.proj_type_perspective = False
 
 
 	def get_mouse_ray(self, pos):
