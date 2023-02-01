@@ -1,4 +1,5 @@
 from .. import np
+from ...util_3d.data_type_gen import gen_dtype
 from ..vk_module import *
 
 
@@ -97,12 +98,14 @@ class ShaderAttributeLayout:
 		return binding_desc, attribute_desc
 
 	def _prepare_desc_set_layout_bindings(self):
-		self.descriptor_types:dict[int, int] = {}
+		self.descriptor_types:dict[str, tuple[int, int]] = {}
+		self.dtypes:dict[str, np.dtype] = {}
 		for name, (t, bind, data_layout) in self.bindings.items():
 			match t:
 				case 'uniform buffer':
 					desc_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
-					#TODO build numpy data type
+					self.dtypes[name] = gen_dtype(data_layout)[0]
+
 				case 'sampler2D':
 					desc_type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
 			# TODO fill this out

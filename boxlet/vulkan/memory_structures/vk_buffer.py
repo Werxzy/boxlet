@@ -145,11 +145,14 @@ class UniformBufferGroup:
 	update_memory() on the buffer associated with the current swapchain frame.
 	'''
 
-	def __init__(self, data, count = 0) -> None:
-		self.data = np.array(data)
+	def __init__(self, data:list|np.ndarray|np.dtype = None, count = 0) -> None:
+		if isinstance(data, np.dtype):
+			self.data = np.array([0], data)
+		else:
+			self.data = np.array(data)
 
 		count = count or BVKC.swapchain.max_frames
-		
+
 		self.buffers = [
 			Buffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, self.data)
 			for _ in range(count)
