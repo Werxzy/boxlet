@@ -13,7 +13,13 @@ class Camera3D(CameraBase, RenderingStep):
 		self.attach_to_base()
 
 	def begin(self, command_buffer):
+		view_mat, _, view_proj_mat = self.get_matricies()
+		PushConstantManager.set_global('box_viewProj', view_proj_mat)
+		PushConstantManager.set_global('box_view', view_mat)
+
+	def get_matricies(self):
+		'Returns the view, projection, and view*proj matricies.'
 		inv_mod = np.linalg.inv(self.model_matrix)
-		PushConstantManager.set_global('box_viewProj', np.matmul(inv_mod, self.proj_matrix))
-		PushConstantManager.set_global('box_view', inv_mod)
+		return inv_mod, self.proj_matrix, np.matmul(inv_mod, self.proj_matrix)
+
 

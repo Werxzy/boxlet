@@ -232,10 +232,11 @@ if __name__ == 'never':
 				)
 			],
 
-			# tuple as value implies built-in data type
-			'texture_atlas': ('texture2D', 8), 
-			'samp': ('sampler',),
-			'texEffect': ('sampler2D',),
+			'texEffect': ('sampler2D', 0, None),
+
+
+			# 'texture_atlas': ('texture2D', 8), 
+			# 'samp': ('sampler',),
 		},
 	)
 	
