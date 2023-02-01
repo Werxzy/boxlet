@@ -116,19 +116,19 @@ class Descriptor:
 		self.binder = binder
 		self.binding = binding
 		self.needs_update = [False] * len(binder.descriptor_sets)
-		self.set_range = range(len(self.needs_update))
+		self.desc_range = range(len(self.needs_update))
 
-	def get_update(self, set_number) -> list[Any]:
-		if self.needs_update[set_number]:
-			self.needs_update[set_number] = False
-			return [self.get_write(set_number)]
+	def get_update(self, desc_number) -> list[Any]:
+		if self.needs_update[desc_number]:
+			self.needs_update[desc_number] = False
+			return [self.get_write(desc_number)]
 		return []
 
 	def force_update_all(self):
-		for i in self.set_range:
+		for i in self.desc_range:
 			self.needs_update[i] = False
 		
-		return [self.get_write(i) for i in self.set_range]
+		return [self.get_write(i) for i in self.desc_range]
 
 	def set_descriptor(self, data) -> None: 
 		'''
@@ -137,27 +137,30 @@ class Descriptor:
 		It is recommended to use this as little as possible and instead update the buffer/image themselves.
 		'''
 
-	def get_write(self, set_number) -> Any: ...
+	def get_write(self, desc_number) -> Any: ...
 
 	def destroy(self): ...
 
 
 class UniformBufferDescriptor(Descriptor):
-	def set_descriptor(self, data:np.ndarray) -> None:
+	def set_descriptor(self, data:'np.ndarray|UniformBufferGroup') -> None:
 		self.destroy()
 
-		for i in self.set_range:
+		for i in self.desc_range:
 			self.needs_update[i] = True
 
-		self.buffer_group = UniformBufferGroup(data, len(self.needs_update))
+		if isinstance(data, UniformBufferGroup):
+			self.buffer_group = data
+		else:
+			self.buffer_group = UniformBufferGroup(data, len(self.needs_update))
 		# TODO parameter to keep memory map?
 
-	def get_update(self, set_number) -> list[Any]:
-		self.buffer_group.update_memory(set_number)
-		return super().get_update(set_number)
+	def get_update(self, desc_number) -> list[Any]:
+		self.buffer_group.update_memory(desc_number)
+		return super().get_update(desc_number)
 
-	def get_write(self, set_number):
-		b = self.buffer_group.buffers[set_number]
+	def get_write(self, desc_number):
+		b = self.buffer_group.buffers[desc_number]
 		buffer_info = VkDescriptorBufferInfo(
 			buffer = b.buffer,
 			offset = 0,
@@ -165,7 +168,7 @@ class UniformBufferDescriptor(Descriptor):
 		)
 
 		return VkWriteDescriptorSet(
-			dstSet = self.binder.descriptor_sets[set_number],
+			dstSet = self.binder.descriptor_sets[desc_number],
 			dstBinding = self.binding,
 			dstArrayElement = 0,
 			descriptorCount = 1,
@@ -180,13 +183,13 @@ class UniformBufferDescriptor(Descriptor):
 
 class ImageDescriptor(Descriptor):
 	def set_descriptor(self, data:'Texture') -> None:
-		for i in self.set_range:
+		for i in self.desc_range:
 			self.needs_update[i] = True
 
 		self.texture = data
 		self.orig_image_view = self.texture.image_view
 
-	def get_write(self, set_number):
+	def get_write(self, desc_number):
 		image_info = VkDescriptorImageInfo(
 			sampler = self.texture.sampler,
 			imageView = self.texture.image_view.vk_addr,
@@ -194,7 +197,7 @@ class ImageDescriptor(Descriptor):
 		)
 
 		return VkWriteDescriptorSet(
-			dstSet = self.binder.descriptor_sets[set_number],
+			dstSet = self.binder.descriptor_sets[desc_number],
 			dstBinding = self.binding,
 			dstArrayElement = 0,
 			descriptorCount = 1,
@@ -202,13 +205,13 @@ class ImageDescriptor(Descriptor):
 			pImageInfo = image_info,
 		)
 
-	def get_update(self, set_number) -> list[Any]:
+	def get_update(self, desc_number) -> list[Any]:
 		if self.orig_image_view != self.texture.image_view:
 			self.orig_image_view = self.texture.image_view
-			for i in self.set_range:
+			for i in self.desc_range:
 				self.needs_update[i] = True
 			
-		return super().get_update(set_number)
+		return super().get_update(desc_number)
 
 
 class RendererBindings:
@@ -274,10 +277,10 @@ class RendererBindings:
 
 		vkUpdateDescriptorSets(BVKC.logical_device.device, len(write), write, 0, None)
 
-	def _update_descriptors(self, set_number):
+	def _update_descriptors(self, desc_number):
 		write = []
 		for desc in self.descriptors.values():
-			write.extend(desc.get_update(set_number))
+			write.extend(desc.get_update(desc_number))
 		if write:
 			vkUpdateDescriptorSets(BVKC.logical_device.device, len(write), write, 0, None)
 
