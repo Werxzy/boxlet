@@ -84,7 +84,7 @@ class CameraBase(Transform):
 		self.proj_type_perspective = False
 
 
-	def get_mouse_ray(self, pos):
+	def get_mouse_ray(self, pos) -> tuple[np.ndarray, np.ndarray]:
 		'Returns the ray of the given mouse coordinate from screen space to world space.\n\nreturns (pos, direction)'
 
 		coord = pos / np.array(pygame.display.get_window_size()) * 2 - 1

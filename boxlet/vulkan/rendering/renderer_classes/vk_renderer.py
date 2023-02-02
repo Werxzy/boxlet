@@ -1,4 +1,6 @@
-from typing import Any, Self
+from typing import Any, TYPE_CHECKING
+if TYPE_CHECKING:
+	from typing import Self
 
 from ... import RenderingStep, UniformBufferGroup, np
 from ...vk_module import *
@@ -218,7 +220,7 @@ class RendererBindings:
 	
 	# can also be considered a vulkan descriptor set
 
-	def __new__(cls: type[Self], pipeline:'GraphicsPipeline|list[GraphicsPipeline]', defaults) -> Self|None:
+	def __new__(cls: 'type[Self]', pipeline:'GraphicsPipeline|list[GraphicsPipeline]', defaults) -> 'Self|None':
 		# Checks if the arguments are valid.
 		if isinstance(pipeline, list):
 			if any(len(pipe.shader_layout['bindings']) > 0 for pipe in pipeline):
@@ -312,7 +314,7 @@ class RendererBindings:
 class ChildRendererBindings:
 	# needed because the layout is different between pipelines
 
-	def __new__(cls: type[Self], parent:RendererBindings, pipeline:'GraphicsPipeline') -> Self|None:
+	def __new__(cls: 'type[Self]', parent:RendererBindings, pipeline:'GraphicsPipeline') -> 'Self|None':
 		# Checks if the arguments are valid.
 		if parent is not None:
 			return super().__new__(cls)
@@ -337,7 +339,7 @@ class PushConstantManager:
 
 	global_values:dict[str,np.ndarray] = {}
 
-	def __new__(cls: type[Self], pipeline_layout:'PipelineLayout') -> Self|None:
+	def __new__(cls: 'type[Self]', pipeline_layout:'PipelineLayout') -> 'Self|None':
 		# Checks if the arguments are valid.
 		if pipeline_layout.push_constant_dtype is not None:
 			return super().__new__(cls)

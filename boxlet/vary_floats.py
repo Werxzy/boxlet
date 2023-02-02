@@ -2,12 +2,14 @@ import numpy as np
 
 class VaryFloats:
 	def __init__(self, values=None, size=None) -> None:
-		if values:
+		if values is not None:
 			self.current = np.array(values, float)
 			self.previous = np.array(values, float)
-		if size:
+		elif size is not None:
 			self.current = np.zeros(size)
 			self.previous = np.zeros(size)
+		else:
+			raise Exception('Invalid Input')
 
 	def set_full(self, values):
 		self.current[:] = values
