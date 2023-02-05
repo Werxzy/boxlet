@@ -64,7 +64,7 @@ class SimpleRenderTarget(RenderTarget):
 				tiling = VK_IMAGE_TILING_OPTIMAL,
 				usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 
-				# image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+				image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 				access_mask = VK_ACCESS_SHADER_READ_BIT,
 				stage_mask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
 				filter = filter
@@ -75,6 +75,8 @@ class SimpleRenderTarget(RenderTarget):
 			format = BVKC.physical_device.find_depth_format(),
 			extent = [width, height],
 			tiling = VK_IMAGE_TILING_OPTIMAL,
+			
+			image_layout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL,
 			usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT,
 			filter = filter

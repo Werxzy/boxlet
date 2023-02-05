@@ -32,9 +32,9 @@ class RenderPass(TrackedInstances, RenderingStep):
 		# we assume that the final layout is always preseting.
 		# Otherwise, we assume it's read by a shader 
 		if render_target:
-			final_layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-		else:
 			final_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+		else:
+			final_layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 
 		for i, image in enumerate(self.render_target.get_color_images()):
 			attachments.append(self.create_description(image, final_layout))
@@ -54,9 +54,9 @@ class RenderPass(TrackedInstances, RenderingStep):
 
 		if image := self.render_target.get_depth_image():
 			if render_target:
-				final_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+				final_layout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL
 			else:
-				final_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+				final_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
 
 			attachments.append(self.create_description(image, final_layout))
 

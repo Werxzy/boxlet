@@ -184,6 +184,7 @@ class ShaderAttributeLayout:
 	def get_type_size(t):
 		# this is a little silly
 		return {
+			'float': 4,
 			'vec4': 16,
 			'vec3': 12,
 			'mat4': 64
@@ -193,6 +194,7 @@ class ShaderAttributeLayout:
 	def get_type_format(t):
 		# this is a little silly
 		return {
+			'float': '(1,)f4',
 			'vec4': '(4,)f4',
 			'vec3': '(3,)f4',
 			'mat4': '(4,4)f4'
